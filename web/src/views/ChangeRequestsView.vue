@@ -236,7 +236,7 @@ async function assess() {
 const signOpen = ref(false)
 const signBusy = ref(false)
 const signError = ref('')
-async function sign(v: { decision: string; comment: string; password: string }) {
+async function sign(v: { decision: string; comment: string; password: string; meaning?: string; mfa_code?: string; time_zone?: string }) {
   if (!detail.value) return
   signBusy.value = true
   signError.value = ''

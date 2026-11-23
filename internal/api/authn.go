@@ -182,7 +182,8 @@ func (s *Server) authed(fn handlerFunc, perms ...string) http.Handler {
 				return
 			}
 		}
-		fn(w, r, p)
+		// reasons for change and signatures of electronic-records mode
+		s.serveERecords(fn, w, r, p)
 	})
 }
 
@@ -239,8 +240,16 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 		return nil, errors.New("user disabled")
 	}
 	p := &Principal{User: u, Session: sess}
-	if err := s.Store.TouchSession(ctx, sess, s.clientIP(r)); err != nil {
-		s.Log.Warn("session touch failed", "err", err)
+	// electronic-records mode ends sessions after inactivity
+	if s.idleExpired(ctx, sess) {
+		_ = s.Store.DeleteSession(ctx, sess.ID)
+		return nil, errIdle
+	}
+	// polling of the client is no activity
+	if r.Header.Get(headerBackground) == "" {
+		if err := s.Store.TouchSessionEvery(ctx, sess, s.clientIP(r), s.touchInterval(ctx, sess)); err != nil {
+			s.Log.Warn("session touch failed", "err", err)
+		}
 	}
 	if sess.TenantID != "" {
 		if t, err := s.Store.GetTenant(ctx, sess.TenantID); err == nil {

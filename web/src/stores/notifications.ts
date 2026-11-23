@@ -12,9 +12,9 @@ let unsubscribe: (() => void) | null = null
 export const useNotificationsStore = defineStore('notifications', {
   state: () => ({ items: [] as AppNotification[], unread: 0, timer: 0 as ReturnType<typeof setInterval> | 0 }),
   actions: {
-    async load(unreadOnly = false) {
+    async load(unreadOnly = false, background = false) {
       try {
-        const res = await api.get<{ items: AppNotification[]; unread: number }>('/notifications', unreadOnly ? { unread: 1 } : undefined)
+        const res = await api.get<{ items: AppNotification[]; unread: number }>('/notifications', unreadOnly ? { unread: 1 } : undefined, { background })
         this.items = res.items ?? []
         this.unread = res.unread ?? 0
       } catch {
@@ -45,7 +45,7 @@ export const useNotificationsStore = defineStore('notifications', {
       void this.load()
       const live = useLiveStore()
       this.timer = setInterval(() => {
-        if (!live.active) void this.load()
+        if (!live.active) void this.load(false, true)
       }, POLL_MS)
       unsubscribe = live.subscribe((ev) => {
         if (ev.kind === 'notification' || ev.kind === 'reset') void this.load()

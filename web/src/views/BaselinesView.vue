@@ -29,6 +29,9 @@ import { P } from '@/lib/permissions'
 import type { Baseline, BaselineChange, BaselineDiff, BaselineItem } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
+import { useERecordsStore } from '@/stores/erecords'
+import SignExtras from '@/components/SignExtras.vue'
+import { browserTimeZone, meaningLabel, signErrorKey } from '@/lib/erecords'
 import { usePrefsStore } from '@/stores/prefs'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
@@ -244,7 +247,13 @@ const signPassword = ref('')
 const signError = ref('')
 const signBusy = ref(false)
 const needsPassword = computed(() => (auth.user?.auth_provider ?? 'local') === 'local')
-const meanings = computed(() => ['authored', 'reviewed', 'approved', 'released'].map((m) => ({ label: t(`signoff.meaning.${m}`), value: m })))
+// electronic-records mode: the organisation's meanings and the second factor (SignExtras)
+const er = useERecordsStore()
+const signMfa = ref('')
+const meanings = computed(() =>
+  er.enabled ? er.meanings.map((m) => ({ label: meaningLabel(t, m), value: m })) : ['authored', 'reviewed', 'approved', 'released'].map((m) => ({ label: t(`signoff.meaning.${m}`), value: m })),
+)
+const signNeedsMfa = computed(() => er.enabled && !!auth.user?.mfa_enabled)
 watch(baselines, (list) => {
   const ids = new Set(list.map((b) => b.id))
   selection.value = selection.value.filter((s) => ids.has(s.id))
@@ -255,7 +264,8 @@ interface BulkBaseline {
   reason?: string
 }
 function openSign() {
-  signMeaning.value = 'approved'
+  signMeaning.value = er.enabled ? (er.meanings.includes('approved') ? 'approved' : (er.meanings[0] ?? '')) : 'approved'
+  signMfa.value = ''
   signComment.value = ''
   signPassword.value = ''
   signError.value = ''
@@ -270,6 +280,8 @@ async function bulkSign() {
       meaning: signMeaning.value,
       comment: signComment.value,
       password: signPassword.value,
+      mfa_code: signMfa.value.trim(),
+      time_zone: browserTimeZone(),
     })
     signDialog.value = false
     notify.ok(
@@ -279,10 +291,12 @@ async function bulkSign() {
     signoffKey.value++
   } catch (e) {
     if (e instanceof ApiError && (e.code === 'reauth_failed' || e.code === 'reauth_required')) signError.value = t(`signoff.${e.code}`)
+    else if (e instanceof ApiError && signErrorKey(e.code)) signError.value = t(signErrorKey(e.code))
     else notify.fail(e)
   } finally {
     signBusy.value = false
     signPassword.value = ''
+    signMfa.value = ''
   }
 }
 function bulkDelete() {
@@ -511,11 +525,12 @@ function remove(b: Baseline) {
         <Password v-model="signPassword" input-id="bk-so-pw" :feedback="false" toggle-mask fluid autocomplete="current-password" @keydown.enter="bulkSign" />
       </template>
       <p v-else class="small muted">{{ t('signoff.ssoHint') }}</p>
+      <SignExtras v-model:mfa-code="signMfa" id-prefix="bk-so" :with-meaning="false" />
       <Message v-if="signError" severity="error" :closable="false">{{ signError }}</Message>
     </div>
     <template #footer>
       <Button :label="t('common.cancel')" severity="secondary" text @click="signDialog = false" />
-      <Button :label="t('baselines.bulk.signAll', { n: selection.length }, selection.length)" icon="pi pi-check" :disabled="needsPassword && !signPassword" :loading="signBusy" @click="bulkSign" />
+      <Button :label="t('baselines.bulk.signAll', { n: selection.length }, selection.length)" icon="pi pi-check" :disabled="(needsPassword && !signPassword) || !signMeaning || (signNeedsMfa && signMfa.trim().length < 6)" :loading="signBusy" @click="bulkSign" />
     </template>
   </Dialog>
 </template>

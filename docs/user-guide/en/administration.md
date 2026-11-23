@@ -10,6 +10,7 @@
 | **Provisioning (SCIM)** | Admins |
 | **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
 | **Audit log** | Test lead and up |
+| **Electronic records** | Test lead and up (Admins change the settings) |
 | **Field sets** (custom fields and templates per project type) | Admins and Test leads |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
@@ -291,6 +292,28 @@ The API reference (`docs/api.md`, section *OSLC*) lists the properties and the q
 - Limit the time range with **From date** and **To date**.
 - **Number of entries** sets how many are shown (up to 5000).
 - **Export CSV** downloads the filtered log for an auditor; **Export Markdown** downloads it as a Markdown document with the date range and filter.
+
+
+### Verify the audit trail
+
+The audit log cannot be changed through the application, and every entry is linked to the one before it by a hash (a fingerprint of its content), so a change made directly in the database shows. **Verify audit trail** at the top of the page checks the whole chain and shows either *The audit trail is intact* (with the number of entries and signed checkpoints) or the **first broken link**: the entry number and what is wrong – the entry was changed, entries are missing or were removed at the end, or the chain was rewritten. Keep that evidence and report it as your procedures say.
+
+**Export with hashes (JSON)** and **(CSV)** download the whole trail with each entry's number, hash and the hash of the entry before it, for archiving outside Qtestframe. The open *Details* of an entry also show its number, hash and, in electronic-records mode, the reason for the change.
+
+## Electronic-records mode
+
+*(Admins change it; Test lead and up can read it and create the report)* **Administration → Electronic records** turns on the controls regulated organisations need for electronic records and signatures (21 CFR Part 11, EU GMP Annex 11). It is **off** until an admin turns it on. When it is on:
+
+- **Every signature asks you to confirm who you are**: your password and, if you use an authenticator app, a code from it. You choose the **meaning** of your signature (for example *Approved* or *Reviewed*) from the organisation's list. If you sign in with single sign-on, you sign shortly after signing in.
+- **Some actions need a signature**: the admin chooses among approving a requirement, approving a test (status *Ready*), the release go (*Released*) and creating a baseline. When you do one of them – in the editor, a bulk change, the spreadsheet or a bulk review – the signature dialog opens; the change is saved once you have signed. If you cancel, nothing is saved.
+- **Some changes need a reason**: when you save such a change, a dialog asks why (for example the number of a change request). The reason is stored in the audit log with the change.
+- **You are signed out after a time without activity** (default 15 minutes). Background updates such as the notification count do not keep you signed in.
+
+Signed records show their **Electronic signatures**: the printed name and e-mail of the signer, the date and time in UTC and in the signer's time zone, the meaning, what was signed and how the signer confirmed it. When the record is changed after it was signed, the signature shows *Record changed after signing*. You find them under **History** of a requirement or test, in a baseline's sign-offs, in a waiver, under the acceptance of a risk and in a release.
+
+![Electronic records settings and the Part 11 / Annex 11 controls report](../images/en-admin-erecords.png)
+
+The admin sets on the same page the actions that need a signature, the meanings (one per line), the changes that need a reason, the inactivity time and how soon after a single sign-on accounts may sign. **Create report** shows the **Part 11 / Annex 11 controls**: for each requirement of the regulations what Qtestframe does, what your organisation's procedures must cover and the evidence from this installation; **Download (Markdown)** saves it. Qtestframe gives technical controls – validation, training, written policies and checking people's identity before they get an account remain your organisation's responsibility, and the report says so.
 
 ## Organisations
 

@@ -205,7 +205,7 @@ are `mfa.enable`, `mfa.disable`, `mfa.recovery_codes`,
 | GET | `/tokens` | token.manage | own tokens in tenant |
 | POST | `/tokens` | token.manage | `{"name","roles" (or "role"),"expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; the roles default to all of the creator's own roles, and their permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its roles' permissions and those of the user's current roles) |
 | DELETE | `/tokens/{id}` | token.manage | |
-| GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user |
+| GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user, the `reason` for change and their place in the hash chain (`seq`, `prev_hash`, `hash`, see [Tamper-evident audit trail](#tamper-evident-audit-trail)) |
 | GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"email_enabled"`, `"email_digest_hour"` (UTC) and `"version"` |
 | POST | `/admin/email/test` | tenant.manage | sends a test e-mail to the caller's own address now → `{"ok", "to", "error"?}` with the SMTP error; 400 when e-mail is not configured |
 
@@ -3373,6 +3373,74 @@ Project icon files are served by `/files/{id}/content?inline=1`.
 
 CLI equivalents: `qtestframe backup --out FILE.zip`,
 `qtestframe restore --in FILE.zip --yes`.
+
+### Tamper-evident audit trail
+
+The audit log of each organisation is a hash chain (system entries such as
+command-line backups, tenant `""`, have their own). Every entry has `seq`
+(1, 2, …), `prev_hash` (the hash of the entry before it, `""` for the first)
+and `hash` = hex SHA-256 over the canonical encoding: the line
+`qtf-audit-v1\n`, then for each of tenant id, seq, id, `created_at` (UTC,
+`2006-01-02T15:04:05.000000Z`), user id, user e-mail, action, entity type,
+entity id, details, reason and prev_hash the text `<length in bytes>:<value>\n`.
+Entries are chained right after the transaction that wrote them commits
+(`seq` is 0 until then, normally milliseconds). Signed checkpoints
+(HMAC-SHA256 with a server key that is stored encrypted like the other
+secrets) are written every 1 000 entries, at least hourly while entries are
+written, and at every verification and export.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| POST | `/audit/verify` | audit.read | verifies the chain → `AuditVerification`: `ok`, `entries`, `last_seq`, `last_hash`, `checkpoints`, `last_checkpoint`, `key_protected`, `unchained`, and `broken` (`seq`, `entry_id`, `created_at`, `problem`: `entry_changed`, `link_broken`, `sequence_gap`, `truncated`, `checkpoint_mismatch`, `checkpoint_signature`; `message`) for the first broken link. Recorded as `audit.verify` |
+| GET | `/audit/archive?format=json\|csv` | audit.read | the whole chain for external archiving. JSON: `{"format": "qtestframe-audit-archive-v1", "chain": "qtf-audit-v1", "tenant_id", "tenant", "exported_at", "head_seq", "head_hash", "checkpoints": [...], "entries": [...]}`; CSV: `seq, id, created_at, user_id, user_email, action, entity_type, entity_id, details, reason, prev_hash, hash`. Recorded as `audit.archive` |
+
+`qtestframe audit verify [--tenant SLUG] [--json]` verifies the chains in the
+database (exit 1 at a broken link); `qtestframe audit verify --file
+EXPORT.json` verifies a JSON export without the database (hashes, links, end
+and checkpoint hashes; the checkpoint signatures need the server key).
+
+### Electronic-records mode (Part 11 / Annex 11)
+
+An organisation setting, off by default. When it is on, the server enforces:
+
+- **Signatures for chosen actions.** A request that performs an action of
+  `signature_actions` — `requirement.approve` (status → approved, also by
+  bulk, batch and bulk review), `test.approve` (status → ready),
+  `release.go` (status → released) and `baseline.create` — answers **428**
+  `{"code": "signature_required", "action", "meanings"}` unless it carries
+  the header `X-Signature-Ticket` with a ticket from `POST /esign/tickets`
+  for that action. Records it leaves unchanged (already approved, skipped)
+  are not signed.
+- **Reasons for change.** A request of an edit type in `reason_edits`
+  answers **428** `{"code": "reason_required", "edit_type"}` unless the header
+  `X-Change-Reason` carries a reason (3–1000 characters, URL-encoded); every
+  audit entry of the request records it in `reason`.
+- **Re-authentication at every signature**, also in the dialogs of baseline
+  sign-offs, waiver decisions, risk acceptance and verification-record
+  sign-offs: the password and, when the signer has a second factor, a code
+  (`mfa_code`); single sign-on accounts sign within `sso_reauth_minutes` of
+  signing in. `meaning` must be one of `meanings`; `time_zone` (IANA) is
+  recorded with the UTC time. These requests may instead carry a ticket
+  (`X-Signature-Ticket`) for `baseline.signoff`, `waiver.decision`,
+  `risk.accept` or `verification.signoff`; without any credentials they
+  answer 428 `signature_required` like the actions above.
+- **Inactivity timeout**: a browser session ends after
+  `idle_timeout_minutes` without requests (requests with the header
+  `X-Qtf-Background: 1`, the client's polling, do not count).
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/erecords` | signed in | `{"settings": {"enabled", "meanings", "signature_actions", "reason_edits", "idle_timeout_minutes", "sso_reauth_minutes", "updated_by", "updated_at"}, "signature_actions": [...], "reason_edits": [...]}` (the last two: what can be chosen) |
+| PUT | `/erecords` | tenant.manage | replaces the settings; recorded as `erecords.enable`, `erecords.disable` or `erecords.update` |
+| POST | `/esign/tickets` | signed in | `action`: one of `signature_actions` or `baseline.signoff`, `waiver.decision`, `risk.accept`, `verification.signoff`; `{"action", "password", "mfa_code", "meaning", "comment", "time_zone"}` → 201 `{"ticket", "action", "meaning", "expires_at"}`: single use, 5 minutes, this session only. API tokens cannot sign (403). Errors 403 `reauth_failed`, `reauth_required`, `mfa_required`, `mfa_invalid`, 400 `meaning_required`, 429 |
+| GET | `/esignatures?entity_type=&entity_id=` | read permission on the record | the signatures of a record (`requirement`, `test`, `release`, `baseline`, `waiver`, `risk`, `verification_record`), newest first: `user_name`, `user_email`, `signed_at` (UTC), `time_zone`, `meaning`, `action`, `method` (`password`, `password+mfa`, `sso`, `sso+mfa`), `comment`, `content_hash` and `valid` (the record still has the signed content) |
+| GET | `/esignatures?project_id=` | audit.read | all signatures of a project (without parameters: of the organisation) |
+| GET | `/erecords/report?format=json\|md` | audit.read | the "Part 11 / Annex 11 controls" report: per control `references`, `provider` (`tool`, `shared`, `customer`), `status` (`met`, `not_configured`, `attention`, `procedural`), what the tool does, what the customer's procedures must cover, and `evidence` (it verifies the audit chain) |
+
+Signatures are recorded in every mode for the existing signature dialogs
+(baseline sign-offs, waiver decisions, risk acceptance); outside the mode
+verification-record sign-offs need no re-authentication and are not
+recorded as signatures.
 
 ### System settings
 

@@ -342,11 +342,20 @@ func (s *Server) handleSignRecord(sign bool) handlerFunc {
 			return
 		}
 		var req struct {
+			signerCreds
 			Comment string `json:"comment"`
 		}
 		if sign {
 			if err := decodeOptional(r, &req); err != nil {
 				s.fail(w, r, err)
+				return
+			}
+		}
+		// in electronic-records mode a sign-off is an electronic signature
+		var proof *signerProof
+		if sign && s.erecords(r.Context(), p.TenantID()).Enabled {
+			var ok bool
+			if proof, ok = s.confirmSigner(w, r, p, req.signerCreds, nil, model.SignVerificationSignoff); !ok {
 				return
 			}
 		}
@@ -364,6 +373,9 @@ func (s *Server) handleSignRecord(sign bool) handlerFunc {
 			action = "verification.signoff.remove"
 		}
 		s.audit(r.Context(), p, action, "requirement", v.RequirementID, v.RequirementKey+" "+v.Method)
+		if proof != nil {
+			s.recordSignature(r.Context(), p, model.SignVerificationSignoff, "verification_record", v.ID, proof, req.Comment)
+		}
 		writeJSON(w, http.StatusOK, v)
 	}
 }

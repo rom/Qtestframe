@@ -77,6 +77,10 @@ var commands = []command{
 		"Prints a new random 256-bit key (base64) for `QTF_SECRETS_KEY` or a key file.",
 		"Skriver ut en ny slumpmässig 256-bitarsnyckel (base64) för `QTF_SECRETS_KEY` eller en nyckelfil.",
 	}},
+	{[]string{"audit", "verify"}, text{
+		"Verifies the hash chain of the audit trail: every entry's hash, the links between entries, the sequence, the recorded end of the chain and the signed checkpoints (with `--tenant` one organisation, otherwise every organisation and the system entries). Exit `0` when intact, `1` at the first broken link (printed with its entry). `--file EXPORT.json` checks an export (Administration → Audit trail → Export with hashes) without the database; the signatures of its checkpoints need the server's key and are only checked against the database.",
+		"Verifierar granskningsloggens hashkedja: varje posts hash, länkarna mellan posterna, ordningen, kedjans registrerade slut och de signerade kontrollpunkterna (med `--tenant` en organisation, annars alla organisationer och systemposterna). Slutstatus `0` när den är intakt, `1` vid den första brutna länken (skrivs ut med sin post). `--file EXPORT.json` kontrollerar en export (Administration → Granskningslogg → Exportera med hashar) utan databasen; kontrollpunkternas signaturer kräver serverns nyckel och kontrolleras bara mot databasen.",
+	}},
 	{[]string{"check-config"}, text{
 		"Loads and validates the configuration (secret files included) without touching the database, and prints `configuration OK`.",
 		"Läser in och kontrollerar konfigurationen (även hemlighetsfiler) utan att röra databasen, och skriver `configuration OK`.",

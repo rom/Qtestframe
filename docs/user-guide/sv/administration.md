@@ -10,6 +10,7 @@
 | **Provisionering (SCIM)** | Administratörer |
 | **Tvåstegsverifiering** | Administratörer (organisationens policy); superadministratörer ställer också in serverpolicyn |
 | **Händelselogg** | Testledare och uppåt |
+| **Elektroniska poster** | Testledare och uppåt (administratörer ändrar inställningarna) |
 | **Organisationer** | Superadministratörer |
 | **Användare** | Superadministratörer |
 | **Säkerhetskopiering** | Superadministratörer |
@@ -290,6 +291,28 @@ API-referensen (`docs/api.md`, avsnittet *OSLC*) listar egenskaperna och fråges
 - Begränsa tidsperioden med **Från datum** och **Till datum**.
 - **Antal poster** anger hur många som visas (upp till 5000).
 - **Exportera CSV** laddar ner den filtrerade loggen till en revisor; **Exportera Markdown** laddar ner den som ett Markdown-dokument med datumintervallet och filtret.
+
+
+### Verifiera händelseloggen
+
+Händelseloggen kan inte ändras i programmet, och varje post är kopplad till posten före med en hash (ett fingeravtryck av innehållet), så en ändring som görs direkt i databasen syns. **Verifiera granskningsloggen** högst upp på sidan kontrollerar hela kedjan och visar antingen *Granskningsloggen är intakt* (med antalet poster och signerade kontrollpunkter) eller den **första brutna länken**: postens nummer och vad som är fel – posten har ändrats, poster saknas eller har tagits bort i slutet, eller kedjan har skrivits om. Spara beläggen och rapportera enligt era rutiner.
+
+**Exportera med hashar (JSON)** och **(CSV)** laddar ner hela loggen med varje posts nummer, hash och hashen av posten före, för arkivering utanför Qtestframe. *Detaljer* för en post visar också dess nummer, hash och, i läget för elektroniska poster, orsaken till ändringen.
+
+## Läge för elektroniska poster
+
+*(Administratörer ändrar det; testledare och uppåt kan läsa det och skapa rapporten)* **Administration → Elektroniska poster** slår på de kontroller som reglerade organisationer behöver för elektroniska poster och signaturer (21 CFR Part 11, EU GMP Annex 11). Läget är **av** tills en administratör slår på det. När det är på:
+
+- **Varje signatur kräver att du bekräftar vem du är**: ditt lösenord och, om du använder en autentiseringsapp, en kod från den. Du väljer signaturens **innebörd** (till exempel *Godkänd* eller *Granskad*) från organisationens lista. Loggar du in med enkel inloggning signerar du strax efter inloggningen.
+- **Vissa åtgärder kräver signatur**: administratören väljer bland att godkänna ett krav, godkänna ett test (status *Klar*), release go (*Frisläppt*) och att skapa en baslinje. När du gör någon av dem – i redigeraren, en massändring, kalkylbladsvyn eller en massgranskning – öppnas signaturdialogen; ändringen sparas när du har signerat. Avbryter du sparas ingenting.
+- **Vissa ändringar kräver en orsak**: när du sparar en sådan ändring frågar en dialog varför (till exempel numret på en ändringsbegäran). Orsaken sparas i händelseloggen tillsammans med ändringen.
+- **Du loggas ut efter en tid utan aktivitet** (standard 15 minuter). Uppdateringar i bakgrunden, som antalet aviseringar, håller dig inte inloggad.
+
+Signerade poster visar sina **Elektroniska signaturer**: namn och e-post för den som signerade, datum och tid i UTC och i den personens tidszon, innebörden, vad som signerades och hur personen bekräftade sig. När posten ändras efter signeringen visar signaturen *Posten ändrad efter signeringen*. Du hittar dem under **Historik** för ett krav eller test, bland en baslinjes signeringar, i ett undantag, vid acceptansen av en risk och i en release.
+
+![Inställningar för elektroniska poster och rapporten Kontroller enligt Part 11 / Annex 11](../images/sv-admin-erecords.png)
+
+Administratören anger på samma sida vilka åtgärder som kräver signatur, innebörderna (en per rad), vilka ändringar som kräver en orsak, tiden för inaktivitet och hur snart efter inloggningen konton med enkel inloggning får signera. **Skapa rapport** visar **Kontroller enligt Part 11 / Annex 11**: för varje krav i regelverken vad Qtestframe gör, vad organisationens rutiner måste täcka och belägg från den här installationen; **Ladda ner (Markdown)** sparar den. Qtestframe ger tekniska kontroller – validering, utbildning, skriftliga policyer och kontroll av identiteten innan någon får ett konto är fortfarande organisationens ansvar, och rapporten säger det.
 
 ## Organisationer
 

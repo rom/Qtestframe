@@ -871,6 +871,12 @@ export interface AuditEntry {
   entity_id: string
   details: string
   created_at: string
+  /** reason for change (electronic-records mode) */
+  reason?: string
+  /** place in the hash chain (0: not chained yet) */
+  seq?: number
+  prev_hash?: string
+  hash?: string
 }
 
 export interface ListResponse<T> {

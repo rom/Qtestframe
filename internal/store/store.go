@@ -51,6 +51,8 @@ type Store struct {
 	now func() time.Time
 	// keys encrypts the stored secrets (nil: plaintext; see secrets.go)
 	keys *secrets.Keyring
+	// sealer chains the audit log (auditchain.go)
+	sealer *auditSealer
 	// notified is told about new notifications once they are committed
 	// (live updates of the notification bell; see OnNotifications).
 	notified func(tenantID string, userIDs []string)
@@ -70,7 +72,7 @@ func (s *Store) LiveTarget(ctx context.Context, query, id, tenantID string) (pro
 
 // New returns a store over database d.
 func New(d *db.DB) *Store {
-	return &Store{DB: d, now: func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }}
+	return &Store{DB: d, now: func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }, sealer: newAuditSealer()}
 }
 
 // SetClock overrides the time source (tests).
@@ -79,7 +81,7 @@ func (s *Store) SetClock(f func() time.Time) { s.now = f }
 // WithClock returns a store over the same database with another time
 // source (e.g. to record backdated demo data).
 func (s *Store) WithClock(f func() time.Time) *Store {
-	return &Store{DB: s.DB, now: f, keys: s.keys, notified: s.notified}
+	return &Store{DB: s.DB, now: f, keys: s.keys, notified: s.notified, sealer: s.sealer}
 }
 
 // Now returns the current time of the store's clock.

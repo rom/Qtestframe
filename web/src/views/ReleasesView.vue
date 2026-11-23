@@ -18,6 +18,7 @@ import Tabs from 'primevue/tabs'
 import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
 import QueryInput from '@/components/QueryInput.vue'
+import ESignaturesPanel from '@/components/ESignaturesPanel.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import SummaryBar from '@/components/SummaryBar.vue'
 import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
@@ -605,6 +606,7 @@ function itemNote(c: CriterionResult, note?: string) {
         <Button icon="pi pi-times" text rounded severity="secondary" :aria-label="t('common.close')" v-tooltip="t('common.close')" @click="closeDetail" />
       </div>
       <p v-if="detail.description" class="muted" style="margin: 0 0 8px">{{ detail.description }}</p>
+      <ESignaturesPanel entity-type="release" :entity-id="detail.id" :stamp="detail.status" />
       <Message v-if="detail.status === 'released'" severity="success" :closable="false" class="released-msg">
         <div>{{ t('releasesView.releasedAt', { date: detail.released_at ? formatDateTime(detail.released_at) : '—', user: detail.released_by || '—' }) }}</div>
         <div v-if="detail.release_note">{{ t('releasesView.releaseNoteShown', { note: detail.release_note }) }}</div>

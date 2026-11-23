@@ -19,7 +19,8 @@ export const useWorkListStore = defineStore('worklist', {
   actions: {
     async load() {
       try {
-        this.summary = { ...emptySummary(), ...(await api.get<WorkSummary>('/my-work/count')) }
+        // polling: no activity of the session (inactivity timeout)
+        this.summary = { ...emptySummary(), ...(await api.get<WorkSummary>('/my-work/count', undefined, { background: true })) }
       } catch {
         /* the badge is a convenience */
       }

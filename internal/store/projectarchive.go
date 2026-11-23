@@ -212,6 +212,13 @@ var ProjectArchiveExcluded = map[string]string{
 	"req_sync_configs":      "secret (webhook secret of the tracker sync) and the account it runs as",
 	"req_sync_conflicts":    "decisions waiting for the tracker sync (the sync is not part of the archive)",
 	"req_sync_runs":         "log of the tracker sync",
+	"audit_heads":           "organisation audit trail (hash chain)",
+	"audit_checkpoints":     "organisation audit trail (hash chain)",
+	"audit_keys":            "server keys of the audit trail",
+	"audit_backfill":        "organisation audit trail (hash chain)",
+	"erecords_settings":     "organisation",
+	"esignatures":           "organisation records of electronic signatures (bound to the organisation's audit trail; the archived sign-offs are kept)",
+	"esign_tickets":         "secret (single-use signing tickets)",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.

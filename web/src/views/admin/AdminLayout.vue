@@ -18,6 +18,7 @@ const tabs = computed(() =>
     { to: 'executionSettings', label: t('execSettings.tab'), icon: 'pi pi-sliders-h', show: auth.can(P.settingsManage) },
     { to: 'aiSettings', label: t('ai.org.tab'), icon: 'pi pi-sparkles', show: auth.can(P.settingsManage) },
     { to: 'mfaPolicy', label: t('mfa.adminTab'), icon: 'pi pi-shield', show: auth.can(P.tenantManage) },
+    { to: 'erecords', label: t('erecords.admin.tab'), icon: 'pi pi-verified', show: auth.can(P.auditRead) },
     { to: 'tenants', label: t('admin.tenants'), icon: 'pi pi-building', show: auth.isSuperAdmin },
     { to: 'users', label: t('admin.users'), icon: 'pi pi-id-card', show: auth.isSuperAdmin },
     { to: 'backup', label: t('admin.backup'), icon: 'pi pi-database', show: auth.isSuperAdmin },

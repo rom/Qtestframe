@@ -1472,6 +1472,15 @@ type AuditEntry struct {
 	EntityID   string    `json:"entity_id"`
 	Details    string    `json:"details"`
 	CreatedAt  time.Time `json:"created_at"`
+	// Reason is the reason for the change given with the request
+	// (electronic-records mode; "" none).
+	Reason string `json:"reason"`
+	// Seq, PrevHash and Hash place the entry in the tenant's hash chain
+	// (see internal/store/auditchain.go); Seq 0: not chained yet (an entry
+	// is chained right after its transaction commits).
+	Seq      int64  `json:"seq"`
+	PrevHash string `json:"prev_hash"`
+	Hash     string `json:"hash"`
 }
 
 // Traceability rule kinds: what an item matching the rule's selector must

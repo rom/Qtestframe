@@ -95,6 +95,22 @@ export interface RequestOptions {
   signal?: AbortSignal
   /** The version the change is based on (If-Match); a newer saved version answers 412 "stale". */
   ifMatch?: number | string
+  /** Polling the client does on its own: no activity of the session (inactivity timeout). */
+  background?: boolean
+  /** Extra request headers. */
+  headers?: Record<string, string>
+}
+
+/**
+ * Answers a 428 of electronic-records mode (reason_required,
+ * signature_required) with the headers to repeat the request with (a reason
+ * for change, a signing ticket), or null to give up (ERecordsHost.vue).
+ */
+export type ChallengeHandler = (err: ApiError) => Promise<Record<string, string> | null>
+let onChallenge: ChallengeHandler | null = null
+
+export function setChallengeHandler(fn: ChallengeHandler | null): void {
+  onChallenge = fn
 }
 
 async function toError(res: Response): Promise<ApiError> {
@@ -132,27 +148,39 @@ export function statusCode(status: number): string {
       return 'not_found'
     case 409:
       return 'conflict'
+    case 428:
+      return 'precondition_required'
     default:
       return status >= 500 ? 'internal' : 'error'
   }
 }
 
 async function send(method: string, path: string, opts: RequestOptions = {}): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'application/json' }
-  const init: RequestInit = { method, headers, credentials: 'same-origin', signal: opts.signal }
-  if (opts.body !== undefined) {
-    headers['Content-Type'] = 'application/json'
-    init.body = JSON.stringify(opts.body)
-  }
-  if (method !== 'GET' && method !== 'HEAD' && csrfToken) headers['X-CSRF-Token'] = csrfToken
-  if (opts.ifMatch !== undefined && opts.ifMatch !== '') headers['If-Match'] = `"${opts.ifMatch}"`
-  const res = await fetch(buildUrl(path, opts.params), init)
-  if (!res.ok) {
+  let extra: Record<string, string> = { ...(opts.headers ?? {}) }
+  for (let attempt = 0; ; attempt++) {
+    const headers: Record<string, string> = { Accept: 'application/json', ...extra }
+    const init: RequestInit = { method, headers, credentials: 'same-origin', signal: opts.signal }
+    if (opts.body !== undefined) {
+      headers['Content-Type'] = 'application/json'
+      init.body = JSON.stringify(opts.body)
+    }
+    if (method !== 'GET' && method !== 'HEAD' && csrfToken) headers['X-CSRF-Token'] = csrfToken
+    if (opts.ifMatch !== undefined && opts.ifMatch !== '') headers['If-Match'] = `"${opts.ifMatch}"`
+    if (opts.background) headers['X-Qtf-Background'] = '1'
+    const res = await fetch(buildUrl(path, opts.params), init)
+    if (res.ok) return res
     const err = await toError(res)
+    // electronic-records mode: a reason or a signature, then the same request again
+    if (res.status === 428 && onChallenge && attempt < 4 && (err.code === 'reason_required' || err.code === 'signature_required')) {
+      const more = await onChallenge(err)
+      if (more) {
+        extra = { ...extra, ...more }
+        continue
+      }
+    }
     handleErrorResponse(err, opts)
     throw err
   }
-  return res
 }
 
 /** Perform a JSON request; resolves undefined for 204 / empty bodies. */

@@ -762,6 +762,15 @@ function shotsFor(lang, D, ids) {
       },
     },
     {
+      name: 'admin-erecords',
+      run: async (page) => {
+        await go(page, '/admin/erecords', '.er-grid')
+        await page.locator('button:has(.pi-list-check)').first().click()
+        await page.waitForSelector('.er-table')
+        await save(page, `${lang}-admin-erecords.png`)
+      },
+    },
+    {
       name: 'admin-users',
       run: async (page) => {
         await go(page, '/admin/users', '.p-datatable')

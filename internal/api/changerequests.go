@@ -823,9 +823,9 @@ func (s *Server) crVotes(ctx context.Context, p *Principal, cr *model.ChangeRequ
 func (s *Server) handleDecideChangeRequest(w http.ResponseWriter, r *http.Request, p *Principal) {
 	ctx := r.Context()
 	var req struct {
+		signerCreds
 		Decision string `json:"decision"`
 		Comment  string `json:"comment"`
-		Password string `json:"password"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -857,10 +857,16 @@ func (s *Server) handleDecideChangeRequest(w http.ResponseWriter, r *http.Reques
 		writeError(w, http.StatusForbidden, "forbidden", "you are not on the project's change control board")
 		return
 	}
-	if !signerOK(w, p, req.Password) {
+	// the same re-authentication as every signature (electronic-records
+	// mode: password, second factor and a meaning of the configured list)
+	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, nil, model.SignChangeRequestDecision)
+	if !ok {
 		return
 	}
-	meaning := cc.SignatureMeaning
+	meaning := proof.Meaning
+	if meaning == "" {
+		meaning = cc.SignatureMeaning
+	}
 	if meaning == "" {
 		meaning = model.DefaultSignatureMeaning
 	}

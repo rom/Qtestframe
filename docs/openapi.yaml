@@ -2704,6 +2704,272 @@ paths:
           $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/audit/verify:
+    post:
+      tags:
+      - Administration
+      summary: Verify the audit trail
+      operationId: postAuditVerify
+      description: |-
+        Chains pending entries, writes a signed checkpoint at the end of the organisation's audit chain and verifies the whole chain: every entry's hash (SHA-256 over its canonical encoding), the links to the previous entry, the sequence, the recorded end of the chain and every signed checkpoint (HMAC-SHA256 with the server key). The answer is OK or the first broken link (`broken`: `seq`, `problem` one of `entry_changed`, `link_broken`, `sequence_gap`, `truncated`, `checkpoint_mismatch`, `checkpoint_signature`, and a message). Recorded as `audit.verify`.
+
+        **Permission:** `audit.read`.
+      x-permission: audit.read
+      responses:
+        '200':
+          description: Result of the verification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditVerification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/audit/archive:
+    get:
+      tags:
+      - Administration
+      summary: Export the audit trail with hashes
+      operationId: getAuditArchive
+      description: |-
+        The whole audit chain of the organisation in chain order, for external archiving. `format=json` (default): `{"format": "qtestframe-audit-archive-v1", "chain": "qtf-audit-v1", "tenant_id", "tenant", "exported_at", "head_seq", "head_hash", "checkpoints": [...], "entries": [...]}` (entries with `seq`, `prev_hash` and `hash`; `qtestframe audit verify --file` checks it offline). `format=csv`: one row per entry with the columns `seq, id, created_at, user_id, user_email, action, entity_type, entity_id, details, reason, prev_hash, hash` (values as stored, so the hashes can be recomputed). A signed checkpoint is written first; recorded as `audit.archive`.
+
+        **Permission:** `audit.read`.
+      x-permission: audit.read
+      parameters:
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - json
+          - csv
+      responses:
+        '200':
+          description: The audit chain
+          content:
+            application/json:
+              schema:
+                type: object
+            text/csv:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/erecords:
+    get:
+      tags:
+      - Administration
+      summary: Electronic-records settings
+      operationId: getERecords
+      description: |-
+        The organisation's electronic-records settings (21 CFR Part 11 / EU GMP Annex 11 mode, off by default) and the actions and edit types that can be configured: `{"settings": ERecordsSettings, "signature_actions": [...], "reason_edits": [...]}`. Every member may read them (the web client adapts its signature dialogs).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: Settings and choices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    $ref: '#/components/schemas/ERecordsSettings'
+                  signature_actions:
+                    type: array
+                    items:
+                      type: string
+                  reason_edits:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Administration
+      summary: Change the electronic-records settings
+      operationId: putERecords
+      description: |-
+        Replaces the settings. `meanings` (1–20, at most 60 characters each; empty: the defaults), `signature_actions` (of `requirement.approve`, `test.approve`, `release.go`, `baseline.create`), `reason_edits` (see `GET`), `idle_timeout_minutes` (1–480, default 15), `sso_reauth_minutes` (1–60, default 5). Recorded as `erecords.enable`, `erecords.disable` or `erecords.update` with the new settings.
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ERecordsSettings'
+      responses:
+        '200':
+          description: The stored settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERecordsSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/erecords/report:
+    get:
+      tags:
+      - Administration
+      summary: Part 11 / Annex 11 controls report
+      operationId: getERecordsReport
+      description: |-
+        Lists per requirement of 21 CFR Part 11 and EU GMP Annex 11 what the tool provides (`tool`), what the customer's procedures must cover (`customer`) and where both are needed (`shared`), with the status in this organisation (`met`, `not_configured`, `attention`, `procedural`) and evidence (settings, a fresh verification of the audit chain, signature counts, multi-factor use). `format=md` downloads it as Markdown.
+
+        **Permission:** `audit.read`.
+      x-permission: audit.read
+      parameters:
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - json
+          - md
+      responses:
+        '200':
+          description: The report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceReport'
+            text/markdown:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/esign/tickets:
+    post:
+      tags:
+      - Administration
+      summary: Sign (signing ticket)
+      operationId: postESignTicket
+      description: |-
+        Electronic-records mode only. Re-authenticates the caller for one action: one of `signature_actions`, or `baseline.signoff`, `waiver.decision`, `risk.accept`, `verification.signoff` (whose routes also accept the ticket instead of credentials in the body): `{"action", "password", "mfa_code", "meaning", "comment", "time_zone"}` (the second-factor code when enrolled; single sign-on accounts instead need a sign-in within `sso_reauth_minutes`; `meaning` from the organisation's list; `time_zone` an IANA name, default UTC). Answers `{"ticket", "action", "meaning", "expires_at"}`: a single-use ticket, valid for 5 minutes and for this session, that the request performing the action sends as `X-Signature-Ticket`. Without it such a request answers 428 `signature_required` (`action`, `meanings`). API tokens cannot sign. Errors: 403 `reauth_failed`, `reauth_required`, `mfa_required`, `mfa_invalid`; 400 `meaning_required`; 429 after too many attempts.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - action
+              - meaning
+              properties:
+                action:
+                  type: string
+                password:
+                  type: string
+                  writeOnly: true
+                mfa_code:
+                  type: string
+                  writeOnly: true
+                meaning:
+                  type: string
+                comment:
+                  type: string
+                time_zone:
+                  type: string
+      responses:
+        '201':
+          description: The ticket
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticket:
+                    type: string
+                  action:
+                    type: string
+                  meaning:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/esignatures:
+    get:
+      tags:
+      - Administration
+      summary: Electronic signatures
+      operationId: getESignatures
+      description: |-
+        Signatures (manifestation: printed name, UTC time and the signer's time zone, meaning, method of re-authentication, comment), newest first, each with `valid`: whether the record still has the content (hash) that was signed. With `entity_type` (`requirement`, `test`, `release`, `baseline`, `waiver`, `risk`, `verification_record`) and `entity_id`: the signatures of that record (read permission on it). Otherwise, optionally with `project_id`: all signatures (`audit.read`).
+
+        **Permission:** signed in; read permission on the record, or `audit.read` for lists.
+      x-permission: authenticated
+      parameters:
+      - name: entity_type
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: entity_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: project_id
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Signatures
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ESignature'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects:
     get:
       tags:
@@ -24891,6 +25157,201 @@ components:
           type: array
           items:
             type: string
+    AuditCheckpoint:
+      type: object
+      description: A signed statement that entry `seq` of the organisation's audit chain had hash `hash` (HMAC-SHA256 with the server key `key_id`).
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        seq:
+          type: integer
+        hash:
+          type: string
+        key_id:
+          type: string
+        signature:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    AuditVerification:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+        ok:
+          type: boolean
+        entries:
+          type: integer
+        last_seq:
+          type: integer
+        last_hash:
+          type: string
+        checkpoints:
+          type: integer
+        last_checkpoint:
+          $ref: '#/components/schemas/AuditCheckpoint'
+        key_protected:
+          type: boolean
+          description: the checkpoint key is stored encrypted by the server's key provider
+        unchained:
+          type: integer
+          description: entries written during the verification, not chained yet
+        broken:
+          type: object
+          description: the first broken link (absent when ok)
+          properties:
+            seq:
+              type: integer
+            entry_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            problem:
+              type: string
+              enum:
+              - entry_changed
+              - link_broken
+              - sequence_gap
+              - truncated
+              - checkpoint_mismatch
+              - checkpoint_signature
+            message:
+              type: string
+        verified_at:
+          type: string
+          format: date-time
+        duration_ms:
+          type: integer
+    ERecordsSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        meanings:
+          type: array
+          items:
+            type: string
+        signature_actions:
+          type: array
+          items:
+            type: string
+            enum:
+            - requirement.approve
+            - test.approve
+            - release.go
+            - baseline.create
+        reason_edits:
+          type: array
+          items:
+            type: string
+        idle_timeout_minutes:
+          type: integer
+        sso_reauth_minutes:
+          type: integer
+        updated_by:
+          type: string
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    ESignature:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+        entity_key:
+          type: string
+        action:
+          type: string
+        meaning:
+          type: string
+        comment:
+          type: string
+        user_id:
+          type: string
+        user_email:
+          type: string
+        user_name:
+          type: string
+        method:
+          type: string
+          description: password, password+mfa, sso or sso+mfa
+        time_zone:
+          type: string
+        content_hash:
+          type: string
+        signed_at:
+          type: string
+          format: date-time
+        valid:
+          type: boolean
+        current_hash:
+          type: string
+    ComplianceReport:
+      type: object
+      properties:
+        tenant:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+        generated_by:
+          type: string
+        settings:
+          $ref: '#/components/schemas/ERecordsSettings'
+        audit:
+          $ref: '#/components/schemas/AuditVerification'
+        signatures:
+          type: object
+          additionalProperties:
+            type: integer
+        disclaimer:
+          type: string
+        controls:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              references:
+                type: array
+                items:
+                  type: string
+              title:
+                type: string
+              provider:
+                type: string
+                enum:
+                - tool
+                - shared
+                - customer
+              status:
+                type: string
+                enum:
+                - met
+                - not_configured
+                - attention
+                - procedural
+              tool:
+                type: string
+              customer:
+                type: string
+              evidence:
+                type: array
+                items:
+                  type: string
     AuditEntry:
       type: object
       properties:
@@ -24917,6 +25378,17 @@ components:
         created_at:
           type: string
           format: date-time
+        reason:
+          type: string
+          description: reason for change given with the request (electronic-records mode)
+        seq:
+          type: integer
+          description: position in the organisation's hash chain (0 = not chained yet)
+        prev_hash:
+          type: string
+        hash:
+          type: string
+          description: SHA-256 over the canonical encoding of the entry and prev_hash
     Me:
       type: object
       properties:

@@ -132,6 +132,17 @@ Stores every secret as plaintext again (before a downgrade). Needs `--yes`.
 
 Prints a new random 256-bit key (base64) for `QTF_SECRETS_KEY` or a key file.
 
+### `qtestframe audit verify`
+
+Verifies the hash chain of the audit trail: every entry's hash, the links between entries, the sequence, the recorded end of the chain and the signed checkpoints (with `--tenant` one organisation, otherwise every organisation and the system entries). Exit `0` when intact, `1` at the first broken link (printed with its entry). `--file EXPORT.json` checks an export (Administration → Audit trail → Export with hashes) without the database; the signatures of its checkpoints need the server's key and are only checked against the database.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--file` | `string` | verify an exported audit trail (JSON) instead of the database |
+| `--json` | — | print the result as JSON |
+| `--tenant` | `string` | organisation (slug); default every organisation |
+
 ### `qtestframe check-config`
 
 Loads and validates the configuration (secret files included) without touching the database, and prints `configuration OK`.

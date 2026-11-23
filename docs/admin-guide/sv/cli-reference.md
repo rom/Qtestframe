@@ -132,6 +132,17 @@ Lagrar alla hemligheter i klartext igen (före en nedgradering). Kräver `--yes`
 
 Skriver ut en ny slumpmässig 256-bitarsnyckel (base64) för `QTF_SECRETS_KEY` eller en nyckelfil.
 
+### `qtestframe audit verify`
+
+Verifierar granskningsloggens hashkedja: varje posts hash, länkarna mellan posterna, ordningen, kedjans registrerade slut och de signerade kontrollpunkterna (med `--tenant` en organisation, annars alla organisationer och systemposterna). Slutstatus `0` när den är intakt, `1` vid den första brutna länken (skrivs ut med sin post). `--file EXPORT.json` kontrollerar en export (Administration → Granskningslogg → Exportera med hashar) utan databasen; kontrollpunkternas signaturer kräver serverns nyckel och kontrolleras bara mot databasen.
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--file` | `string` | verify an exported audit trail (JSON) instead of the database |
+| `--json` | — | print the result as JSON |
+| `--tenant` | `string` | organisation (slug); default every organisation |
+
 ### `qtestframe check-config`
 
 Läser in och kontrollerar konfigurationen (även hemlighetsfiler) utan att röra databasen, och skriver `configuration OK`.

@@ -66,6 +66,8 @@ Usage:
                                                   replace ALL data with a backup
   qtestframe secrets status|migrate|rotate [--prune]|rewrap [--from-config OLD]|decrypt --yes|generate-key [--config FILE]
                                                   encryption of stored secrets (docs/security.md)
+  qtestframe audit verify [--config FILE] [--tenant SLUG] [--file EXPORT.json] [--json]
+                                                  check the hash chain of the audit trail
   qtestframe check-config [--config FILE] [--port N] [--listen HOST:PORT]
   qtestframe healthcheck [--config FILE] [--port N] [--url URL]
   qtestframe report      --url URL --token T (--project KEY --run NAME [--create-run] | --run-id ID)
@@ -132,6 +134,8 @@ func Run(args []string, env Env) int {
 		err = cmdRestore(args[1:], env)
 	case "secrets":
 		err = cmdSecrets(args[1:], env)
+	case "audit":
+		err = cmdAudit(args[1:], env)
 	case "healthcheck":
 		err = cmdHealthcheck(args[1:], env)
 	case "check-config":

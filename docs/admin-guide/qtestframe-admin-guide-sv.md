@@ -1359,7 +1359,58 @@ Samma sak gäller, i svagare form, HSM-nycklar (använd HSM:ens egen nyckelsäke
 
 Varje organisation har en händelselogg (**Administration → Händelselogg**, behörigheten `audit.read`, API `GET /api/v1/audit`, nyaste först, upp till 5000 poster per begäran): vem (användar-id och e-post, eller `SCIM: <token>`, eller `cli`), vad (`action`, objekt, korta detaljer) och när. Här registreras inloggningar (med metod, och `mfa=…`, `amr`/`acr` för single sign-on), ändringar av projekt, objekt, körningar, medlemmar, roller, nycklar, delning, organisationer och användare, exporter, säkerhetskopiering och återställning (`admin.backup`, `admin.restore`), MFA-återställningar och policyändringar, samt systeminställningar (`settings.update`). Gamla och nya värden för objekt finns i objektens historik, inte i händelseloggen; klientadressen finns i begärandeloggen, inte i posten.
 
-Varje post skrivs också som en loggpost `audit` på nivån INFO. Skicka loggen till en central syslog-server (se [Loggning](#central-syslog)), så att spåret överlever att värden komprometteras. Misslyckade inloggningar syns i serverloggen (`login failed`) och i användarens inloggningshistorik, inte i händelseloggen. Händelseloggen ingår i en säkerhetskopia.
+Varje post skrivs också som en loggpost `audit` på nivån INFO. Skicka loggen till en central syslog-server (se [Loggning](#central-syslog)), så att spåret överlever att värden komprometteras. Misslyckade inloggningar syns i serverloggen (`login failed`) och i användarens inloggningshistorik, inte i händelseloggen. Händelseloggen ingår i en säkerhetskopia. Posterna registrerar också den orsak till ändringen som anges i läget för elektroniska poster (`reason`).
+
+### Manipuleringssäker händelselogg
+
+Händelseloggen i varje organisation är en **hashkedja** (kommandoradens systemposter, till exempel `admin.backup`, har en egen kedja). Varje post får ett löpnummer (`seq`, 1, 2, …), hashen av posten före (`prev_hash`) och en egen hash: SHA-256 över en kanonisk kodning av postens fält (organisation, löpnummer, id, UTC-tid på mikrosekunden, användare, åtgärd, objekt, detaljer, orsak till ändringen) och föregående hash. Den exakta kodningen finns i `docs/api.md` ("Tamper-evident audit trail"), så att en export kan kontrolleras med andra verktyg.
+
+- **Så kedjas posterna.** En post skrivs i transaktionen för ändringen den registrerar (en ändring som rullas tillbaka lämnar ingen post) och kedjas direkt när transaktionen har bekräftats, i en kort egen transaktion som håller organisationens rad i `audit_heads` (PostgreSQL: `SELECT … FOR UPDATE`). Tillägg i en organisation sker alltså i tur och ordning utan lås under själva begäran, och flera serverprocesser kan dela databasen. Tills posten är kedjad (normalt millisekunder) visar den `seq` 0; poster som en process lämnade okedjade när den stoppades kedjas av nästa post eller vid nästa start.
+- **Signerade kontrollpunkter.** Var 1 000:e post, minst varje timme medan poster skrivs och vid varje verifiering och export skriver servern en kontrollpunkt: en HMAC-SHA256 över organisationen, ett löpnummer och den postens hash, med en 256-bitarsnyckel i `audit_keys` som är **krypterad som de andra lagrade hemligheterna** (se [Kryptering av lagrade hemligheter](#kryptering-av-lagrade-hemligheter)). Den som kan ändra databasen men inte läsa serverns nyckel (nyckelfilen, TPM eller HSM) kan räkna om hashar men inte förfalska kontrollpunkter: en omskriven kedja eller borttagna poster före den senaste kontrollpunkten upptäcks. Poster efter den senaste kontrollpunkten kan en sådan angripare ta bort oupptäckt; kopian i central syslog och regelbundna exporter täpper till den luckan. Utan nyckelleverantör lagras nyckeln i klartext och verifieringen säger det.
+- **Vad den upptäcker**, med den första brutna länken: en ändrad post (`entry_changed`), en borttagen, utbytt eller omkastad post (`link_broken`, `sequence_gap`), borttagna poster i slutet (`truncated`, mot kedjans registrerade slut och kontrollpunkterna), en omskriven kedja (`checkpoint_mismatch`) och en förfalskad kontrollpunkt (`checkpoint_signature`). Den **hindrar inte** ändringar: en databasadministratör kan fortfarande ändra eller ta bort rader; kedjan gör det synligt. Den som har både serverns nyckel och databasen kan skriva om allt – skydda nyckeln och värdarna därefter.
+- **Verifiera** under **Administration → Händelselogg → Verifiera granskningsloggen** (behörigheten `audit.read`, `POST /api/v1/audit/verify`), eller på servern:
+
+  ```sh
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml            # alla organisationer; slutstatus 1 när den är bruten
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml --tenant acme --json
+  ```
+
+  Kör den från en timer och larma på slutstatus 1. 100 000 poster verifieras på ungefär en sekund (SQLite och PostgreSQL på en bärbar dator); den första kedjningen efter uppgraderingen kedjar 100 000 poster på 2–4 sekunder.
+- **Export för extern arkivering**: **Exportera med hashar (JSON / CSV)** (`GET /api/v1/audit/archive?format=json|csv`) ger hela kedjan med löpnummer och hashar; JSON innehåller också kontrollpunkterna och kedjans slut. `qtestframe audit verify --file EXPORT.json` kontrollerar en export utan databasen (poster, länkar, slut, kontrollpunkternas hashar; deras signaturer kräver serverns nyckel). Spara exporterna på lagring som bara kan skrivas en gång för att förlänga skyddet bortom den senaste kontrollpunkten.
+- **Efter uppgraderingen** (migrering 0055) kedjas varje organisations befintliga poster vid första starten: kedjan börjar med en post `audit.chain_start` som säger hur många tidigare poster som följer och när de kedjades. Kedjan bevisar att de posterna inte ändrats **efter** den tidpunkten, inte före.
+
+Kedjan i säkerhetskopior, återställningar och projektarkiv beskrivs i [Säkerhetskopiering, återställning och migrering](#händelseloggen-i-säkerhetskopior).
+
+## Läge för elektroniska poster (21 CFR Part 11 / EU GMP Annex 11)
+
+En organisationsinställning under **Administration → Elektroniska poster** (ändra: `tenant.manage`; läsa och rapport: `audit.read`; `GET`/`PUT /api/v1/erecords`), **av som standard**. När läget är på kräver servern:
+
+| Kontroll | Vad servern gör |
+|---|---|
+| Ny autentisering vid varje signatur | Signering av baslinjer, beslut om undantag, riskacceptans, signering av verifieringsposter och åtgärderna nedan kräver den som signerar att ange sitt **lösenord** och, om hen har en andra faktor, en **aktuell kod** (en återställningskod fungerar också). Konton utan lösenord här (enkel inloggning) signerar inom *signeringsfönstret för enkel inloggning* (standard 5 minuter) efter inloggningen hos identitetsleverantören, plus koden om de har en andra faktor här. API-nycklar kan inte signera. Misslyckade försök begränsas. |
+| Signaturens innebörd | Den som signerar väljer en innebörd från organisationens lista (standard authored, reviewed, approved, verified, released; upp till 20, egna ord går bra). |
+| Signaturens synliga uppgifter | Varje signatur registrerar namn, e-post, UTC-tid, tidszonen för den som signerar, innebörden, metoden (`password`, `password+mfa`, `sso`, `sso+mfa`) och hashen av den signerade versionen av posten; signerade poster visar detta, och en senare ändring av posten visar *Posten ändrad efter signeringen*. |
+| Åtgärder som kräver signatur | Väljs bland: godkännande av krav (status → godkänd, också genom massändring, kalkylbladsvyn och massgranskning), godkännande av test (status → klar), release go (status → frisläppt), skapande av baslinje. Krävs på varje väg som utför dem; utan signatur svarar begäran 428 `signature_required`. |
+| Orsak till ändringen | Valda slags ändringar (ändringar och borttagningar av krav, tester, körningar, utfall, releaser, baslinjer, risker, undantag och verifieringsposter) kräver en orsak, som registreras i ändringens poster i händelseloggen. |
+| Utloggning vid inaktivitet | Webbläsarsessioner avslutas efter *Logga ut efter inaktivitet* minuter (1–480, standard 15) utan begäranden; klientens egen bakgrundshämtning räknas inte. |
+
+Inställningarna cachas i upp till 5 sekunder per serverprocess. Signaturer i de dialoger som fanns tidigare (signering av baslinjer, beslut om undantag, riskacceptans) registreras med sina uppgifter i alla lägen.
+
+**Rapporten Kontroller enligt Part 11 / Annex 11.** **Skapa rapport** på samma sida (`GET /api/v1/erecords/report`, `?format=md` för Markdown) listar varje kontroll med hänvisningar, vem som täcker den (*verktyget*, *verktyget och rutiner*, *era rutiner*), dess status här och belägg (inställningar, en ny verifiering av händelseloggen, antal signaturer, användning av andra faktor).
+
+### Vad verktyget ger – och vad era rutiner måste täcka
+
+Qtestframe ger tekniska kontroller. Verktyget är **inte** "Part 11-kompatibelt" i sig, och ingen inställning gör det: efterlevnad är en egenskap hos det validerade systemet i drift, dess rutiner och dess människor.
+
+| Verktyget ger | Era rutiner måste täcka |
+|---|---|
+| En datorgenererad, tidsstämplad, manipuleringssäker händelselogg med verifiering och export | Validering av den installerade versionen för den avsedda användningen (och efter uppgraderingar); granskning av händelseloggen som del av granskningen av poster; regelbunden verifiering och arkivering av exporter |
+| Signaturer med ny autentisering, innebörd, synliga uppgifter och koppling till postens version | En skriftlig policy om att elektroniska signaturer är bindande, och intyget till FDA (§11.100(c)); beslut om vilka poster som kräver vilka signaturer och när de ska signeras om |
+| Rollbaserad åtkomst, tvåstegsverifiering, sessioners giltighetstid och utloggning vid inaktivitet | Identitetskontroll innan ett konto skapas, att konton aldrig återanvänds, behörighetsgranskningar, rutiner när någon slutar, lösenordsbyten och förlorade lösenord (eller identitetsleverantörens) |
+| Säkerhetskopior som håller kedjan giltig; exporter i öppna format | Schema för säkerhetskopiering, återställningstester, lagringstider, kontinuitet och katastrofåterställning |
+| Dokumentation för varje version | Utbildning, ändringshantering av installationen och dess konfiguration, leverantörsbedömning |
+
+Tidsstämplarna kommer från serverns klocka: håll den synkroniserad (NTP).
 
 ## Säkerhetshuvuden och CSP
 
@@ -1850,9 +1901,9 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**I en säkerhetskopia** (103 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`.
+**I en säkerhetskopia** (109 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`.
 
-**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1908,6 +1959,15 @@ En återställning avvisas, utan att något ändras, när:
 Säkerhetskopians systeminställningar gäller direkt. Efter en återställning: kontrollera `qtestframe secrets status` och logga in.
 
 Använd historiken i webbklienten för att återställa ett enskilt objekt; för att flytta ett projekt, se nedan.
+
+## Händelseloggen i säkerhetskopior
+
+Händelseloggens hashkedja (se [Manipuleringssäker händelselogg](#manipuleringssäker-händelselogg)) klarar säkerhetskopiering och återställning, också mellan SQLite och PostgreSQL:
+
+- En **säkerhetskopia** är en konsekvent ögonblicksbild av posterna, kedjornas registrerade slut (`audit_heads`), de signerade kontrollpunkterna och deras nyckel (`audit_keys`, krypterad med de säkerhetskopierade datanycklarna), så den återställda kedjan verifieras som originalet. Tiderna sparas på mikrosekunden, vilket båda databaserna lagrar.
+- En **återställning** ersätter kedjan med säkerhetskopians: poster som skrevs efter säkerhetskopian försvinner, liksom kontrollpunkterna som skrevs efter den, så den återställda kedjan är intakt; själva återställningen (`admin.restore`) blir nästa post. Spara händelseloggens exporter från tiden mellan säkerhetskopian och återställningen om ni måste kunna visa vad som hände då. Verifiera efter en återställning: `qtestframe audit verify`.
+- Återställning till en installation med en annan nyckel misslyckas som för alla krypterade hemligheter; nyckeln till kontrollpunkterna kan inte läsas utan säkerhetskopians nyckel.
+- **Projektarkiv** (nedan) innehåller aldrig händelseloggen eller de elektroniska signaturerna: de hör till organisationen. Att spara, läsa in, kopiera eller ta bort ett projekt lägger bara till poster i kedjan; inget tas bort ur den. Elektroniska signaturer behålls när deras projekt tas bort.
 
 ## Uppgradering
 
@@ -1979,6 +2039,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 52 | `0052_multiple_roles.sql` |
 | 53 | `0053_ci_integration.sql` |
 | 54 | `0054_change_requests.sql` |
+| 55 | `0055_audit_chain_erecords.sql` |
 | 59 | `0059_dashboards.sql` |
 | 60 | `0060_req_sync.sql` |
 | 61 | `0061_ai_assistance.sql` |
@@ -2259,6 +2320,17 @@ Lagrar alla hemligheter i klartext igen (före en nedgradering). Kräver `--yes`
 #### `qtestframe secrets generate-key`
 
 Skriver ut en ny slumpmässig 256-bitarsnyckel (base64) för `QTF_SECRETS_KEY` eller en nyckelfil.
+
+### `qtestframe audit verify`
+
+Verifierar granskningsloggens hashkedja: varje posts hash, länkarna mellan posterna, ordningen, kedjans registrerade slut och de signerade kontrollpunkterna (med `--tenant` en organisation, annars alla organisationer och systemposterna). Slutstatus `0` när den är intakt, `1` vid den första brutna länken (skrivs ut med sin post). `--file EXPORT.json` kontrollerar en export (Administration → Granskningslogg → Exportera med hashar) utan databasen; kontrollpunkternas signaturer kräver serverns nyckel och kontrolleras bara mot databasen.
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--file` | `string` | verify an exported audit trail (JSON) instead of the database |
+| `--json` | — | print the result as JSON |
+| `--tenant` | `string` | organisation (slug); default every organisation |
 
 ### `qtestframe check-config`
 

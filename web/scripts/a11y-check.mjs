@@ -413,6 +413,30 @@ async function discover(request) {
     { name: 'undo-menu', path: `${p}/tests`, open: '.undo-controls button:has(.pi-history)', wait: '.undo-menu' },
     { name: 'columns-menu', path: `${p}/requirements`, open: 'button:has(.pi-table)', wait: '.columns-menu' },
     { name: 'baselines', path: `${p}/baselines` },
+    // electronic-records mode (on for these routes only): the signature a
+    // baseline needs, the reason a requirement change needs, the signatures of a record
+    {
+      name: 'erecords-signature-dialog',
+      path: `${p}/baselines`,
+      erecords: true,
+      open: '.page-header .actions button:has(.pi-plus)',
+      act: async (page) => {
+        await page.locator('#bl-name').fill('A11y signed baseline')
+        await page.locator('.p-dialog button[type="submit"]').first().click()
+      },
+      wait: '.p-dialog #er-sign-meaning',
+    },
+    reqs[0] && {
+      name: 'erecords-reason-dialog',
+      path: `${p}/requirements?item=${reqs[0].id}`,
+      erecords: true,
+      act: async (page) => {
+        await page.locator('.p-drawer form input').first().fill(`${reqs[0].title} `)
+        await page.locator('.p-drawer button[type="submit"]').first().click()
+      },
+      wait: '.p-dialog #er-reason',
+    },
+    firstBaseline && { name: 'baseline-signatures', path: `${p}/baselines?b=${firstBaseline.id}`, wait: '.esigs, .signoffs' },
     { name: 'releases', path: `${p}/releases` },
     { name: 'risks', path: `${p}/risks`, wait: '.heat' },
     { name: 'risks-area', path: `${p}/risks?area=authentication`, wait: '.heat' },
@@ -635,6 +659,10 @@ async function discover(request) {
     { name: 'provisioning', path: '/admin/provisioning', wait: '#h-scim-events' },
     { name: 'provisioning-token-dialog', path: '/admin/provisioning', open: 'section:has(#h-scim-tokens) .filterbar button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'audit', path: '/admin/audit' },
+    // the tamper-evident audit trail and electronic-records mode
+    { name: 'audit-verify', path: '/admin/audit', open: '.chain-card button:has(.pi-verified)', wait: '.chain-result' },
+    { name: 'erecords', path: '/admin/erecords', wait: '.er-grid' },
+    { name: 'erecords-report', path: '/admin/erecords', open: 'button:has(.pi-list-check)', wait: '.er-table' },
     { name: 'tenants', path: '/admin/tenants' },
     { name: 'users', path: '/admin/users' },
     // system settings (super admins): every section, the OIDC provider dialog
@@ -872,6 +900,8 @@ async function main() {
     await api(authCtx.request, 'POST', '/suggest/history', { entries: [{ field: 'search', value: 'status:approved' }, { field: 'search', value: 'login' }] }, csrf).catch(() => undefined)
     if (routes.some((r) => r.mfa)) await setupMfaUser(browser, authCtx.request, csrf)
     if (routes.some((r) => r.live) && (!ONLY.length || routes.some((r) => r.live && ONLY.includes(r.name)))) await setupLiveUser(browser, authCtx.request, csrf)
+    // the electronic-records settings, restored after the routes that turn the mode on
+    const erSaved = (await api(authCtx.request, 'GET', '/erecords').catch(() => null))?.settings ?? { enabled: false }
 
     for (const cfg of CONFIGS) {
       // the user's preferences decide theme and language once signed in
@@ -902,6 +932,8 @@ async function main() {
           // the second sign-in step: a context with a pending sign-in
           const mfaCtx = r.mfa ? await browser.newContext({ ...opts, storageState: await mfaPendingState(browser) }) : null
           if (mfaCtx) await mfaCtx.addInitScript(local, { lang: cfg.lang, theme: cfg.theme })
+          // electronic-records mode for this route only
+          if (r.erecords) await api(authCtx.request, 'PUT', '/erecords', { ...erSaved, enabled: true, reason_edits: ['requirement.update'], signature_actions: ['baseline.create'] }, csrf)
           const page = await (mfaCtx ?? (r.anon ? anon : ctx)).newPage()
           const label = `${cfg.name} ${vp.name} ${r.name}`
           const errors = []
@@ -919,6 +951,11 @@ async function main() {
             for (const sel of r.open ? [].concat(r.open) : []) {
               await settle(page)
               await page.locator(sel).first().click()
+            }
+            // act: a function of the page (fill a field and save)
+            if (r.act) {
+              await settle(page)
+              await r.act(page)
             }
             // upload: [selector, file] — a file of the repository set in a file input (an import preview)
             if (r.upload) {
@@ -951,6 +988,7 @@ async function main() {
           } finally {
             await page.close()
             if (mfaCtx) await mfaCtx.close()
+            if (r.erecords) await api(authCtx.request, 'PUT', '/erecords', erSaved, csrf).catch(() => undefined)
           }
         }
         await ctx.close()

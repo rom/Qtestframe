@@ -6,6 +6,7 @@ import ObligationHelp from './ObligationHelp.vue'
 import ObligationKeywordLine from './ObligationKeywordLine.vue'
 import MentionText from './MentionText.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import ESignaturesPanel from '@/components/ESignaturesPanel.vue'
 import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
 import ApplicabilityPanel from '@/components/ApplicabilityPanel.vue'
 import CodePanel from '@/components/CodePanel.vue'
@@ -750,6 +751,7 @@ function criterionLabel(id: string | null) {
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><DiscussionPanel entity="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (commentCount = n)" @open="(n) => (openDiscussions = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="requirement" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
+  <ESignaturesPanel entity-type="requirement" :entity-id="item.id" :stamp="item.version" />
   <HistoryPanel
     entity="requirement"
     :entity-id="item.id"
