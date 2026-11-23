@@ -348,7 +348,7 @@ watch(
         </div>
         <div class="field">
           <label :for="`${id}-owner`">{{ t('common.owner') }}</label>
-          <Select v-model="form.owner_id" :input-id="`${id}-owner`" :options="ownerOptions" option-label="label" option-value="value" filter :disabled="!canWrite" />
+          <Select v-model="form.owner_id" :input-id="`${id}-owner`" :options="ownerOptions" option-label="label" option-value="value" filter :disabled="!canWrite" :aria-label="t('common.owner')" />
         </div>
         <div class="field">
           <label :for="`${id}-exp`">{{ t('dataSets.expires') }}</label>

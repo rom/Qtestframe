@@ -161,7 +161,7 @@ async function save() {
         </div>
         <div class="field">
           <label :for="`${id}-owner`">{{ t('environments.owner') }}</label>
-          <Select v-model="fm.owner_id" :input-id="`${id}-owner`" :options="ownerOptions" option-label="label" option-value="value" filter />
+          <Select v-model="fm.owner_id" :input-id="`${id}-owner`" :options="ownerOptions" option-label="label" option-value="value" filter :aria-label="t('environments.owner')" />
         </div>
         <div class="field">
           <label :for="`${id}-cap`">{{ t('environments.capacity') }}</label>

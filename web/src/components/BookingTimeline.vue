@@ -74,11 +74,11 @@ const barLabel = (b: Booking) =>
           class="tl-bar"
           :class="[`st-${b.booking.status}`]"
           :style="{ left: `${b.left}%`, width: `${b.width}%`, top: `${b.lane * 26 + 3}px` }"
-          :aria-label="barLabel(b.booking)"
           :title="barLabel(b.booking)"
           @click="emit('open', b.booking)"
         >
           <span class="ellipsis">{{ b.booking.hidden ? t('environments.otherProject') : b.booking.purpose || b.booking.booked_by }}</span>
+          <span class="sr-only">, {{ barLabel(b.booking) }}</span>
         </button>
       </div>
       <Button v-if="canBook && bookable(r.env)" icon="pi pi-calendar-plus" text rounded size="small" :aria-label="t('environments.bookNamed', { name: r.env.name })" v-tooltip="t('environments.book')" @click="emit('book', r.env.id, days[0].toISOString())" />
