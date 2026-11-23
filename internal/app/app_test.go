@@ -316,6 +316,19 @@ func TestSeedDemo(t *testing.T) {
 	if ts, err := st.TenantSettings(context.Background(), tn.ID); err != nil || !ts.AIEnabled {
 		t.Errorf("tenant settings %+v %v", ts, err)
 	}
+	// the demo project is a software project with a solution preamble (two versions)
+	for _, p := range ps {
+		if p.Key != "DEMO" {
+			continue
+		}
+		pre, err := st.SolutionPreamble(context.Background(), tn.ID, p.ID)
+		if err != nil || p.Type != model.ProjectTypeSoftware || pre.Version != 2 || pre.Template != "go-postgres-vue" || !strings.Contains(pre.Integrations, "BankID") {
+			t.Errorf("solution preamble %+v %v (%s)", pre, err, p.Type)
+		}
+		if revs, err := st.ListRevisions(context.Background(), tn.ID, model.KindSolutionPreamble, p.ID); err != nil || len(revs) != 2 {
+			t.Errorf("preamble history %d %v", len(revs), err)
+		}
+	}
 	// the restricted project, shared with Dana as a viewer
 	var vault *model.Project
 	for i := range ps {

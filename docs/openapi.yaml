@@ -4448,7 +4448,10 @@ paths:
       - Projects
       summary: Prompt
       operationId: postProjectsByPidPrompts
-      description: '**Permission:** `project.read` checked by the router; project.read + the read permission of the items'' kind – see [Prompts](#prompts-software-projects).'
+      description: |-
+        Builds a prompt for an AI assistant (Markdown; nothing is sent to an AI service). Kinds: `implement`, `review_requirements`, `design_tests`, `automate_tests`, `review_tests`, `test_strategy`, and the solution prompts `architecture`, `design`, `implementation_plan`, `full_solution` (with the solution preamble). Requirements by `requirement_ids` or `q`, within `folder_id`, `release_id`, `variant`. Solution prompts: `compact`, `split` (`none`, `folder`, `size`), `max_tokens` per part, `formats` (`mermaid`, `c4`, `openapi`, `sql`). `format: zip` answers with the parts as Markdown files. → `{kind, lang, title, prompt, items, tokens, parts?}`. See [Prompts](#prompts-software-projects).
+
+        **Permission:** `project.read` checked by the router; project.read + the read permission of the items' kind.
       x-permission: project.read
       requestBody:
         required: false
@@ -4456,7 +4459,283 @@ paths:
           application/json:
             schema:
               type: object
+              properties:
+                kind:
+                  type: string
+                  enum: [implement, review_requirements, design_tests, automate_tests, review_tests, test_strategy, architecture, design, implementation_plan, full_solution]
+                lang:
+                  type: string
+                  enum: [en, sv]
+                test_type:
+                  type: string
+                framework:
+                  type: string
+                  maxLength: 200
+                notes:
+                  type: string
+                  maxLength: 8000
+                requirement_ids:
+                  type: array
+                  items:
+                    type: string
+                test_ids:
+                  type: array
+                  items:
+                    type: string
+                q:
+                  type: string
+                folder_id:
+                  type: string
+                release_id:
+                  type: string
+                variant:
+                  type: string
+                compact:
+                  type: boolean
+                split:
+                  type: string
+                  enum: [none, folder, size]
+                max_tokens:
+                  type: integer
+                  minimum: 1000
+                  maximum: 1000000
+                formats:
+                  type: array
+                  items:
+                    type: string
+                    enum: [mermaid, c4, openapi, sql]
+                format:
+                  type: string
+                  enum: [json, zip]
         description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/solution-preamble:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Get the solution preamble
+      operationId: getProjectsByPidSolutionPreamble
+      description: |-
+        The project's solution preamble (languages, stack, environments, constraints, conventions) that solution prompts start with → `{preamble, warnings: [{field, kind, message, excerpt}], filled, software}`. See [Solution preamble](#solution-preamble-software-projects).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Projects
+      summary: Save the solution preamble
+      operationId: putProjectsByPidSolutionPreamble
+      description: |-
+        Replaces the preamble of a software project (fields left out are emptied) and records a version in its history → as GET. Descriptions only: fields named like a password, secret, token, key or connection string are refused (400); text that looks like a credential is saved but reported in `warnings` and masked in prompts. With `version`, a stale save answers 409.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                template:
+                  type: string
+                  description: id of the template it was prefilled from (GET …/templates)
+                version:
+                  type: integer
+                  description: the version edited; 409 when it is no longer the current one
+                architecture_style:
+                  type: string
+                  enum: ['', monolith, modular_monolith, microservices, serverless, event_driven, layered, hexagonal, other]
+                languages:
+                  type: string
+                  maxLength: 4000
+                frameworks:
+                  type: string
+                  maxLength: 4000
+                environments:
+                  type: string
+                  maxLength: 4000
+                architecture_notes:
+                  type: string
+                  maxLength: 4000
+                frontend:
+                  type: string
+                  maxLength: 4000
+                backend:
+                  type: string
+                  maxLength: 4000
+                messaging:
+                  type: string
+                  maxLength: 4000
+                caching:
+                  type: string
+                  maxLength: 4000
+                databases:
+                  type: string
+                  maxLength: 4000
+                integrations:
+                  type: string
+                  maxLength: 4000
+                deployment:
+                  type: string
+                  maxLength: 4000
+                performance:
+                  type: string
+                  maxLength: 4000
+                availability:
+                  type: string
+                  maxLength: 4000
+                scalability:
+                  type: string
+                  maxLength: 4000
+                security:
+                  type: string
+                  maxLength: 4000
+                conventions:
+                  type: string
+                  maxLength: 4000
+                testing:
+                  type: string
+                  maxLength: 4000
+                repository:
+                  type: string
+                  maxLength: 4000
+                out_of_scope:
+                  type: string
+                  maxLength: 4000
+                additional:
+                  type: string
+                  maxLength: 16000
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/solution-preamble/check:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Check a solution preamble
+      operationId: postProjectsByPidSolutionPreambleCheck
+      description: |-
+        The warnings of an unsaved preamble (same body as PUT; nothing is stored) → as GET.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/solution-preamble/history:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: History of the solution preamble
+      operationId: getProjectsByPidSolutionPreambleHistory
+      description: |-
+        The saved versions of the preamble, newest first (revisions of entity type `solution_preamble`) → `{items: [revision]}`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/solution-preamble/templates:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Solution preamble templates
+      operationId: getProjectsByPidSolutionPreambleTemplates
+      description: |-
+        Templates for common stacks to prefill the preamble → `{items: [{id, name: {en, sv}, preamble}]}`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
       responses:
         '200':
           description: OK

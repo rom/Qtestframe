@@ -234,6 +234,11 @@ default):
 | GET | `/projects/{pid}` | project.read |
 | PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
 | POST | `/projects/{pid}/prompts` | project.read + the read permission of the items' kind – see [Prompts](#prompts-software-projects) |
+| GET | `/projects/{pid}/solution-preamble` | project.read – see [Solution preamble](#solution-preamble-software-projects) |
+| PUT | `/projects/{pid}/solution-preamble` | project.update – software projects |
+| POST | `/projects/{pid}/solution-preamble/check` | project.read – the warnings of an unsaved preamble |
+| GET | `/projects/{pid}/solution-preamble/history` | project.read – its saved versions |
+| GET | `/projects/{pid}/solution-preamble/templates` | project.read – templates for common stacks |
 | DELETE | `/projects/{pid}` | project.delete |
 | GET | `/projects/{pid}/dashboard` | project.read – see [Dashboard and metrics](#dashboard-and-metrics) |
 | GET | `/projects/{pid}/metrics/trends` | project.read – `?range=30\|90\|365` or `?since=YYYY-MM-DD` |
@@ -388,13 +393,92 @@ projects of type `software` (else 400).
 * `kind` (`/meta` `prompt_kinds`): `implement`, `review_requirements`,
   `design_tests` (requirements; need `requirement.read`), `automate_tests`,
   `review_tests`, `test_strategy` (tests; need `test.read`; the last two also
-  include the requirements the tests verify when the caller may read them).
+  include the requirements the tests verify when the caller may read them),
+  and the solution prompts `architecture`, `design`, `implementation_plan`
+  and `full_solution` (requirements; see below).
 * Items: `requirement_ids` / `test_ids` (must belong to the project), else
-  those matching `q`, else all; more than 200 → 400.
+  those matching `q`, else all; within `folder_id` (with its subfolders;
+  `root` = not in a folder) and, for requirements, `release_id` (the
+  release's requirements) and `variant` (id or name: the requirements that
+  apply to it). More than 200 items (2000 for solution prompts) → 400.
 * `test_type` (`/meta` `test_types`) is required for `design_tests` and
   `test_strategy`; `lang` is `en` (default) or `sv`; `framework` ≤ 200 and
   `notes` ≤ 8000 characters.
-* Response: `{"kind", "lang", "title", "prompt", "items"}`.
+* `format`: `json` (default) or `zip` – the parts as Markdown files
+  (`<KEY>-<kind>-<date>[-part-NN].md`) in an `application/zip` download.
+* Response: `{"kind", "lang", "title", "prompt", "items", "tokens", "parts"}`
+  – `tokens` estimates the size (characters / 4); `parts` (solution prompts)
+  lists `{"index", "title", "label", "prompt", "items", "tokens"}`, and
+  `prompt` is then all parts separated by `---` lines.
+
+Solution prompts start with the project's [solution
+preamble](#solution-preamble-software-projects) (credentials masked) and its
+technical context, then a project summary (scope, requirements by
+obligation, folders, releases, variants, linked risks and tests), the
+requirements (key, obligation, type, priority, status, folder, description,
+rationale, acceptance criteria, relations, linked risks with mitigation and
+ATT&CK / EMB3D ids, verifying tests, catalogue references such as CWE ids and
+standard clauses, D3FEND and EMB3D ids), for `implementation_plan` and
+`full_solution` the dependency order from the *depends on* relations, the
+instructions (trace every element to requirement keys, flag ambiguities and
+conflicts, list assumptions, the requested formats) and the answer format,
+ending with a traceability table. Options:
+
+* `compact`: titles, obligation, priority and acceptance criteria only.
+* `split`: `none` (default), `folder` (one part per top-level folder) or
+  `size` (parts of at most `max_tokens`, default 8000); with `folder`,
+  `max_tokens` splits large folders further. Every part repeats the
+  preamble and has a continuation instruction (first, middle, last part).
+* `max_tokens`: 1000–1000000.
+* `formats` besides Markdown: `mermaid`, `c4`, `openapi`, `sql`; left out:
+  the kind's defaults (architecture: `mermaid`, `c4`; design: `mermaid`,
+  `openapi`, `sql`; full solution: all; implementation plan: none); `[]`:
+  Markdown only.
+
+```json
+{"kind": "architecture", "lang": "sv", "folder_id": "…", "split": "folder", "max_tokens": 12000,
+ "compact": false, "formats": ["mermaid", "c4"]}
+```
+
+The command line builds the same prompts: `qtestframe prompt --project KEY
+--kind architecture --scope 'tag:payments' --split folder --out prompts/`
+(see `qtestframe help`).
+
+### Solution preamble (software projects)
+
+`GET /projects/{pid}/solution-preamble` → `{"preamble", "warnings",
+"filled", "software"}`; `PUT` (project.update, software projects only)
+replaces it and answers the same. The preamble's fields (all text, at most
+4000 characters; `additional` 16000): `languages`, `frameworks`,
+`environments`, `architecture_style` (`monolith`, `modular_monolith`,
+`microservices`, `serverless`, `event_driven`, `layered`, `hexagonal`,
+`other` or `""`), `architecture_notes`, `frontend`, `backend`, `messaging`,
+`caching`, `databases`, `integrations`, `deployment`, `performance`,
+`availability`, `scalability`, `security`, `conventions`, `testing`,
+`repository`, `out_of_scope`, `additional`, plus `template` (the template
+it was prefilled from) and, set by the server, `version`, `updated_at` and
+`updated_by`. Send `version` to detect a concurrent change (409).
+
+It holds descriptions only. Unknown fields and fields named like a secret
+(`password`, `secret`, `token`, `credential`, `api_key`, `private_key`,
+`connection_string` …) → 400. Text that looks like a credential – a URL or
+connection string with a password, a `password=` / `api_key:` assignment, a
+private key, a well-known access key or token shape, a long random string –
+is saved but listed in `warnings` (`{"field", "kind", "message",
+"excerpt"}`, `kind` one of `password_in_url`, `password_assignment`,
+`private_key`, `token`; the excerpt is masked), and it is replaced by
+`[REDACTED]` in prompts. Placeholders such as `${DB_PASSWORD}` or
+`<from the vault>` are fine. `POST …/solution-preamble/check` returns the
+warnings of an unsaved body.
+
+`GET …/solution-preamble/history` lists its versions (revisions of entity
+type `solution_preamble`); `GET …/solution-preamble/templates` → `{"items":
+[{"id", "name": {"en", "sv"}, "preamble"}]}` (`go-postgres-vue`,
+`java-spring-oracle`, `dotnet-sqlserver`, `python-fastapi-postgres`,
+`node-ts-mongodb`, `embedded-c-rtos`). The preamble is stored with the
+project (`projects.solution_preamble`), so project archives, duplicates and
+backups include it with its history. Audit action:
+`project.solution_preamble`.
 
 ### Dashboard and metrics
 

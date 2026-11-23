@@ -95,7 +95,14 @@ Usage:
                                                   write test code stubs named after the test keys (an
                                                   unimplemented stub reports as skipped); generating
                                                   again keeps implemented bodies
-                         report, gate, select and stubs read QTF_URL, QTF_TOKEN and QTF_PROJECT, and the
+  qtestframe prompt      --project KEY [--kind architecture|design|implementation_plan|full_solution|implement|…]
+                         [--scope QUERY] [--folder PATH] [--release R] [--variant V] [--lang en|sv]
+                         [--compact] [--split none|folder|size] [--max-tokens N] [--formats mermaid,c4,openapi,sql]
+                         [--out DIR]
+                                                  build a prompt for an AI assistant (with the project's
+                                                  solution preamble) and print it, or write one .md file
+                                                  per part; nothing is sent to an AI service
+                         report, gate, select, stubs and prompt read QTF_URL, QTF_TOKEN and QTF_PROJECT, and the
                          GitLab CI / GitHub Actions variables; tokens for posting: QTF_GITLAB_TOKEN,
                          QTF_GITHUB_TOKEN
   qtestframe version
@@ -148,6 +155,8 @@ func Run(args []string, env Env) int {
 		err = cmdSelect(args[1:], env)
 	case "stubs":
 		err = cmdStubs(args[1:], env)
+	case "prompt":
+		err = cmdPrompt(args[1:], env)
 	case "sandbox-exec":
 		var c *runner.SandboxConfig
 		if c, err = runner.ParseSandboxArgs(args[1:], env.Stderr); err == nil {

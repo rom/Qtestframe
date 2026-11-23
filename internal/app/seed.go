@@ -337,6 +337,10 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedLogo(ctx, st, tenantID); err != nil {
 		return nil, err
 	}
+	// a software project with a solution preamble (seedsolution.go)
+	if err := seedSolution(ctx, st, tenantID, p); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 
