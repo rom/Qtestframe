@@ -6,7 +6,14 @@ Bara superadministratörer **inloggade med en session** kan läsa eller ändra i
 
 ## Företräde och låsning
 
-**Företräde:** ett värde som ändrats i webbklienten vinner över `QTF_*`-miljövariabeln och konfigurationsfilen, som vinner över det inbyggda standardvärdet. Sidan visar varifrån varje värde kommer (*Standard*, *Konfigurationsfil*, *Miljö*, *Ändrat här*), och **Återställ till filens värde** tar bort det sparade värdet.
+**Företräde**, från starkast till svagast:
+
+1. en **miljövariabel** `QTF_*` – den vinner alltid och låser inställningen på sidan;
+2. ett värde **ändrat i webbklienten** (sparat i databasen) – om inte `system_settings.locked` låser nyckeln, då vinner filen;
+3. **konfigurationsfilen**;
+4. det inbyggda **standardvärdet**.
+
+Sidan visar varifrån varje värde kommer (*Standard*, *Konfigurationsfil*, *Miljö*, *Ändrat här*). Ett sparat värde som skuggas – nyckeln sattes senare av en miljövariabel eller låstes i filen – behålls men markeras *ignoreras*, och värdet som används visas. **Återställ till filens värde** tar bort det sparade värdet. Ordningen är densamma som innan sidan fanns; driftansvariga som vill att filen ska vinna låser nycklarna.
 
 **Driftansvarig vinner alltid**, genom tre sorters lås:
 
@@ -29,9 +36,13 @@ Använd miljövariabler eller lås för det som inte får ändras från webbklie
 
 | Avsnitt | Gäller |
 |---|---|
-| Allmänt, Säkerhet, Enkel inloggning (OIDC), Loggning och syslog, E-post (SMTP) | **direkt** – e-postavsändaren, OIDC-leverantörerna (oförändrade leverantörer behålls, så pågående inloggningar fortsätter), loggningen och inloggningsgränserna byggs om |
+| Allmänt, Inloggning och lösenord, API-tokens, Enkel inloggning, Loggning och syslog, E-post (SMTP), Utgående anslutningar, Likhet, AI-assistans | **direkt** – e-postavsändaren, OIDC-leverantörerna (oförändrade leverantörer behålls, så pågående inloggningar fortsätter), loggningen, inloggningsgränserna och den utgående HTTP-klienten följer de nya värdena |
+| Liveuppdateringar | brytaren och pulsen **direkt** (nya anslutningar); anslutningsgränserna, repriskbufferten och tidsgränsen för närvaro **efter en omstart** |
+| Server och databas | HTTP-tidsgränserna för läsning och skrivning **efter en omstart**; allt annat anges i filen och visas med sin källa (lyssningsadress, TLS-filer, databas, första start, härdning, nyckelleverantör) |
 | Körning av skript och webbtester | **efter en omstart** – körningen och dess sandlåda sätts upp innan processen låses (Landlocks körbara sökvägar, arbetskatalogen); värdet sparas direkt och sidan visar värdet som används tills dess |
-| Gallring och säkerhetskopior | inget att ändra: papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast |
+| Gallring och säkerhetskopior, Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem (papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast) |
+
+Inställningar märkta **Gäller efter omstart** behåller sitt värde tills nästa start. En banderoll överst på sidan listar varje sparad ändring som väntar på en omstart, med en länk till inställningen.
 
 `auth.session_ttl` gäller sessioner som skapas efter ändringen. Nya värden kontrolleras tillsammans med resten av konfigurationen – samma kontroller som `check-config` – innan de sparas. Om de sparade inställningarna är ogiltiga vid start (till exempel efter en ändring av filen) loggar servern `stored system settings are invalid and were ignored`, använder filen, och sidan visar en varning; rätta eller återställ värdena där.
 
@@ -46,17 +57,40 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Allmänt | `server.base_url` | text | direkt |
 | Allmänt | `files.max_upload_mb` | 1–1024 | direkt |
 | Allmänt | `requirements.auto_create_test` | på/av | direkt |
-| Allmänt | `server.listen` | text | visas bara (filen) |
-| Allmänt | `database.driver` | text | visas bara (filen) |
-| Säkerhet | `auth.local` | på/av | direkt |
-| Säkerhet | `auth.session_ttl` | 5m–2160h | direkt |
-| Säkerhet | `auth.password_min_length` | 8–72 | direkt |
-| Säkerhet | `auth.login_max_attempts` | 1–1000 | direkt |
-| Säkerhet | `auth.login_lockout` | 1m–24h | direkt |
-| Säkerhet | `auth.cookie_secure` | på/av | visas bara (filen) |
-| Säkerhet | `server.hsts` | på/av | visas bara (filen) |
-| Säkerhet | `server.trusted_proxies` | lista | visas bara (filen) |
-| Enkel inloggning (OIDC) | `auth.oidc` | lista med leverantörer | direkt |
+| Server och databas | `server.listen` | text | visas bara (filen) |
+| Server och databas | `server.tls_cert` | text | visas bara (filen) |
+| Server och databas | `server.tls_key` | text | visas bara (filen) |
+| Server och databas | `server.read_timeout` | 1s–2h | efter omstart |
+| Server och databas | `server.write_timeout` | 1s–2h | efter omstart |
+| Server och databas | `server.frame_ancestors` | lista | direkt |
+| Server och databas | `server.trusted_proxies` | lista | visas bara (filen) |
+| Server och databas | `server.hsts` | på/av | visas bara (filen) |
+| Server och databas | `database.driver` | text | visas bara (filen) |
+| Server och databas | `database.dsn` | hemlighet (skrivskyddad läsning) | visas bara (filen) |
+| Server och databas | `database.max_open_conns` | tal | visas bara (filen) |
+| Server och databas | `bootstrap.tenant_slug` | text | visas bara (filen) |
+| Server och databas | `bootstrap.tenant_name` | text | visas bara (filen) |
+| Server och databas | `bootstrap.admin_email` | text | visas bara (filen) |
+| Server och databas | `hardening.no_new_privs` | på/av | visas bara (filen) |
+| Server och databas | `hardening.landlock` | på/av | visas bara (filen) |
+| Server och databas | `hardening.seccomp` | på/av | visas bara (filen) |
+| Server och databas | `hardening.drop_capabilities` | på/av | visas bara (filen) |
+| Server och databas | `hardening.read_only_paths` | lista | visas bara (filen) |
+| Server och databas | `hardening.read_write_paths` | lista | visas bara (filen) |
+| Server och databas | `secrets.provider` | text | visas bara (filen) |
+| Inloggning och lösenord | `auth.local` | på/av | direkt |
+| Inloggning och lösenord | `auth.session_ttl` | 5m–2160h | direkt |
+| Inloggning och lösenord | `auth.session_idle_timeout` | 0s–720h | direkt |
+| Inloggning och lösenord | `auth.password_min_length` | 8–72 | direkt |
+| Inloggning och lösenord | `auth.password_min_classes` | 0–4 | direkt |
+| Inloggning och lösenord | `auth.password_history` | 0–24 | direkt |
+| Inloggning och lösenord | `auth.password_max_age_days` | 0–3650 | direkt |
+| Inloggning och lösenord | `auth.login_max_attempts` | 1–1000 | direkt |
+| Inloggning och lösenord | `auth.login_lockout` | 1m–24h | direkt |
+| Inloggning och lösenord | `auth.cookie_secure` | på/av | visas bara (filen) |
+| API-tokens | `auth.token_max_days` | 0–3650 | direkt |
+| API-tokens | `auth.token_require_expiry` | på/av | direkt |
+| Enkel inloggning | `auth.oidc` | lista med leverantörer | direkt |
 | Loggning och syslog | `logging.level` | `debug`, `info`, `warn`, `error` | direkt |
 | Loggning och syslog | `logging.format` | `text`, `json` | direkt |
 | Loggning och syslog | `logging.syslog.enabled` | på/av | direkt |
@@ -67,6 +101,7 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Loggning och syslog | `logging.syslog.tag` | text | direkt |
 | Loggning och syslog | `logging.syslog.ca_file` | text | visas bara (filen) |
 | Loggning och syslog | `logging.syslog.cert_file` | text | visas bara (filen) |
+| Loggning och syslog | `logging.syslog.key_file` | text | visas bara (filen) |
 | E-post (SMTP) | `email.enabled` | på/av | direkt |
 | E-post (SMTP) | `email.host` | text | direkt |
 | E-post (SMTP) | `email.port` | 1–65535 | direkt |
@@ -75,15 +110,25 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | E-post (SMTP) | `email.password` | hemlighet (skrivskyddad läsning) | direkt |
 | E-post (SMTP) | `email.from` | text | direkt |
 | E-post (SMTP) | `email.from_name` | text | direkt |
+| E-post (SMTP) | `email.reply_to` | text | direkt |
 | E-post (SMTP) | `email.timeout` | 1s–10m | direkt |
 | E-post (SMTP) | `email.digest_hour` | 0–23 | direkt |
+| Utgående anslutningar | `outbound.proxy` | text | direkt |
+| Utgående anslutningar | `outbound.no_proxy` | lista | direkt |
+| Utgående anslutningar | `outbound.allowed_hosts` | lista | direkt |
+| Utgående anslutningar | `outbound.denied_hosts` | lista | direkt |
+| Utgående anslutningar | `outbound.block_private` | på/av | direkt |
 | Körning av skript och webbtester | `runner.enabled` | på/av | efter omstart |
 | Körning av skript och webbtester | `runner.timeout` | 1s–24h | efter omstart |
 | Körning av skript och webbtester | `runner.max_output_bytes` | 1024–67108864 | efter omstart |
 | Körning av skript och webbtester | `runner.deny_network` | på/av | efter omstart |
 | Körning av skript och webbtester | `runner.sandbox` | på/av | visas bara (filen) |
+| Körning av skript och webbtester | `runner.work_dir` | text | visas bara (filen) |
+| Körning av skript och webbtester | `runner.interpreters` | lista | visas bara (filen) |
 | Körning av skript och webbtester | `runner.web.enabled` | på/av | efter omstart |
 | Körning av skript och webbtester | `runner.web.browser` | `chromium`, `firefox`, `webkit` | efter omstart |
+| Körning av skript och webbtester | `runner.web.channel` | text | efter omstart |
+| Körning av skript och webbtester | `runner.web.browser_channels` | på/av | efter omstart |
 | Körning av skript och webbtester | `runner.web.headless` | på/av | efter omstart |
 | Körning av skript och webbtester | `runner.web.timeout` | 1s–24h | efter omstart |
 | Körning av skript och webbtester | `runner.web.job_timeout` | 1s–24h | efter omstart |
@@ -92,7 +137,17 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Körning av skript och webbtester | `runner.web.screenshots` | `on_failure`, `always`, `off` | efter omstart |
 | Körning av skript och webbtester | `runner.web.trace` | `on_failure`, `always`, `off` | efter omstart |
 | Körning av skript och webbtester | `runner.web.video` | `off`, `on_failure`, `always` | efter omstart |
+| Körning av skript och webbtester | `runner.web.node` | text | visas bara (filen) |
 | Körning av skript och webbtester | `runner.web.playwright_dir` | text | visas bara (filen) |
+| Körning av skript och webbtester | `runner.web.command` | text | visas bara (filen) |
+| Körning av skript och webbtester | `runner.web.browsers_path` | text | visas bara (filen) |
+| Körning av skript och webbtester | `runner.web.executable_path` | text | visas bara (filen) |
+| Liveuppdateringar | `live.enabled` | på/av | direkt |
+| Liveuppdateringar | `live.heartbeat` | 1s–5m | direkt |
+| Liveuppdateringar | `live.presence_ttl` | 5s–1h | efter omstart |
+| Liveuppdateringar | `live.max_connections` | 1–1000000 | efter omstart |
+| Liveuppdateringar | `live.max_connections_per_user` | 1–1000 | efter omstart |
+| Liveuppdateringar | `live.replay_buffer` | 0–100000 | efter omstart |
 | Likhet (dubbletter) | `similarity.embeddings.enabled` | på/av | direkt |
 | Likhet (dubbletter) | `similarity.embeddings.url` | text | direkt |
 | Likhet (dubbletter) | `similarity.embeddings.model` | text | direkt |
@@ -117,15 +172,23 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 
 <!-- END GENERATED: system-settings -->
 
-Vad varje nyckel betyder står i [konfigurationsreferensen](configuration.md#referens). Allt annat – TLS, databasen, härdningen, nyckelleverantören, SAML, `trusted_proxies`, `cookie_secure`, `hsts`, körningens sökvägar – sätts bara i filen.
+Vad varje nyckel betyder står i [konfigurationsreferensen](configuration.md#referens). Varje nyckel i konfigurationsfilen finns antingen i tabellen – ändringsbar, eller *visas bara (filen)* med värde och källa – eller är avsiktligt bara i filen: hemligheternas `*_file`-alternativ, bootstrap-lösenordet, SAML-leverantörerna (de behöver nyckel- och certifikatfiler; sidan listar dem skrivskyddade med en knapp *Testa metadata*), `system_settings.locked` självt och detaljerna om nyckelleverantören för lagrade hemligheter (visas i krypteringspanelen under *Server och databas*). Ett test (`TestSettingsInventory`) ser till att det förblir så när en nyckel läggs till.
+
+## Att använda sidan
+
+- Sidonavigeringen grupperar avsnitten i *Server*, *Åtkomst* och *Tjänster*. **Sök** hittar en inställning i alla avsnitt via namn, hjälptext, nyckel, värde eller miljövariabel och hoppar dit.
+- Varje avsnitt sparas för sig. **Spara avsnittet** visar först ändringarna – gammalt och nytt värde, hemligheter bara som *ett nytt värde sparas* – och om de gäller direkt eller efter en omstart.
+- **Exportera inställningar (JSON)** laddar ned värdena som ändrats här (inte filens, aldrig hemligheter, utan OIDC-leverantörslistan) som `qtestframe-settings.json`; **Importera inställningar** läser en sådan fil på en annan server, hoppar över okända, låsta och hemliga nycklar och visar ändringarna innan de sparas. **Exportera konfigurationen** laddar fortfarande ned hela den gällande konfigurationen som YAML.
 
 ## Om single sign-on, syslog och e-post
 
 - **OIDC-leverantörer.** När leverantörerna ändras i webbklienten sparas hela listan, som då **ersätter** `auth.oidc` i filen. Klienthemligheter för leverantörer som kommer från filen kopieras inte till databasen: de kommer fortsatt från `client_secret_file` eller `QTF_OIDC_<NAMN>_CLIENT_SECRET`, som alltid vinner. **Återställ till filens värde** går tillbaka till filens lista.
-- **SAML**-leverantörer kan bara konfigureras i filen.
+- **SAML**-leverantörer kan bara konfigureras i filen; sidan listar dem (entitets-ID, metadata, ACS-adress, attribut, rollkoppling) och *Testa metadata* läser identitetsleverantörens metadata.
+- **Utgående anslutningar.** `outbound.*` gäller varje utgående HTTP-anrop: webhooks, chattkanaler, ärendehanterare och kravkällor, AI-assistans, tjänsten för inbäddningar, OIDC-discovery och hälsokontroller av miljöer (inte SMTP eller syslog). `allowed_hosts` och `denied_hosts` tar exakta namn, adresser eller `*.example.com`; `block_private` nekar loopback-, privata, länklokala och andra icke-publika adresser, kontrollerat på adressen som faktiskt ansluts (så ett DNS-namn som senare pekar på en intern adress nekas ändå), om inte värden uttryckligen är tillåten. *Kontrollera adress* testar en adress mot reglerna, även osparade ändringar. Med en proxy kontrolleras adresserna på servern före anropet. Det finns ingen separat hastighetsgräns för webhooks eller chatt utöver deras egna regler för omförsök.
 - **Syslog över TLS** använder `ca_file`, `cert_file` och `key_file` från filen; de är läsbara efter låsningen eftersom de läggs till bland Landlocks skrivskyddade sökvägar vid start. En Unix-socket som inte var konfigurerad vid start kan nekas av Landlock; använd `udp`, `tcp` eller `tls`, eller starta om.
 - **Hemligheter** som anges på sidan (SMTP-lösenordet, OIDC-klienthemligheter) kan bara skrivas, lagras [krypterade](security.md#kryptering-av-lagrade-hemligheter), loggas aldrig och visas aldrig igen.
-- **Testknapparna** (*Testa anslutningen* för OIDC-discovery, *Skicka testmeddelande* för syslog, *Skicka testmejl*) får servern att ansluta till en adress som superadministratören anger. Filtrera serverns utgående trafik om den når interna tjänster.
+- **Testknapparna** (*Testa anslutningen* för OIDC-discovery, *Testa metadata* för SAML, *Skicka testmeddelande* för syslog, *Skicka testmejl*, *Testa tjänsten* för inbäddningar och AI, *Kontrollera adress* för utgående anslutningar) får servern att ansluta till en adress som superadministratören anger. De följer reglerna för utgående anslutningar när de använder HTTP; filtrera serverns utgående trafik om den når interna tjänster.
+- **Inte på sidan:** schema för säkerhetskopior (de görs vid behov eller från en systemd-timer med `qtestframe backup`), metrikslutpunkter (det finns ingen; `/healthz` och `/readyz` är publika och innehåller inga data), standardvärden för CI och ärendehanterare (de är per projekt) och inställningar per organisation, som finns på organisationens egna sidor (AI-assistans, Elektroniska poster, Flerfaktorsautentisering) eller i dess regler (Administration → Organisationer).
 
 ## Tjänst för inbäddningar för liknande objekt
 

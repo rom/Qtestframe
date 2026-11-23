@@ -19323,6 +19323,276 @@ paths:
           $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/outbound:
+    post:
+      tags:
+      - Administration
+      summary: Check a URL against the outbound settings
+      operationId: postAdminSettingsTestOutbound
+      description: |-
+        `{"url": "https://…", "values": {"outbound.…": …}}` (optional unsaved values of the outbound section): checks the URL against the proxy, allowed and denied hosts and the block of private addresses, then fetches it; `{ok, message, error, details: {url, status, blocked, proxy}}` (audited as `settings.test_outbound`). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/saml:
+    post:
+      tags:
+      - Administration
+      summary: Test the metadata of a SAML provider
+      operationId: postAdminSettingsTestSaml
+      description: |-
+        `{"name": "adfs"}`: reads the identity provider metadata of a SAML provider of the configuration file (URL or file) and reports `{ok, message, error, details: {entity_id, certificates, sso_urls}}` (audited as `settings.test_saml`). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants:
+    get:
+      tags:
+      - Administration
+      summary: List organisations with usage and policy
+      operationId: getAdminTenants
+      description: |-
+        `{items: [{id, slug, name, created_at, suspended_at?, policy: {max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers, email_domains, note}, usage: {members, projects, requirements, tests, runs, files, storage_bytes, last_activity}, ai_enabled, erecords_enabled, mfa_required}]}`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Administration
+      summary: Get an organisation with usage and policy
+      operationId: getAdminTenantsById
+      description: |-
+        One organisation as in `GET /admin/tenants`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants/{id}/policy:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    put:
+      tags:
+      - Administration
+      summary: Set the policy of an organisation
+      operationId: putAdminTenantsByIdPolicy
+      description: |-
+        Replaces the policy `{max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers: ["local", "oidc:<name>", "saml:<name>"], email_domains, note}` (0 = no limit; an e-mail domain belongs to one organisation, 409 otherwise) and returns the organisation (audited as `tenant.policy` with the changes). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants/{id}/suspend:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: Suspend an organisation
+      operationId: postAdminTenantsByIdSuspend
+      description: |-
+        Its members can no longer open it and its API tokens are refused until it is reactivated; nothing is deleted (audited as `tenant.suspend`). Super administrators still open it. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants/{id}/reactivate:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: Reactivate an organisation
+      operationId: postAdminTenantsByIdReactivate
+      description: |-
+        Ends a suspension (audited as `tenant.reactivate`). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/memberships:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Administration
+      summary: List the organisations of a user
+      operationId: getUsersByIdMemberships
+      description: |-
+        `{items: [membership with tenant_slug, tenant_name, roles], sessions}` (open sessions). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/sessions/revoke:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: Sign a user out everywhere
+      operationId: postUsersByIdSessionsRevoke
+      description: |-
+        Ends all sessions of the user (not of the caller: 400); API tokens stay valid. `{revoked}`; audited as `user.revoke_sessions`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/web-tests:
     parameters:
     - $ref: '#/components/parameters/pid'

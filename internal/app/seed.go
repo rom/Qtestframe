@@ -337,6 +337,11 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedLogo(ctx, st, tenantID); err != nil {
 		return nil, err
 	}
+	// organisations and system settings of the super-administrator pages
+	// (seedadmin.go)
+	if err := seedAdmin(ctx, live, tenantID); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

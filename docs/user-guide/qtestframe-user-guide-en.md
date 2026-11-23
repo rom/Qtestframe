@@ -4582,8 +4582,12 @@ The admin sets on the same page the actions that need a signature, the meanings 
 
 - **New organisation**: a **Slug** (short name used at sign-in, for example `acme`) and a **Name**.
 - **Rename organisation** (also allowed for an organisation's admins).
-- **Switch** to an organisation to work in it.
-- **Delete** removes the organisation with **all** its projects and data. This cannot be undone.
+- **Switch** to an organisation to work in it. You work there under your own name: nobody, not even a super administrator, can sign in as another user.
+- The list shows the **members**, **projects** and **storage** of each organisation, against its limits.
+- **Usage and policy** shows the counts (requirements, tests, runs, files, last activity), what the organisation's admins have turned on (AI assistance, electronic-records mode, multi-factor authentication), and the **policy** only super administrators change: the most **members**, **projects** and **storage** (0 = no limit; adding more is refused), **Forbid AI assistance**, the **Allowed sign-in methods** (password or a single sign-on provider; members whose account uses another method cannot open the organisation) and **E-mail domains** whose new single sign-on users join it.
+- **Suspend** stops the organisation without deleting anything: its members cannot open it and its API tokens stop working until you **Reactivate** it.
+- **Audit trail** opens the organisation's [audit log](#audit-log).
+- **Delete** removes the organisation with **all** its projects and data. This cannot be undone: the dialog offers **Download backup** first and asks you to type the organisation's slug. You cannot delete the organisation you are working in.
 
 ## Users
 
@@ -4593,7 +4597,9 @@ The admin sets on the same page the actions that need a signature, the meanings 
 
 - **New user**: e-mail, display name, password and optionally **Super administrator**.
 - **Edit user**: change the display name, set a new password (**Reset password (optional)**), make the user a super administrator, or mark the account **Disabled**. Disabling an account or setting a password signs the user out everywhere. **Must change password** forces a new password at the next sign-in.
-- You cannot remove your own super admin flag or disable yourself.
+- You cannot remove your own super admin flag or disable yourself, and the last enabled super administrator always stays one.
+- **Filter** by name or e-mail, status (enabled or disabled), sign-in method, multi-factor authentication or super administrators.
+- The buttons of a row show the user's **organisations** with their roles and open sessions, **sign the user out everywhere** (API tokens stay valid), reset the second factor or a local password, and **disable** or **enable** the account.
 
 Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the [administrator guide](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/en/authentication.md#provisioning-of-single-sign-on-users)).
 
@@ -4612,9 +4618,12 @@ Secrets in a backup (authenticator-app secrets, webhook secrets, tracker tokens,
 
 ## System settings
 
-*(Super admin)* **Administration → System settings** changes the configuration of the server while it runs: single sign-on, logging and syslog, the e-mail server, sign-in security and the test runner. Organisation admins do not see this page: every setting applies to the whole installation.
+*(Super admin)* **Administration → System settings** changes the configuration of the server while it runs: sign-in and passwords, API tokens, single sign-on, logging and syslog, the e-mail server, outgoing connections, the test runner, live updates, similarity and AI assistance. Settings that can only be set in the configuration file (the listen address, TLS, the database, hardening) are shown read-only with their source. Organisation admins do not see this page: every setting applies to the whole installation.
 
-Choose a section in the list on the left (on a phone: at the top). Each section has its own **Save** button; only the values you changed are sent. **Export configuration** downloads the effective configuration as a YAML file, with every secret replaced by `REDACTED`, for example to copy it into the server's configuration file.
+Choose a section in the list on the left (on a phone: at the top); the sections are grouped into *Server*, *Access* and *Services*. **Search all settings** above the list finds a setting in any section by its name, help text or value and takes you to it. Each section has its own **Save section** button; only the values you changed are sent, after a confirmation that lists every change with its old and new value.
+
+- **Export configuration** downloads the effective configuration as a YAML file, with every secret replaced by `REDACTED`, for example to copy it into the server's configuration file.
+- **Export settings (JSON)** downloads only the values changed on this page, without secrets; **Import settings** reads such a file (for example from a test server), shows what it would change, and saves it after you confirm. Locked settings, secrets and unknown keys in the file are skipped and listed.
 
 ### Where a value comes from
 
@@ -4625,7 +4634,7 @@ Every setting shows a badge with the source of its current value:
 - **Environment** – set by a `QTF_…` environment variable of the server.
 - **Changed here** – changed on this page (stored in the database).
 
-A value changed here wins over the configuration file and the default. **Reset to file value** removes your change, and the value of the configuration file (or the default) applies again.
+A value changed here wins over the configuration file and the default, but not over an environment variable. **Reset to file value** removes your change, and the value of the configuration file (or the default) applies again. If a value you changed is later set by an environment variable or locked, the page says that the stored value is ignored.
 
 Some settings cannot be changed here. They show a lock and say why:
 
@@ -4633,7 +4642,7 @@ Some settings cannot be changed here. They show a lock and say why:
 - **Locked by the server administrator** – the configuration file lists the setting under `system_settings.locked`.
 - **Configuration file only** – shown for information (for example the listen address or the database), because they can only change with a restart of the server.
 
-Most settings apply at once. Settings with the badge **Applies after restart** (the test runner) are saved now and take effect the next time the server starts; until then the page shows the value in use. If the stored settings ever become invalid (for example after a change of the configuration file), the server ignores them at start-up and the page shows a warning.
+Most settings apply at once. Settings with the badge **Applies after restart** (the test runner, the limits of live updates, the HTTP timeouts) are saved now and take effect the next time the server starts; until then the page shows the value in use, and a banner at the top lists every change that waits for a restart. If the stored settings ever become invalid (for example after a change of the configuration file), the server ignores them at start-up and the page shows a warning.
 
 Every change is recorded in the [audit log](#audit-log) with the old and the new value; passwords and client secrets are never written there, only that they were set or changed.
 
@@ -4641,11 +4650,13 @@ Every change is recorded in the [audit log](#audit-log) with the old and the new
 
 The **Single sign-on (OIDC)** section lists the OpenID Connect providers that appear as buttons on the sign-in page.
 
-- **Add provider** asks for a name (lower-case letters, digits, `-` and `_`; it is part of the callback address), the **Button label**, the **Issuer** URL, the **Client ID** and the **Client secret**, the **Scopes**, the claims that hold the e-mail address, the name and the groups, and how users are provisioned: **Create users on first sign-in**, the **Default role** and organisation, and a **Group → role** mapping.
+- **Add provider** asks for a name (lower-case letters, digits, `-` and `_`; it is part of the callback address), the **Button label** and **Button icon**, the **Issuer** URL, the **Client ID** and the **Client secret**, the **Scopes**, the claims that hold the e-mail address, the name and the groups, and how users are provisioned: **Create users on first sign-in**, the **Default role** (one or several, separated by commas) and organisation, **Allowed e-mail domains**, and a **Group → role** mapping (`group=role`, or `group=role1, role2`).
 - **Test connection** fetches the issuer's discovery document (`/.well-known/openid-configuration`) from the server and tells you whether it was found and lists its endpoints. A failure shows the reason, for example that the server cannot reach the address or that the issuer in the document does not match.
 - Register the **Callback URL** shown for the provider in your identity provider.
 - The client secret is write-only: it is never shown again. Leave the field empty to keep it; **Remove the stored secret** deletes it.
 - The switch in the list turns a provider off without deleting it. Changes apply at once; people who are signing in at an unchanged provider are not interrupted.
+
+SAML providers are set up in the configuration file; the section lists them with the addresses to register at the identity provider, and **Test metadata** checks that the server can read the provider's metadata.
 
 Once you change the providers here, this list replaces the providers of the configuration file. Secrets of providers from the file stay in the file and are not copied. **Reset to file value** brings back the providers of the configuration file.
 
@@ -4659,11 +4670,17 @@ The SMTP server for notifications, invitations and reports: host, port, encrypti
 
 ### Security
 
-The **session lifetime** (how long a sign-in lasts; applies to new sign-ins), the **minimum password length** of local accounts, the number of **failed sign-ins** after which further attempts from the same address for the same account are refused, and for how long. **Local sign-in** (e-mail and password) can only be turned off while at least one single sign-on provider is enabled.
+The **session lifetime** (how long a sign-in lasts; applies to new sign-ins), the **inactivity timeout** (0 = off), the password policy of local accounts – **minimum length**, **character classes** (lower-case, upper-case, digits, symbols), **password history** and **password expiry** – the number of **failed sign-ins** after which further attempts from the same address for the same account are refused, and for how long. **Local sign-in** (e-mail and password) can only be turned off while at least one single sign-on provider is enabled.
+
+**API tokens**: the longest lifetime of new tokens in days, and whether they need an expiry date at all.
+
+**Outgoing connections**: a proxy for the server's outgoing calls (webhooks, chat, defect trackers, AI, embeddings, single sign-on discovery), the hosts they may or may not reach, and **Block private addresses** so that nobody can make the server call your internal network. **Check URL** tests an address against these rules.
+
+**Authorisation** explains who may do what and links to the role matrix, organisations, users and provisioning.
 
 ### Encryption of stored secrets
 
-The **Security** section also shows, read-only, how the secrets that the server must be able to read back are protected: the secrets of authenticator apps, webhook signing secrets, defect tracker tokens, secret test variables, and the e-mail password and client secrets entered on this page. They are stored **encrypted** (AES-256-GCM) in the database. Earlier versions stored them unencrypted; that no longer holds, and values saved by an earlier version are encrypted when the server starts. Passwords and access tokens were never stored as such: only their hashes are kept.
+The **Server and database** section also shows, read-only, how the secrets that the server must be able to read back are protected: the secrets of authenticator apps, webhook signing secrets, defect tracker tokens, secret test variables, and the e-mail password and client secrets entered on this page. They are stored **encrypted** (AES-256-GCM) in the database. Earlier versions stored them unencrypted; that no longer holds, and values saved by an earlier version are encrypted when the server starts. Passwords and access tokens were never stored as such: only their hashes are kept.
 
 The page shows:
 

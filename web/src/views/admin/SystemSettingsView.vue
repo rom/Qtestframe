@@ -362,15 +362,6 @@ function resetProviders() {
     t('sysSettings.reset'),
   )
 }
-
-const HELP: Partial<Record<SectionId, InstanceType<typeof HelpTip>['$props']['id']>> = {
-  general: 'system.general',
-  security: 'system.security',
-  oidc: 'system.oidc',
-  logging: 'system.logging',
-  email: 'system.email',
-  runner: 'system.runner',
-}
 </script>
 
 <template>
@@ -444,7 +435,12 @@ const HELP: Partial<Record<SectionId, InstanceType<typeof HelpTip>['$props']['id
       <section v-else class="card sys-section" :aria-labelledby="`h-sys-${current}`">
         <div class="row" style="gap: 6px; align-items: center">
           <h2 :id="`h-sys-${current}`" class="plain-heading" style="margin: 0">{{ sectionLabel(current) }}</h2>
-          <HelpTip v-if="HELP[current]" :id="HELP[current]!" :label="sectionLabel(current)" />
+          <HelpTip v-if="current === 'general'" id="system.general" :label="sectionLabel(current)" />
+          <HelpTip v-else-if="current === 'security'" id="system.security" :label="sectionLabel(current)" />
+          <HelpTip v-else-if="current === 'oidc'" id="system.oidc" :label="sectionLabel(current)" />
+          <HelpTip v-else-if="current === 'logging'" id="system.logging" :label="sectionLabel(current)" />
+          <HelpTip v-else-if="current === 'email'" id="system.email" :label="sectionLabel(current)" />
+          <HelpTip v-else-if="current === 'runner'" id="system.runner" :label="sectionLabel(current)" />
         </div>
         <p class="small muted" style="margin: 4px 0 12px">{{ t(`sysSettings.sectionIntro.${current}`) }}</p>
 

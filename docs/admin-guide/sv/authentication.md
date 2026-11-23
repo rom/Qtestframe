@@ -116,6 +116,8 @@ auth:
 
 Bara **SP-initierad** inloggning stöds; IdP-initierade (oombedda) svar avvisas. Svaret eller varje assertion måste vara signerat av IdP-certifikatet i metadata; destination, mottagare och giltighetstid kontrolleras. AuthnRequests signeras inte, så stäng av *client signature required* hos IdP:n. Krypterade assertions dekrypteras med `sp_key_file`. SAML-leverantörer konfigureras bara i filen och läser `server.base_url` vid start. Metadataadressen hämtas vid första inloggningen; `idp_metadata_file` kräver ingen utgående anslutning.
 
+**Lösenordsregler** (Systeminställningar → Inloggning och lösenord): `auth.password_min_classes` kräver 2–4 av gemener, versaler, siffror och symboler; `auth.password_history` (0–24) nekar de senaste lösenorden när användare byter sitt; `auth.password_max_age_days` gör att ett lösenord går ut – nästa inloggning därefter måste byta det (för konton äldre än inställningen räknas dagarna från nästa inloggning). Tillfälliga lösenord som administratörer sätter måste ändå bytas vid nästa inloggning.
+
 ## Provisionering av användare med single sign-on
 
 Vid varje inloggning med OIDC eller SAML:
@@ -125,6 +127,8 @@ Vid varje inloggning med OIDC eller SAML:
 3. Med `default_tenant` blir rollen den mest privilegierade roll som `role_mapping` ger någon av användarens grupper, annars `default_role` (`viewer` när den är tom eller okänd). Ett saknat medlemskap skapas med `auto_provision`; med en `role_mapping` sätts ett befintligt medlemskap till den mappade rollen vid varje inloggning – identitetsleverantören bestämmer.
 
 Eftersom konton kopplas via e-postadress: anslut bara identitetsleverantörer vars adresser är verifierade och tillhör er organisation. Medlemmar som SCIM hanterar lämnas åt SCIM.
+
+Med `allowed_domains` nekas adresser i andra domäner innan något annat händer (`*.example.com` tillåter underdomänerna). Organisationen är `default_tenant`; utan den den organisation vars regler listar användarens e-postdomän (Administration → Organisationer → *E-postdomäner*). En avstängd organisation, eller en vars regler inte tillåter leverantören, går man inte med i. Rollerna är alla roller som `role_mapping` ger någon av användarens grupper – en koppling kan ange flera roller (`qa: "tester, reviewer"`) – annars `default_role`, som också kan lista flera. OIDC-leverantörerna har i webbklienten också en **knappikon** (`icon`), och knappen *Testa anslutningen* hämtar discovery-dokumentet.
 
 ## Provisionering med SCIM
 
@@ -155,3 +159,5 @@ API-nycklar är för skript och CI-flöden (`Authorization: Bearer qtf_…`). Me
 - Användare ser sina sessioner (webbläsare, adress, senaste aktivitet) i sin profil och kan avsluta var och en.
 - Begäranden från webbläsaren som ändrar något måste skicka sessionens CSRF-token och klara en ursprungskontroll mot begärans värd eller `server.base_url`.
 - Sessioner ingår inte i en säkerhetskopia; en återställning loggar ut alla.
+
+**Token-regler och sessioner.** Serverns regler för API-tokens (Systeminställningar → API-tokens) kan kräva ett utgångsdatum (`auth.token_require_expiry`) och begränsa det (`auth.token_max_days`); de gäller nya tokens. Sessioner avslutas också efter `auth.session_idle_timeout` utan aktivitet (av som standard; läget för elektroniska poster i en organisation kan ange en kortare) och när en superadministratör loggar ut en användare överallt (Administration → Användare). "Kom ihåg den här enheten" för den andra faktorn anges i serverns MFA-regler.

@@ -226,6 +226,24 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, p *Pri
 	writeJSON(w, http.StatusCreated, u)
 }
 
+var errLastSuperAdmin = errors.New("this is the last enabled super administrator: make another user super administrator first")
+
+// keepSuperAdmin refuses to demote or disable (demote) the last enabled
+// super administrator u: there is always one.
+func (s *Server) keepSuperAdmin(ctx context.Context, u *model.User, demote bool) error {
+	if !demote || !u.SuperAdmin || u.Disabled {
+		return nil
+	}
+	n, err := s.Store.CountActiveSuperAdmins(ctx)
+	if err != nil {
+		return err
+	}
+	if n <= 1 {
+		return errLastSuperAdmin
+	}
+	return nil
+}
+
 func applyUserReq(u *model.User, req userReq, pol auth.PasswordPolicy) error {
 	if req.DisplayName != nil {
 		u.DisplayName = strings.TrimSpace(*req.DisplayName)
@@ -272,17 +290,13 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, p *Pri
 		writeError(w, http.StatusConflict, "conflict", "you cannot demote or disable yourself")
 		return
 	}
-	// there is always an enabled super administrator
-	if u.SuperAdmin && !u.Disabled && demote {
-		n, err := s.Store.CountActiveSuperAdmins(ctx)
-		if err != nil {
-			s.fail(w, r, err)
+	if err := s.keepSuperAdmin(ctx, u, demote); err != nil {
+		if errors.Is(err, errLastSuperAdmin) {
+			writeError(w, http.StatusConflict, "last_super_admin", err.Error())
 			return
 		}
-		if n <= 1 {
-			writeError(w, http.StatusConflict, "last_super_admin", "this is the last enabled super administrator: make another user super administrator first")
-			return
-		}
+		s.fail(w, r, err)
+		return
 	}
 	if err := applyUserReq(u, req, pwPolicy(s.conf())); err != nil {
 		s.fail(w, r, err)

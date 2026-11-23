@@ -131,6 +131,12 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `auth.password_min_length` | heltal | `10` | — | Minsta längd på lokala lösenord (8–72) som anges i webbklienten eller API:t. `user create` och bootstrap-administratören använder alltid 10. |
 | `auth.login_max_attempts` | heltal | `10` | — | Inloggningsförsök per klientadress och e-postadress inom `login_lockout` (1–1000); fler försök får HTTP 429. |
 | `auth.login_lockout` | tidslängd | `5m` | — | Tidsfönstret för `login_max_attempts` (1m–24h). |
+| `auth.session_idle_timeout` | tidslängd | `0s` | — | Avslutar en webbläsarsession efter så här lång tid utan aktivitet, t.ex. `30m` (`0` = av: bara `session_ttl` gäller). En organisations läge för elektroniska poster kan ange en kortare; den kortare gäller. |
+| `auth.password_min_classes` | heltal | `0` | — | Hur många av teckenklasserna gemener, versaler, siffror och symboler ett lokalt lösenord måste innehålla (2 till 4; `0` = bokstäver och minst en siffra eller symbol). |
+| `auth.password_history` | heltal | `0` | — | Hur många tidigare lösenord en användare inte kan välja igen när lösenordet byts (0 till 24; `0` = av). |
+| `auth.password_max_age_days` | heltal | `0` | — | Ett lokalt lösenord går ut så här många dagar efter att det sattes: nästa inloggning måste byta det (`0` = aldrig). För konton som är äldre än inställningen räknas dagarna från nästa inloggning. |
+| `auth.token_max_days` | heltal | `0` | — | Längsta livslängd för en ny API-token i dagar (`0` = ingen gräns). Med en gräns behöver varje ny token ett utgångsdatum inom den; befintliga tokens behåller sina. |
+| `auth.token_require_expiry` | bool | `false` | — | Neka nya API-tokens utan utgångsdatum. |
 
 ### `auth.oidc`
 
@@ -140,6 +146,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `auth.oidc[].name` | text | — | — | Leverantörens id i dess adresser (`/api/v1/auth/oidc/<namn>/callback`) och i `QTF_OIDC_<NAMN>_CLIENT_SECRET`. Använd gemena bokstäver, siffror och `_`. |
 | `auth.oidc[].enabled` | bool | `true` | — | `false` behåller leverantören men döljer den på inloggningssidan. Standard `true`. |
 | `auth.oidc[].display_name` | text | — | — | Texten på knappen på inloggningssidan. |
+| `auth.oidc[].icon` | text | — | — | Ikon på inloggningsknappen: `sign-in`, `key`, `shield`, `building`, `microsoft`, `google`, `github`, `amazon` eller `apple` (tom = en allmän ikon). |
 | `auth.oidc[].issuer` | text | — | — | Utfärdarens URL; servern läser `<issuer>/.well-known/openid-configuration` vid första inloggningen. Krävs. |
 | `auth.oidc[].client_id` | text | — | — | Klient-id som registrerats hos leverantören. Krävs. |
 | `auth.oidc[].client_secret` | text | — | `QTF_OIDC_<NAME>_CLIENT_SECRET` | Klienthemlighet skriven i filen. Använd hellre `client_secret_file` eller miljövariabeln. |
@@ -155,6 +162,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `auth.oidc[].default_tenant` | text | — | — | Slug för organisationen vars medlemskap inloggningen skapar eller uppdaterar. |
 | `auth.oidc[].default_role` | text | `viewer` | — | Roll när ingen grupp mappas (en okänd eller tom roll betyder `viewer`). |
 | `auth.oidc[].role_mapping` | mappning | — | — | Grupp → roll. Den mest privilegierade mappade rollen vinner och sätts på nytt vid varje inloggning. |
+| `auth.oidc[].allowed_domains` | lista | — | — | E-postdomäner som får logga in via leverantören (`example.com`; `*.example.com` för dess underdomäner). Tom = alla. Andra adresser nekas innan ett konto slås upp eller skapas. |
 
 ### `auth.saml`
 
@@ -175,6 +183,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `auth.saml[].default_tenant` | text | — | — | Som för OIDC. |
 | `auth.saml[].default_role` | text | `viewer` | — | Som för OIDC. |
 | `auth.saml[].role_mapping` | mappning | — | — | Som för OIDC. |
+| `auth.saml[].allowed_domains` | lista | — | — | E-postdomäner som får logga in via leverantören, som för OIDC. Tom = alla. |
 
 ### `runner`
 
@@ -257,6 +266,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `email.tls` | text | `starttls` | — | `starttls`, `tls` (implicit) eller `none` (bara ett lokalt relä). |
 | `email.timeout` | tidslängd | `30s` | — | Tidsgräns för att skicka ett meddelande. |
 | `email.digest_hour` | heltal | `7` | — | Timme på dygnet (UTC, 0–23) då dagliga sammanfattningar skickas. |
+| `email.reply_to` | text | — | — | Svarsadress (Reply-To) för e-post som saknar en egen, t.ex. en supportbrevlåda (tom = ingen). Inbjudningar och delade rapporter svarar till personen som skickade dem. |
 
 ### `system_settings`
 
@@ -321,6 +331,16 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `ai.features.suggest_criteria` | bool | `true` | — | Erbjud *Föreslå acceptanskriterier* i kravredigeraren. |
 | `ai.price_input` | text | — | — | Valfritt pris per miljon indata-token (valfri valuta), för att visa en uppskattad kostnad med varje svar. |
 | `ai.price_output` | text | — | — | Valfritt pris per miljon utdata-token. |
+
+### `outbound`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `outbound.proxy` | text | — | — | HTTP(S)-proxy för serverns utgående anrop (webhooks, chatt, ärendehanterare och kravkällor, AI, embeddings, OIDC-discovery, hälsokontroller av miljöer), t.ex. `http://proxy.example.com:3128`. Tom = miljövariablerna `HTTPS_PROXY`, `HTTP_PROXY` och `NO_PROXY`. |
+| `outbound.no_proxy` | lista | — | — | Värdar som nås utan `proxy` (exakta namn eller `*.example.com`). |
+| `outbound.allowed_hosts` | lista | — | — | När den är satt de enda värdar som utgående anrop får nå (exakta namn, adresser eller `*.example.com`); andra nekas. Skyddar mot server-side request forgery via webhook- och ärendehanteraradresser. |
+| `outbound.denied_hosts` | lista | — | — | Värdar som utgående anrop aldrig når, t.ex. `metadata.google.internal` eller `169.254.169.254`. |
+| `outbound.block_private` | bool | `false` | — | Neka utgående anrop till loopback-, privata, länklokala och andra icke-publika adresser (kontrolleras på adressen som faktiskt ansluts), om inte värden finns i `allowed_hosts`. Slå på den när servern nås från internet och användarna inte ska nå ert interna nät genom den. |
 
 <!-- END GENERATED: config-reference -->
 
