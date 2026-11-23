@@ -2048,6 +2048,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 60 | `0060_req_sync.sql` |
 | 61 | `0061_ai_assistance.sql` |
 | 62 | `0062_project_logo.sql` |
+| 64 | `0064_solution_preamble.sql` |
 
 <!-- END GENERATED: migrations -->
 
@@ -2472,6 +2473,31 @@ Skriver genererade kodstubbar för testfall till en katalog (`--out`): en fil pe
 | `--script-dir` | `string` | directory of the stubs in the repository for --mark-script (default --out when it is relative) |
 | `--token` | `string` | API token (default $QTF_TOKEN) |
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+
+### `qtestframe prompt`
+
+Bygger en prompt för en AI-assistent på en server, via REST-API:t med en API-nyckel, och skriver ut den eller skriver en Markdown-fil per del till `--out`. `--kind` är en prompttyp från sidan AI-prompter (standard `architecture`; lösningsprompterna `architecture`, `design`, `implementation_plan` och `full_solution` börjar med projektets lösningsbeskrivning); `--scope` (en sökfråga), `--folder`, `--release` och `--variant` väljer kraven; `--compact`, `--split folder|size`, `--max-tokens` och `--formats` formar lösningsprompter. Ingenting skickas till någon AI-tjänst (se sidan Krav, AI-prompter i användarhandboken).
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--compact` | — | solution prompts: titles and acceptance criteria only |
+| `--folder` | `string` | only this requirement folder and its subfolders (id, name or path A/B) |
+| `--formats` | `string` | solution prompts: output formats besides Markdown, comma-separated (mermaid, c4, openapi, sql; default: the kind's, "none" for Markdown only) |
+| `--framework` | `string` | test framework or tools (implement, automate_tests, test_strategy) |
+| `--kind` | `string` | prompt kind: implement, review_requirements, design_tests, automate_tests, review_tests, test_strategy, architecture, design, implementation_plan, full_solution (default "architecture") |
+| `--lang` | `string` | language of the prompt: en or sv (default "en") |
+| `--max-tokens` | `int` | solution prompts: estimated tokens per part (1000–1000000; split by size defaults to 8000) |
+| `--notes` | `string` | additional instructions |
+| `--out` | `string` | directory to write the prompt to (one .md file per part); default: print to standard output |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--query` | `string` | same as --scope |
+| `--release` | `string` | only the requirements of this release (id, name or version) |
+| `--scope` | `string` | the requirements (or tests) to include, in the query language; "" for all |
+| `--split` | `string` | solution prompts: split into parts by folder (top-level folder) or size, or none (default "none") |
+| `--test-type` | `string` | test type (design_tests, test_strategy): unit, integration, system, acceptance, end_to_end, api, regression, smoke, performance, security, usability, accessibility |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+| `--variant` | `string` | only the requirements that apply to this variant (id or name) |
 
 ### `qtestframe version`
 

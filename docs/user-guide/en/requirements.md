@@ -422,14 +422,61 @@ In a project whose **project type** is **Software** (set it when you create the 
    | tests | **Automate test cases** | write automated tests in your **test framework**, one per test case, named after its key |
    | tests | **Review tests** | check quality and coverage against the requirements they verify |
    | tests | **Plan a test type** | a test plan for one test type: scope, tools, entry and exit criteria, tests to add |
+   | solution | **Architecture** | system context, containers and components, key decisions as ADR candidates, quality attribute scenarios for the non-functional requirements, risks |
+   | solution | **Design** | modules and components, data model from the requirements, API design, sequence flows of the key use cases, error handling, security design |
+   | solution | **Implementation plan** | milestones, epics and tasks traced to the requirement keys, ordered by the dependencies between the requirements, with a definition of done that includes the linked tests |
+   | solution | **Full solution** | architecture, design and implementation plan in one prompt, for capable assistants |
 
-2. Choose the items: **all**, those **matching a filter** (the [query language](search-and-filters.md)), or **selected** ones. You can also start from a requirement or test: **AI prompt** at the bottom of the editor, or **AI prompt** in the bulk toolbar for the selected rows.
+2. Choose the items: **all**, those **matching a filter** (the [query language](search-and-filters.md)), for requirements also those **in a folder** (with its subfolders), **in a release** or **for a variant**, or **selected** ones. You can also start from a requirement or test: **AI prompt** at the bottom of the editor, or **AI prompt** in the bulk toolbar for the selected rows.
 3. Choose the **test type** (unit, integration, system, acceptance, end-to-end, API, regression, smoke, performance, security, usability or accessibility), the **test framework or tools** (suggestions such as pytest, Playwright, JUnit 5 or Go testing; any text is fine), the **language of the prompt** (English or Swedish) and any **additional instructions**.
 4. Select **Build prompt**, then **Copy** or **Download (.md)**.
 
 A prompt contains the project's **technical context**, the items with their obligation, status, description, rationale, criteria with thresholds, relations, linked tests or requirements, steps with test data and expected results, prerequisites and, for automation, the current script, followed by instructions and the expected form of the answer. Describe the languages, frameworks, architecture and conventions of the project once under **Categories & settings → Project → Technical context**; every prompt includes it.
 
-Reading the items is enough to build a prompt. A prompt holds at most 200 items. Only paste prompts into AI services that your organisation allows for this information.
+Reading the items is enough to build a prompt. A prompt holds at most 200 items (a solution prompt 2000 requirements). Only paste prompts into AI services that your organisation allows for this information.
+
+### Solution prompts
+
+The **Solution** prompts (*Architecture*, *Design*, *Implementation plan*, *Full solution*) work on the whole project, or the folder, filter, release or variant you choose. Each one starts with the project's [solution preamble](#solution-preamble), then a **project summary** (scope, requirements per obligation, folders, releases, variants, linked risks and tests) and the requirements with their key, obligation, priority, status, folder, description, acceptance criteria, relations (*refines*, *depends on*, *conflicts with* …), the linked risks with their level and mitigation, the verifying tests and the standards and framework mappings they carry (CWE ids and standard clauses from the [catalogue](catalogue.md), MITRE ATT&CK, D3FEND and EMB3D ids). The implementation plan also gets the **dependency order** of the requirements from their *depends on* relations.
+
+The assistant is told to trace every design element to the requirement keys, to flag ambiguities and conflicts instead of inventing behaviour, to list its assumptions, to keep to the preamble and to finish with a **traceability table**. Under **Also ask for** choose the extra formats of the answer: **Mermaid diagrams**, **C4 diagrams**, an **OpenAPI skeleton** or **SQL DDL** (each kind starts with sensible ones).
+
+**Size.** The result shows an estimate of the prompt's size in **tokens** (characters / 4). For a large project:
+
+- **Compact** keeps only the titles, obligation, priority and acceptance criteria of the requirements.
+- **Split into parts** makes several sequential prompts: **one part per top-level folder**, or **parts by size** of at most the given number of tokens (folders larger than that are split further). Every part repeats the preamble and tells the assistant which part it is: the first asks it to keep names and numbers stable, the next ones to continue the same answer, and the last one to finish with the consolidated traceability table. Paste them one after the other into the same conversation.
+
+Choose a part to see it, then **Copy this part** or **Download this part (.md)**, or **Download all parts (.zip)**. The **language of the prompt** (English or Swedish) is independent of the language of the user interface.
+
+The command line builds the same prompts, for example in a repository's tooling:
+
+```sh
+qtestframe prompt --project SHOP --kind architecture --scope 'tag:payments' --split folder --out prompts/
+```
+
+It reads `QTF_URL`, `QTF_TOKEN` and `QTF_PROJECT` like `qtestframe stubs` ([CI/CD](ci-cd.md)); `--folder`, `--release`, `--variant`, `--compact`, `--max-tokens`, `--formats` and `--lang` match the options above, and without `--out` the prompt is printed.
+
+### Solution preamble
+
+The solution preamble describes the intended solution once, under **Categories & settings → Solution preamble** (software projects; editing needs `project.update`, *Manager*):
+
+| Group | Fields |
+|---|---|
+| Languages and environments | implementation languages and versions, frameworks and libraries, target environments (cloud, on-premises, containers, Kubernetes, operating systems, browsers, devices) |
+| Architecture | architecture style (monolith, modular monolith, microservices, serverless, event-driven, layered, hexagonal, other) and notes |
+| Technology stack | frontend, backend, messaging, caching |
+| Data and integrations | databases – engine, version, schema ownership, migrations tool, how the application connects – and integrations and external APIs |
+| Non-functional targets and security | performance, availability, scalability, security and compliance constraints |
+| Delivery and engineering | deployment and CI/CD, testing strategy, coding conventions, repository layout |
+| Scope and further context | out of scope, additional context |
+
+**Templates** prefill it for common stacks: *Go + PostgreSQL + Vue*, *Java Spring Boot + Oracle*, *.NET + SQL Server*, *Python FastAPI + PostgreSQL*, *Node.js/TypeScript + MongoDB* and *Embedded C + RTOS*. Choose one and **Use template**; the fields it fills in replace yours, the others stay. Adapt everything, then **Save**.
+
+**Descriptions only.** Never enter passwords, keys, tokens or connection strings with credentials – describe where they are kept instead (for example *credentials from the vault*). While you type, text that looks like a credential (a connection string with a password, a `password=` assignment, a private key, an access key or token) is flagged next to the field. You can still save, but it is replaced by `[REDACTED]` in every prompt; remove it. Placeholders such as `${DB_PASSWORD}` are fine.
+
+Every save is a new version: **History** shows who changed which fields and when. The preamble belongs to the project, so [project archives](how-it-works.md#backups-and-project-archives) (also when it is duplicated) and backups include it.
+
+The demo project has a filled-in preamble for its online banking portal (Go, PostgreSQL and Vue).
 
 ## Delete a requirement
 

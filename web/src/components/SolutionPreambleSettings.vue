@@ -13,6 +13,7 @@ import Textarea from 'primevue/textarea'
 import { useConfirm } from 'primevue/useconfirm'
 import { useI18n } from 'vue-i18n'
 import HistoryPanel from './HistoryPanel.vue'
+import HelpLink from '@/guide/HelpLink.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
 import {
@@ -151,7 +152,10 @@ function revert() {
         <h2 id="sp-h" class="plain-heading" style="margin-bottom: 4px"><i class="pi pi-compass" aria-hidden="true" /> {{ t('solution.title') }}</h2>
         <p class="small muted" style="margin: 0; max-width: 72ch">{{ t('solution.intro') }}</p>
       </div>
-      <RouterLink :to="{ name: 'prompts', params: { projectId }, query: { kind: 'architecture' } }" class="small"><i class="pi pi-sparkles" aria-hidden="true" /> {{ t('solution.openPrompts') }}</RouterLink>
+      <div class="row" style="gap: 12px">
+        <RouterLink :to="{ name: 'prompts', params: { projectId }, query: { kind: 'architecture' } }" class="small"><i class="pi pi-sparkles" aria-hidden="true" /> {{ t('solution.openPrompts') }}</RouterLink>
+        <HelpLink page="requirements" :anchor="{ en: 'solution-preamble', sv: 'lösningsbeskrivning' }" />
+      </div>
     </div>
 
     <Message v-if="loadError" severity="error" :closable="false" style="margin-top: 12px">{{ loadError }}</Message>

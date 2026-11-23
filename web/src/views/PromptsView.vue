@@ -307,7 +307,10 @@ const words = computed(() => shown.value.split(/\s+/).filter(Boolean).length)
       <h1>{{ t('prompts.title') }}</h1>
       <div class="sub">{{ t('prompts.intro') }}</div>
     </div>
-    <div class="actions"><HelpLink page="requirements" :anchor="{ en: 'ai-prompts-software-projects', sv: 'ai-prompter-mjukvaruprojekt' }" /></div>
+    <div class="actions">
+      <HelpLink v-if="solution" page="requirements" :anchor="{ en: 'solution-prompts', sv: 'lösningsprompter' }" />
+      <HelpLink v-else page="requirements" :anchor="{ en: 'ai-prompts-software-projects', sv: 'ai-prompter-mjukvaruprojekt' }" />
+    </div>
   </div>
 
   <Message v-if="!software" severity="info" :closable="false">
