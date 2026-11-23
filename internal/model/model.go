@@ -793,6 +793,10 @@ type TestRun struct {
 	BuildID   *string `json:"build_id"`
 	// CycleID: the test cycle that created the run (read-only).
 	CycleID *string `json:"cycle_id"`
+	// EnvironmentID: the environment item the run is executed in
+	// (Environment holds its name for compatibility); nil: none, or only
+	// the free-text Environment.
+	EnvironmentID *string `json:"environment_id"`
 	// Derived.
 	Summary     map[string]int `json:"summary,omitempty"`
 	CycleName   string         `json:"cycle_name,omitempty"`
@@ -854,6 +858,11 @@ type Execution struct {
 	// execution runs in (nil without configuration).
 	ConfigurationID   *string `json:"configuration_id"`
 	ConfigurationName string  `json:"configuration_name,omitempty"`
+	// The environment the result was obtained in and the versions of its
+	// components at that moment (set when a final result is recorded).
+	EnvironmentID         *string     `json:"environment_id"`
+	EnvironmentName       string      `json:"environment_name,omitempty"`
+	EnvironmentComponents []Component `json:"environment_components,omitempty"`
 	// Iterations of a data-driven test (GET /executions/{id}); IterationCount
 	// is set in lists.
 	Iterations     []Iteration `json:"iterations,omitempty"`
@@ -1172,6 +1181,8 @@ var WebhookEvents = []string{
 	"waiver.requested", "waiver.approved", "waiver.rejected", "waiver.revoked",
 	"change_request.submitted", "change_request.review", "change_request.approved", "change_request.rejected", "change_request.deferred",
 	"change_request.implemented", "change_request.closed",
+	"environment.status_changed", "environment.booking_requested", "environment.booking_approved", "environment.booking_rejected",
+	"testdata.refresh_requested", "testdata.refresh_resolved",
 }
 
 // Webhook posts events of a project to a URL, signed with HMAC-SHA256.

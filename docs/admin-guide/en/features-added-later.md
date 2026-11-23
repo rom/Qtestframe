@@ -76,3 +76,11 @@ http:
 ```
 
 Each open tab is one HTTP connection; over HTTP/1.1 browsers allow six per site, so with many tabs open serve the site over HTTP/2 (one connection for all streams).
+
+## Test environments and test data
+
+Test environments, their bookings and test data sets (migration 0057) need no configuration. The new permission `environment.manage` (test leads, managers and administrators by default; the migration adds it to stored test lead and manager roles that hold `run.write`) creates and changes environments, approves bookings and reveals an environment's secret; for an environment shared by the organisation it is taken from the organisation roles, not from project roles. Booking needs `run.execute` in the project the booking is for; test data sets use `test.read` and `test.write`.
+
+An environment's optional secret is encrypted like the other stored secrets (`environments.secret`, re-encrypted by `qtestframe secrets rotate`), write-only in the API, left out of project archives, and every reveal is audited as `environment.secret_reveal`. Prefer the credentials reference (a vault path).
+
+The minute job checks the environments that have a health check URL (at most 100 per minute, 8 at a time, 10 s timeout each) with the server's outgoing HTTP client: the URLs are entered by environment managers and the server must be able to reach them. A failing check marks an available environment broken and a passing one makes it available again; status changes are audited as `environment.health`. The tables `environments`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage` and `test_data_refresh_requests` are part of the backup; a project archive holds the project's own environments with their bookings and its test data sets (shared environments stay with the organisation). The migration turns the distinct free-text environments of each project's runs and cycles into environment items and links the runs, cycles and their final results to them. New webhook and chat events: `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected`, `testdata.refresh_requested`, `testdata.refresh_resolved`.

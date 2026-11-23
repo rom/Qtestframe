@@ -36,6 +36,8 @@ type TestCycle struct {
 	VariantID   *string `json:"variant_id"`
 	BuildID     *string `json:"build_id"`
 	Environment string  `json:"environment"`
+	// EnvironmentID: the environment item (its runs get it too).
+	EnvironmentID *string `json:"environment_id"`
 	// ConfigurationIDs: the configurations tests are planned in (each test
 	// once per configuration); empty: without configurations.
 	ConfigurationIDs []string `json:"configuration_ids"`

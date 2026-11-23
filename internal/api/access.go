@@ -51,7 +51,8 @@ var projectScoped = map[string]bool{
 	string(rbac.ChangeCreate): true, string(rbac.ChangeApprove): true,
 	string(rbac.TestRead): true, string(rbac.TestWrite): true, string(rbac.TestReview): true,
 	string(rbac.RunRead): true, string(rbac.RunWrite): true, string(rbac.RunExecute): true, string(rbac.CyclePlan): true,
-	string(rbac.ScriptExecute): true, string(rbac.Export): true, string(rbac.CommentCreate): true,
+	string(rbac.EnvironmentManage): true,
+	string(rbac.ScriptExecute):     true, string(rbac.Export): true, string(rbac.CommentCreate): true,
 }
 
 // adminUser reports whether the caller is an organisation administrator
@@ -345,6 +346,11 @@ var resourceProjects = map[string]string{
 	"reviews":               `SELECT project_id FROM review_requests WHERE id = ? AND tenant_id = ?`,
 	"files":                 `SELECT COALESCE(project_id, '') FROM files WHERE id = ? AND tenant_id = ?`,
 	"comments":              `SELECT COALESCE(project_id, '') FROM comments WHERE id = ? AND tenant_id = ?`,
+	// shared environments (and their bookings) belong to no project
+	"environments":               `SELECT COALESCE(project_id, '') FROM environments WHERE id = ? AND tenant_id = ?`,
+	"bookings":                   `SELECT COALESCE(e.project_id, '') FROM environment_bookings b JOIN environments e ON e.id = b.environment_id WHERE b.id = ? AND b.tenant_id = ?`,
+	"test-data-sets":             `SELECT project_id FROM test_data_sets WHERE id = ? AND tenant_id = ?`,
+	"test-data-refresh-requests": `SELECT d.project_id FROM test_data_refresh_requests q JOIN test_data_sets d ON d.id = q.data_set_id WHERE q.id = ? AND q.tenant_id = ?`,
 }
 
 // nonProjectResources are {id} resources that belong to no project.

@@ -8,7 +8,7 @@ export const DEFAULT_MAX_UPLOAD_MB = 25
 export const MB = 1024 * 1024
 
 /** Entities that take attachments, with their API collection. */
-export const ATTACHABLE = { requirement: 'requirements', test: 'tests', run: 'runs', execution: 'executions', step: 'step-results', exploratory_session: 'exploratory-sessions' } as const
+export const ATTACHABLE = { requirement: 'requirements', test: 'tests', run: 'runs', execution: 'executions', step: 'step-results', exploratory_session: 'exploratory-sessions', test_data_set: 'test-data-sets' } as const
 export type AttachableType = keyof typeof ATTACHABLE
 
 /** Archive kinds a user can filter by. */

@@ -23,6 +23,9 @@ import Panel from 'primevue/panel'
 import Tag from 'primevue/tag'
 import { useReleaseOptions } from '@/composables/releases'
 import { useConfigurations } from '@/composables/configurations'
+import { useEnvironments } from '@/composables/environments'
+import EnvironmentField from '@/components/EnvironmentField.vue'
+import type { BookingInput } from '@/lib/environments'
 import { summaryByConfiguration } from '@/lib/configurations'
 import { runReleaseName } from '@/lib/releases'
 import Popover from 'primevue/popover'
@@ -147,11 +150,15 @@ async function reload() {
 }
 const rel = useReleaseOptions(() => proj.pid)
 const cfg = useConfigurations(() => proj.pid)
+const envs = useEnvironments(() => proj.pid)
+const editEnv = ref<string | null>(null)
+const editBooking = ref<BookingInput | null>(null)
 onMounted(() => {
   reload()
   if (auth.can(P.projectRead)) {
     rel.load()
     cfg.load()
+    envs.load()
   }
 })
 
@@ -194,6 +201,8 @@ function openEdit() {
   if (!run.value) return
   const r = run.value
   editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build, release_id: r.release_id ?? '', configuration_ids: (r.configurations ?? []).map((c) => c.id), custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues }
+  editEnv.value = r.environment_id ?? null
+  editBooking.value = null
   editError.value = ''
   editDialog.value = true
 }
@@ -204,7 +213,13 @@ async function saveEdit() {
   const changed = before.join(',') !== configuration_ids.join(',')
   const oldName = run.value?.name
   try {
-    run.value = await api.patch<TestRun>(`/runs/${props.runId}`, changed ? editForm.value : fields)
+    const body: Record<string, unknown> = { ...(changed ? editForm.value : fields) }
+    if (envs.environments.value.length) {
+      delete body.environment
+      body.environment_id = editEnv.value ?? ''
+    }
+    run.value = await api.patch<TestRun>(`/runs/${props.runId}`, body)
+    if (editEnv.value && editBooking.value) await api.post(`/environments/${editEnv.value}/bookings`, { ...editBooking.value, project_id: proj.pid, run_id: props.runId })
     void rememberValues(prefs.prefs, proj.pid, savedEntries({ [RUN_NAME]: fields.name }, { [RUN_NAME]: oldName }))
     editDialog.value = false
     notify.ok(t('run.updated'))
@@ -440,7 +455,11 @@ async function copySnippet(text: string = ciSnippet.value) {
         </div>
         <h1>{{ run.name }}</h1>
         <div class="sub row">
-          <span v-if="run.environment"><i class="pi pi-server" aria-hidden="true" /><span class="sr-only">{{ t('common.environment') }}:</span> {{ run.environment }}</span>
+          <span v-if="run.environment"
+            ><i class="pi pi-server" aria-hidden="true" /><span class="sr-only">{{ t('common.environment') }}:</span>
+            <RouterLink v-if="run.environment_id" :to="{ name: 'environment', params: { projectId: proj.pid, environmentId: run.environment_id } }">{{ run.environment }}</RouterLink
+            ><template v-else>{{ run.environment }}</template></span
+          >
           <RouterLink v-if="runReleaseName(run, rel.names.value)" :to="{ name: 'releases', params: { projectId: proj.pid }, query: { r: run.release_id } }">
             <Tag :value="runReleaseName(run, rel.names.value)" icon="pi pi-box" severity="secondary" :aria-label="t('releasesView.runRelease', { name: runReleaseName(run, rel.names.value) })" />
           </RouterLink>
@@ -681,7 +700,10 @@ async function copySnippet(text: string = ciSnippet.value) {
       <Message v-if="editError" severity="error" :closable="false" style="margin-bottom: 10px">{{ editError }}</Message>
       <div class="form-grid">
         <div v-field class="field full"><label>{{ t('common.name') }}</label><SuggestInput v-model="editForm.name" field="run.name" :project-id="proj.pid" /></div>
-        <div v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
+        <div v-if="envs.environments.value.length" class="field full">
+          <EnvironmentField v-model="editEnv" v-model:booking="editBooking" :environments="envs.environments.value" id-prefix="run-edit" :can-book="auth.can(P.runExecute)" />
+        </div>
+        <div v-else v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
         <div v-field class="field"><label>{{ t('common.build') }}</label><InputText v-model="editForm.build" /></div>
         <div v-if="rel.releases.value.length" v-field class="field full">
           <label for="run-edit-release">{{ t('releasesView.release') }}</label>

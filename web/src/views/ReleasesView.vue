@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { componentsText, type ReleaseEnvironment } from '@/lib/environments'
 // Releases: scope (requirements), runs, exit criteria and go / no-go.
 import ItemRef from '../components/ItemRef.vue'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -382,6 +383,20 @@ async function addByQuery() {
 
 // ---------- runs ----------
 const releaseRuns = computed(() => (detail.value ? runsOfRelease(runs.value, detail.value.id) : []))
+// the environments and component versions the release's results were recorded in
+const testedEnvs = ref<ReleaseEnvironment[]>([])
+watch(
+  () => [detail.value?.id, tab.value] as const,
+  async ([id, tb]) => {
+    if (!id || tb !== 'runs') return
+    try {
+      testedEnvs.value = asItems(await api.get<{ items: ReleaseEnvironment[] }>(`/releases/${id}/environments`))
+    } catch {
+      testedEnvs.value = []
+    }
+  },
+  { immediate: true },
+)
 
 // ---------- exit criteria ----------
 const criteria = ref<ExitCriterion[]>([])
@@ -775,6 +790,22 @@ function itemNote(c: CriterionResult, note?: string) {
           <Column :header="t('runs.progress')" style="min-width: 200px"><template #body="{ data }"><SummaryBar :summary="data.summary" show-text /></template></Column>
           <Column field="created_at" :header="t('common.created')" sortable style="width: 150px"><template #body="{ data }"><span class="small muted">{{ formatDateTime(data.created_at) }}</span></template></Column>
           <template #empty><div class="empty">{{ t('releasesView.noRuns') }}</div></template>
+        </DataTable>
+        <h3 class="plain-heading small" style="margin-top: 14px"><i class="pi pi-server" aria-hidden="true" /> {{ t('environments.testedHeader') }} <HelpLink page="test-environments" /></h3>
+        <p class="small muted" style="margin: 0 0 6px">{{ t('environments.testedHelp') }}</p>
+        <DataTable :value="testedEnvs" size="small" :aria-label="t('environments.testedHeader')">
+          <Column field="name" :header="t('environments.field')">
+            <template #body="{ data }">
+              <RouterLink v-if="data.environment_id" :to="{ name: 'environment', params: { projectId: proj.pid, environmentId: data.environment_id } }">{{ data.name }}</RouterLink>
+              <span v-else>{{ data.name }}</span>
+            </template>
+          </Column>
+          <Column :header="t('environments.components')"><template #body="{ data }"><span class="small mono">{{ componentsText(data.components) }}</span></template></Column>
+          <Column field="executions" :header="t('environments.executions')" style="width: 90px" />
+          <Column field="passed" :header="t('environments.passed')" style="width: 90px" />
+          <Column field="failed" :header="t('environments.failed')" style="width: 90px" />
+          <Column field="last_at" :header="t('environments.lastResult')" style="width: 160px"><template #body="{ data }"><span class="small muted">{{ formatDateTime(data.last_at) }}</span></template></Column>
+          <template #empty><div class="empty">{{ t('environments.testedNone') }}</div></template>
         </DataTable>
       </div>
 

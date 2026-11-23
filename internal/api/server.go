@@ -350,6 +350,8 @@ func (s *Server) routes() {
 	s.routesDependencies(h)
 	s.routesReleases(h)
 	s.routesCycles(h)
+	s.routesEnvironments(h)
+	s.routesTestData(h)
 	s.routesMetrics(h)
 	s.routesDashboards(h)
 	s.routesDefects(h)

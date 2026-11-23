@@ -362,6 +362,7 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 		{"chat_channels", "id", "secret", "chat_channels.secret"},
 		{"req_sync_configs", "id", "webhook_secret", "req_sync_configs.webhook_secret"},
 		{"audit_keys", "id", "secret", "audit_keys.secret"},
+		{"environments", "id", "secret", "environments.secret"},
 	} {
 		pairs, err := idValues(ctx, c, `SELECT `+t.id+`, `+t.col+` FROM `+t.table)
 		if err != nil {
@@ -383,6 +384,8 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 				ad = adReqSync(p[0])
 			case "audit_keys":
 				ad = adAuditKey(p[0])
+			case "environments":
+				ad = adEnvSecret(p[0])
 			}
 			v, err := apply(t.field, p[1], ad)
 			if err != nil {

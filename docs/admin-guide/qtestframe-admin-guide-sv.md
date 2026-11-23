@@ -875,6 +875,7 @@ Det här är de inbyggda rollernas behörigheter tills en organisation ändrar d
 | `run.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `cycle.plan` |  |  |  |  | ✔ | ✔ | ✔ |
+| `environment.manage` |  |  |  |  | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  |  | ✔ | ✔ | ✔ |
 | `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
@@ -944,7 +945,7 @@ Ett projekt är antingen **organisationsgemensamt** (standard: alla medlemmar se
 | övriga medlemmar, organisationsgemensamt projekt | organisationsrollerna |
 | övriga medlemmar, begränsat projekt | inga: projektet svarar `404` |
 
-Bara **projektbehörigheter** kommer från projektrollerna (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Behörigheter på organisationsnivå – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – kommer alltid från organisationsrollerna, och en API-nyckel begränsas av sina egna roller även i ett projekt.
+Bara **projektbehörigheter** kommer från projektrollerna (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`, `environment.manage`, `script.execute`, `export`, `comment.create`). Behörigheter på organisationsnivå – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – kommer alltid från organisationsrollerna, och en API-nyckel begränsas av sina egna roller även i ett projekt.
 
 Vad en begränsning **inte** döljer, så planera för det:
 
@@ -1501,6 +1502,8 @@ Projekt kan skicka signerade händelser till andra system. Användare med `proje
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
 | change_request | `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented`, `change_request.closed` |
+| environment | `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected` |
+| testdata | `testdata.refresh_requested`, `testdata.refresh_resolved` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -1529,7 +1532,7 @@ Projekt kan skicka sina händelser till chattkanaler: Slack, Microsoft Teams, Ma
 
 | Grupp | Händelser |
 |---|---|
-| Testkörningar | `run.created` (Testkörning skapad), `run.updated` (Testkörning ändrad), `run.completed` (Testkörning avslutad), `execution.updated` (Testresultat registrerat) |
+| Testkörningar | `run.created` (Testkörning skapad), `run.updated` (Testkörning ändrad), `run.completed` (Testkörning avslutad), `execution.updated` (Testresultat registrerat), `environment.status_changed` (Miljöns status ändrad), `environment.booking_requested` (Miljöbokning begärd), `environment.booking_approved` (Miljöbokning godkänd), `environment.booking_rejected` (Miljöbokning avslagen), `testdata.refresh_requested` (Uppdatering av testdata begärd), `testdata.refresh_resolved` (Begäran om uppdatering av testdata stängd) |
 | Defekter | `defect.created` (Defekt rapporterad), `defect.updated` (Defekt ändrad), `defect.status` (Defektens status ändrad), `defect.assigned` (Defekt tilldelad), `defect.regression` (Regression upptäckt) |
 | Krav och tester | `requirement.created` (Krav skapat), `requirement.updated` (Krav ändrat), `test.created` (Test skapat), `test.updated` (Test ändrat), `comment.created` (Ny kommentar), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baslinje signerad) |
 | Granskningar | `review.requested` (Granskning begärd), `review.completed` (Granskning klar) |
@@ -1901,7 +1904,7 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**I en säkerhetskopia** (109 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`.
+**I en säkerhetskopia** (115 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
 
 **Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
@@ -2031,6 +2034,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 53 | `0053_ci_integration.sql` |
 | 54 | `0054_change_requests.sql` |
 | 55 | `0055_audit_chain_erecords.sql` |
+| 57 | `0057_environments.sql` |
 | 59 | `0059_dashboards.sql` |
 | 60 | `0060_req_sync.sql` |
 | 61 | `0061_ai_assistance.sql` |
@@ -2574,3 +2578,11 @@ http:
 ```
 
 Varje öppen flik är en HTTP-anslutning; över HTTP/1.1 tillåter webbläsare sex per webbplats, så om många flikar är öppna bör webbplatsen använda HTTP/2 (en anslutning för alla strömmar).
+
+## Testmiljöer och testdata
+
+Testmiljöer, deras bokningar och testdatamängder (migrering 0057) behöver ingen konfiguration. Den nya behörigheten `environment.manage` (testledare, förvaltare och administratörer som standard; migreringen lägger till den i sparade testledar- och förvaltarroller som har `run.write`) skapar och ändrar miljöer, godkänner bokningar och visar en miljös hemlighet; för en miljö som delas av organisationen hämtas den från organisationsrollerna, inte från projektroller. Att boka kräver `run.execute` i projektet bokningen gäller; testdatamängder använder `test.read` och `test.write`.
+
+En miljös valfria hemlighet krypteras som de andra sparade hemligheterna (`environments.secret`, krypteras om av `qtestframe secrets rotate`), är endast skrivbar i API:t, utelämnas ur projektarkiv, och varje visning loggas som `environment.secret_reveal`. Använd hellre hänvisningen till inloggningsuppgifterna (en sökväg i ett valv).
+
+Minutjobbet kontrollerar miljöerna som har en adress för hälsokontroll (högst 100 per minut, 8 åt gången, 10 s tidsgräns var) med serverns utgående HTTP-klient: adresserna anges av miljöförvaltare och servern måste kunna nå dem. En misslyckad kontroll markerar en tillgänglig miljö som trasig och en lyckad gör den tillgänglig igen; statusbyten loggas som `environment.health`. Tabellerna `environments`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage` och `test_data_refresh_requests` ingår i säkerhetskopian; ett projektarkiv innehåller projektets egna miljöer med deras bokningar och dess testdatamängder (delade miljöer stannar hos organisationen). Migreringen gör om de olika fritextmiljöerna i varje projekts körningar och cykler till miljöposter och kopplar körningarna, cyklerna och deras slutliga resultat till dem. Nya webhook- och chatthändelser: `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected`, `testdata.refresh_requested`, `testdata.refresh_resolved`.

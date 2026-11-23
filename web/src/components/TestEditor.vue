@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TestDataSources from './TestDataSources.vue'
 import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
@@ -788,6 +789,7 @@ const scriptPlaceholder = computed(() => {
       :can-write="canWrite"
       :texts="[form.description, form.preconditions, form.expected_result, ...form.steps.flatMap((s) => [s.action, s.expected, s.data])]"
     />
+    <TestDataSources v-if="itemId" :project-id="projectId" :test-id="itemId" />
 
     <div v-field class="field">
       <label>{{ t('tests.overallExpected') }}</label>

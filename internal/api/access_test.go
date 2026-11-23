@@ -74,6 +74,10 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	a.m("POST", "/api/v1/requirements/"+r1+"/verification-records", map[string]any{"method": "inspection", "result": "pass"}, 201)
 	a.m("POST", pp+"/elements", map[string]any{"name": "Secret unit"}, 201)
 	a.m("POST", pp+"/exploratory-sessions", map[string]any{"title": "Secret session"}, 201)
+	env := a.m("POST", pp+"/environments", map[string]any{"name": "Secret env"}, 201)["id"].(string)
+	a.m("POST", "/api/v1/environments/"+env+"/bookings", map[string]any{"starts_at": "2030-01-01T08:00:00Z", "ends_at": "2030-01-01T12:00:00Z", "purpose": "Secret booking"}, 201)
+	ds := a.m("POST", pp+"/test-data-sets", map[string]any{"name": "Secret data", "parameters": []string{"user"}, "data_rows": []any{map[string]any{"values": map[string]string{"user": "a"}}}}, 201)["id"].(string)
+	a.m("POST", "/api/v1/test-data-sets/"+ds+"/refresh-requests", map[string]any{"reason": "Secret refresh"}, 201)
 	a.m("PUT", pp+"/access", map[string]any{"access": "restricted"}, 200)
 	// an id of each resource, read from the database
 	q := map[string]string{
@@ -99,6 +103,9 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"variants":             `SELECT id FROM variants WHERE project_id = ?`, "builds": `SELECT id FROM builds WHERE project_id = ?`,
 		"custom-fields": `SELECT id FROM custom_fields WHERE project_id = ?`, "templates": `SELECT id FROM item_templates WHERE project_id = ?`,
 		"cycles": `SELECT id FROM test_cycles WHERE project_id = ?`, "cycle-schedules": `SELECT id FROM test_cycle_schedules WHERE project_id = ?`,
+		"environments": `SELECT id FROM environments WHERE project_id = ?`, "bookings": `SELECT id FROM environment_bookings WHERE project_id = ?`,
+		"test-data-sets":             `SELECT id FROM test_data_sets WHERE project_id = ?`,
+		"test-data-refresh-requests": `SELECT q.id FROM test_data_refresh_requests q JOIN test_data_sets d ON d.id = q.data_set_id WHERE d.project_id = ?`,
 	}
 	for res, sql := range q {
 		var id string
@@ -151,7 +158,7 @@ func TestProjectAccessRouteWalk(t *testing.T) {
 		default:
 			continue
 		}
-		for _, x := range []string{"{file}", "{mid}"} {
+		for _, x := range []string{"{file}", "{mid}", "{link}"} {
 			url = strings.ReplaceAll(url, x, "x")
 		}
 		for _, c := range []*client{m, bt} {

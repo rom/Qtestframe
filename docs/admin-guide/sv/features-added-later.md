@@ -76,3 +76,11 @@ http:
 ```
 
 Varje öppen flik är en HTTP-anslutning; över HTTP/1.1 tillåter webbläsare sex per webbplats, så om många flikar är öppna bör webbplatsen använda HTTP/2 (en anslutning för alla strömmar).
+
+## Testmiljöer och testdata
+
+Testmiljöer, deras bokningar och testdatamängder (migrering 0057) behöver ingen konfiguration. Den nya behörigheten `environment.manage` (testledare, förvaltare och administratörer som standard; migreringen lägger till den i sparade testledar- och förvaltarroller som har `run.write`) skapar och ändrar miljöer, godkänner bokningar och visar en miljös hemlighet; för en miljö som delas av organisationen hämtas den från organisationsrollerna, inte från projektroller. Att boka kräver `run.execute` i projektet bokningen gäller; testdatamängder använder `test.read` och `test.write`.
+
+En miljös valfria hemlighet krypteras som de andra sparade hemligheterna (`environments.secret`, krypteras om av `qtestframe secrets rotate`), är endast skrivbar i API:t, utelämnas ur projektarkiv, och varje visning loggas som `environment.secret_reveal`. Använd hellre hänvisningen till inloggningsuppgifterna (en sökväg i ett valv).
+
+Minutjobbet kontrollerar miljöerna som har en adress för hälsokontroll (högst 100 per minut, 8 åt gången, 10 s tidsgräns var) med serverns utgående HTTP-klient: adresserna anges av miljöförvaltare och servern måste kunna nå dem. En misslyckad kontroll markerar en tillgänglig miljö som trasig och en lyckad gör den tillgänglig igen; statusbyten loggas som `environment.health`. Tabellerna `environments`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage` och `test_data_refresh_requests` ingår i säkerhetskopian; ett projektarkiv innehåller projektets egna miljöer med deras bokningar och dess testdatamängder (delade miljöer stannar hos organisationen). Migreringen gör om de olika fritextmiljöerna i varje projekts körningar och cykler till miljöposter och kopplar körningarna, cyklerna och deras slutliga resultat till dem. Nya webhook- och chatthändelser: `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected`, `testdata.refresh_requested`, `testdata.refresh_resolved`.

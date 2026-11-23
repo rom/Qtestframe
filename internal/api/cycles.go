@@ -65,6 +65,9 @@ type cycleReq struct {
 	// cycle gets (and its release, variant, build and configurations when
 	// not given).
 	CopyFrom string `json:"copy_from"`
+	// EnvironmentID (id or name, "" none) and Booking: the environment
+	// item of the cycle (its runs get it) and a booking of it.
+	itemEnvReq
 }
 
 func optID(v *string) *string {
@@ -246,6 +249,9 @@ func (s *Server) handleCreateCycle(w http.ResponseWriter, r *http.Request, p *Pr
 		}
 		cy.Goal, cy.Description, cy.ReleaseID, cy.VariantID, cy.BuildID = src.Goal, src.Description, src.ReleaseID, src.VariantID, src.BuildID
 		cy.Environment, cy.ConfigurationIDs = src.Environment, src.ConfigurationIDs
+		if in.EnvironmentID == nil && src.EnvironmentID != nil {
+			in.EnvironmentID = src.EnvironmentID
+		}
 	}
 	if err := s.applyCycleReq(ctx, p.TenantID(), cy, &in); err != nil {
 		s.fail(w, r, err)
@@ -264,13 +270,16 @@ func (s *Server) handleCreateCycle(w http.ResponseWriter, r *http.Request, p *Pr
 			return err
 		}
 		if src != nil {
-			_, err := s.Store.CopyCyclePlan(ctx, p.TenantID(), src.ID, cy.ID, p.User.Email)
-			return err
+			if _, err := s.Store.CopyCyclePlan(ctx, p.TenantID(), src.ID, cy.ID, p.User.Email); err != nil {
+				return err
+			}
 		}
-		return nil
+		return s.applyItemEnvironment(r.WithContext(ctx), p, "cycle", cy.ID, pr.ID, in.itemEnvReq)
 	})
 	if err != nil {
-		s.fail(w, r, err)
+		if !s.writeBookingConflict(w, r, p, err) {
+			s.fail(w, r, err)
+		}
 		return
 	}
 	detail := cy.Name
@@ -325,6 +334,17 @@ func (s *Server) handleUpdateCycle(w http.ResponseWriter, r *http.Request, p *Pr
 	if err := s.Store.UpdateCycle(ctx, p.TenantID(), cy); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	if in.EnvironmentID != nil || in.Booking != nil {
+		if err := s.applyItemEnvironment(r, p, "cycle", cy.ID, cy.ProjectID, in.itemEnvReq); err != nil {
+			if !s.writeBookingConflict(w, r, p, err) {
+				s.fail(w, r, err)
+			}
+			return
+		}
+		if c2, err := s.Store.GetCycle(ctx, p.TenantID(), cy.ID); err == nil {
+			cy.EnvironmentID, cy.Environment = c2.EnvironmentID, c2.Environment
+		}
 	}
 	s.audit(ctx, p, "cycle.update", "cycle", cy.ID, cy.Name+" "+cy.Status)
 	if cy.Status == model.CycleActive && before == model.CyclePlanned {
@@ -955,6 +975,12 @@ func (s *Server) cycleFromSchedule(ctx context.Context, p *Principal, x *model.C
 		if tpl != nil {
 			if _, err := s.Store.CopyCyclePlan(ctx, p.TenantID(), tpl.ID, cy.ID, p.User.Email); err != nil {
 				return err
+			}
+			if tpl.EnvironmentID != nil {
+				// the template's environment, unless it can no longer be used
+				if err := s.Store.Savepoint(ctx, func() error { return s.Store.SetItemEnvironment(ctx, p.TenantID(), "cycle", cy.ID, tpl.EnvironmentID) }); err == nil {
+					cy.EnvironmentID = tpl.EnvironmentID
+				}
 			}
 		}
 		if len(ids) > 0 {

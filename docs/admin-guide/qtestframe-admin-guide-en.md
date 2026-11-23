@@ -875,6 +875,7 @@ These are the permissions of the built-in roles until an organisation changes th
 | `run.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `cycle.plan` |  |  |  |  | ✔ | ✔ | ✔ |
+| `environment.manage` |  |  |  |  | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  |  | ✔ | ✔ | ✔ |
 | `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
@@ -944,7 +945,7 @@ A project is either **organisation-wide** (the default: every member sees it wit
 | any other member, organisation-wide project | the organisation roles |
 | any other member, restricted project | none: the project answers `404` |
 
-Only **project-scoped** permissions come from the project roles (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation roles, and an API token is capped by its own roles inside a project as well.
+Only **project-scoped** permissions come from the project roles (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`, `environment.manage`, `script.execute`, `export`, `comment.create`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation roles, and an API token is capped by its own roles inside a project as well.
 
 What restriction does **not** hide, so plan accordingly:
 
@@ -1501,6 +1502,8 @@ Projects can send signed events to other systems. Users with `project.update` se
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
 | change_request | `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented`, `change_request.closed` |
+| environment | `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected` |
+| testdata | `testdata.refresh_requested`, `testdata.refresh_resolved` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -1529,7 +1532,7 @@ Projects can post their events to chat channels: Slack, Microsoft Teams, Matterm
 
 | Group | Events |
 |---|---|
-| Test runs | `run.created` (Test run created), `run.updated` (Test run updated), `run.completed` (Test run completed), `execution.updated` (Test result recorded) |
+| Test runs | `run.created` (Test run created), `run.updated` (Test run updated), `run.completed` (Test run completed), `execution.updated` (Test result recorded), `environment.status_changed` (Environment status changed), `environment.booking_requested` (Environment booking requested), `environment.booking_approved` (Environment booking approved), `environment.booking_rejected` (Environment booking rejected), `testdata.refresh_requested` (Test data refresh requested), `testdata.refresh_resolved` (Test data refresh request closed) |
 | Defects | `defect.created` (Defect reported), `defect.updated` (Defect updated), `defect.status` (Defect status changed), `defect.assigned` (Defect assigned), `defect.regression` (Regression detected) |
 | Requirements and tests | `requirement.created` (Requirement created), `requirement.updated` (Requirement updated), `test.created` (Test created), `test.updated` (Test updated), `comment.created` (New comment), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baseline signed) |
 | Reviews | `review.requested` (Review requested), `review.completed` (Review completed) |
@@ -1901,7 +1904,7 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**In a backup** (109 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`.
+**In a backup** (115 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
 
 **Not in a backup:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
@@ -2031,6 +2034,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 53 | `0053_ci_integration.sql` |
 | 54 | `0054_change_requests.sql` |
 | 55 | `0055_audit_chain_erecords.sql` |
+| 57 | `0057_environments.sql` |
 | 59 | `0059_dashboards.sql` |
 | 60 | `0060_req_sync.sql` |
 | 61 | `0061_ai_assistance.sql` |
@@ -2574,3 +2578,11 @@ http:
 ```
 
 Each open tab is one HTTP connection; over HTTP/1.1 browsers allow six per site, so with many tabs open serve the site over HTTP/2 (one connection for all streams).
+
+## Test environments and test data
+
+Test environments, their bookings and test data sets (migration 0057) need no configuration. The new permission `environment.manage` (test leads, managers and administrators by default; the migration adds it to stored test lead and manager roles that hold `run.write`) creates and changes environments, approves bookings and reveals an environment's secret; for an environment shared by the organisation it is taken from the organisation roles, not from project roles. Booking needs `run.execute` in the project the booking is for; test data sets use `test.read` and `test.write`.
+
+An environment's optional secret is encrypted like the other stored secrets (`environments.secret`, re-encrypted by `qtestframe secrets rotate`), write-only in the API, left out of project archives, and every reveal is audited as `environment.secret_reveal`. Prefer the credentials reference (a vault path).
+
+The minute job checks the environments that have a health check URL (at most 100 per minute, 8 at a time, 10 s timeout each) with the server's outgoing HTTP client: the URLs are entered by environment managers and the server must be able to reach them. A failing check marks an available environment broken and a passing one makes it available again; status changes are audited as `environment.health`. The tables `environments`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage` and `test_data_refresh_requests` are part of the backup; a project archive holds the project's own environments with their bookings and its test data sets (shared environments stay with the organisation). The migration turns the distinct free-text environments of each project's runs and cycles into environment items and links the runs, cycles and their final results to them. New webhook and chat events: `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected`, `testdata.refresh_requested`, `testdata.refresh_resolved`.

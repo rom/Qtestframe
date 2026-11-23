@@ -50,6 +50,8 @@ Projects can send signed events to other systems. Users with `project.update` se
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
 | change_request | `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented`, `change_request.closed` |
+| environment | `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected` |
+| testdata | `testdata.refresh_requested`, `testdata.refresh_resolved` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -78,7 +80,7 @@ Projects can post their events to chat channels: Slack, Microsoft Teams, Matterm
 
 | Group | Events |
 |---|---|
-| Test runs | `run.created` (Test run created), `run.updated` (Test run updated), `run.completed` (Test run completed), `execution.updated` (Test result recorded) |
+| Test runs | `run.created` (Test run created), `run.updated` (Test run updated), `run.completed` (Test run completed), `execution.updated` (Test result recorded), `environment.status_changed` (Environment status changed), `environment.booking_requested` (Environment booking requested), `environment.booking_approved` (Environment booking approved), `environment.booking_rejected` (Environment booking rejected), `testdata.refresh_requested` (Test data refresh requested), `testdata.refresh_resolved` (Test data refresh request closed) |
 | Defects | `defect.created` (Defect reported), `defect.updated` (Defect updated), `defect.status` (Defect status changed), `defect.assigned` (Defect assigned), `defect.regression` (Regression detected) |
 | Requirements and tests | `requirement.created` (Requirement created), `requirement.updated` (Requirement updated), `test.created` (Test created), `test.updated` (Test updated), `comment.created` (New comment), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baseline signed) |
 | Reviews | `review.requested` (Review requested), `review.completed` (Review completed) |

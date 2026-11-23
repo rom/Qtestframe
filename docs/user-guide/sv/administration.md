@@ -30,7 +30,7 @@ Varje organisation börjar med sju inbyggda roller. Som standard kan varje roll 
 | **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet; skriva i [diskussioner](discussions.md) (*comment.create*, som alla roller nedan utom Läsare) |
 | **Ämnesexpert** | delta i att skriva krav: skapa och redigera krav med kriterier, motivering, källor, relationer, länkar och bilagor (*requirement.write*); granska krav (*requirement.review*) och diskutera dem; läsa testfall, körningar, defekter och risker. Inga testfall, körningar, cykler, undantag, inställningar eller medlemmar |
 | **Testare** | skriva och länka testfall, hantera testmappar och testfallskategorier, skapa och redigera körningar, registrera utfall, importera utfall från CI, ladda upp bilagor till testfall, körningar och exekveringar, skapa egna API-nycklar |
-| **Testledare** | planera [testcykler](test-cycles.md) (*cycle.plan*), markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
+| **Testledare** | planera [testcykler](test-cycles.md) (*cycle.plan*), förvalta [testmiljöer](test-environments.md) och godkänna deras bokningar (*environment.manage*), markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
 | **Ansvarig** | godkänna och avvisa krav (*requirement.review*), skriva krav och kravmappar, skapa och redigera projekt, alla kategorier och [spårbarhetsreglerna](traceability-and-coverage.md#spårbarhetsregler), skapa baslinjer |
 | **Administratör** | allt: ta bort projekt, hantera medlemmar och roller, byta namn på organisationen, återställa medlemmars lösenord, ta bort alla kommentarer |
 | **Superadministratör** | allt i alla organisationer; hantera organisationer och användare; säkerhetskopiering och återställning |
@@ -49,7 +49,7 @@ Standardmatrisen med behörigheter:
 | `change.create` | | | ✔ | | ✔ | ✔ | ✔ |
 | `change.approve` | | | | | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `environment.manage`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
 | `waiver.approve`, `project.create`, `project.update` | | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | | ✔ |
 

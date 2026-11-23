@@ -34,6 +34,9 @@ import { useAuthStore } from '@/stores/auth'
 import { useProjectPeopleStore } from '@/stores/projectPeople'
 import { useVariants } from '@/composables/variants'
 import { useConfigurations } from '@/composables/configurations'
+import { useEnvironments } from '@/composables/environments'
+import EnvironmentField from '@/components/EnvironmentField.vue'
+import type { BookingInput } from '@/lib/environments'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 
@@ -48,6 +51,9 @@ const id = uid('cyc')
 const tabsId = uid('cyc-tabs')
 const panel = (value: string) => ({ role: 'tabpanel', id: `${tabsId}_tabpanel_${value}`, 'aria-labelledby': `${tabsId}_tab_${value}` })
 const pid = computed(() => proj.pid)
+const envs = useEnvironments(() => proj.pid)
+const cycleEnv = ref<string | null>(null)
+const cycleBooking = ref<BookingInput | null>(null)
 const canPlan = computed(() => auth.can(P.cyclePlan))
 const vs = useVariants(() => pid.value)
 const cfg = useConfigurations(() => pid.value)
@@ -135,6 +141,8 @@ const form = reactive(blank())
 const copyOptions = computed(() => allCycles.value.map((c) => ({ label: c.name, value: c.id })))
 function openCreate() {
   Object.assign(form, blank())
+  cycleEnv.value = null
+  cycleBooking.value = null
   formError.value = ''
   dialog.value = true
 }
@@ -153,6 +161,8 @@ async function create() {
   if (form.release_id) body.release_id = form.release_id
   if (form.variant_id) body.variant_id = form.variant_id
   if (form.copy_from) body.copy_from = form.copy_from
+  if (cycleEnv.value) body.environment_id = cycleEnv.value
+  if (cycleEnv.value && cycleBooking.value) body.booking = cycleBooking.value
   else body.configuration_ids = form.configuration_ids
   if (form.scheduled_start) body.scheduled_start_at = new Date(form.scheduled_start).toISOString()
   try {
@@ -250,6 +260,7 @@ onMounted(async () => {
     load(),
     vs.load(),
     cfg.load(),
+    envs.load(),
     (async () => {
       try {
         releases.value = asItems(await api.get<{ items: Release[] }>(`/projects/${pid.value}/releases`))
@@ -413,7 +424,7 @@ watch(pid, () => void load())
           <label :for="`${id}-owner`">{{ t('cycles.owner') }}</label>
           <Select v-model="form.owner_id" :input-id="`${id}-owner`" :options="peopleOptions" option-label="label" option-value="value" filter />
         </div>
-        <div class="field">
+        <div v-if="!envs.environments.value.length" class="field">
           <label :for="`${id}-env`">{{ t('cycles.environment') }}</label>
           <InputText :id="`${id}-env`" v-model="form.environment" maxlength="200" />
         </div>
@@ -426,6 +437,7 @@ watch(pid, () => void load())
           <InputText :id="`${id}-end`" v-model="form.end_date" type="date" />
         </div>
       </div>
+      <EnvironmentField v-if="envs.environments.value.length" v-model="cycleEnv" v-model:booking="cycleBooking" :environments="envs.environments.value" :id-prefix="`${id}-cy`" :can-book="auth.can(P.runExecute)" />
       <template v-if="!form.copy_from">
         <div class="form-grid">
           <div class="field">

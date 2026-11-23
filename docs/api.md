@@ -2853,6 +2853,146 @@ effect; `threshold` is the project's risk acceptance threshold and
 `accepted_by`, `accepted_name`, `accepted_at` and `acceptance_comment`;
 `acceptance_valid` is false when the residual assessment changed since.
 
+## Test environments
+
+A **test environment** is a system tests run against: a development or
+staging system, a lab, a hardware-in-the-loop rig, a device. It belongs to
+a project, or (`shared: true`, `project_id` "") to the organisation, and
+every project can then select and book it. It has a `type` (`dev`, `test`,
+`staging`, `pre_prod`, `prod_like`, `lab`, `hil_rig`, `device`), `urls`, a
+`description`, **components** with versions (`[{name, version}]`, e.g.
+app 2.3.1, DB 16), an `owner_id`, a `status` (`available`, `in_use`,
+`maintenance`, `broken`, `retired`) with a `status_note`, `tags`, the
+`configuration_ids` and `variant_ids` it provides (project environments),
+a `capacity` (how many bookings may overlap; 1 = exclusive) and
+`requires_approval`. Reading needs `run.read`; creating and changing
+environments, approving their bookings and revealing their secret need
+`environment.manage` (test leads, managers, admins; for a shared
+environment in the organisation, not a project role).
+
+**Credentials.** `credentials_ref` says where the credentials are (a vault
+path, a password manager entry, a key cabinet); it is plain text and must
+not hold the secret. An optional `secret` is **write-only**: it is
+encrypted like the other stored secrets (`enc:v1:`, bound to
+`environments.secret` and the row; see the administrator guide, *Stored
+secrets*), never returned (`has_secret` says whether one is stored), left
+out of project archives, and revealed only by `POST
+/environments/{id}/secret` to environment managers, which writes the audit
+entry `environment.secret_reveal`. Prefer the reference.
+
+**Health check.** With a `health_url` (http or https) the background job
+(every minute) fetches it every `health_interval_minutes` (default 5) with
+a 10 s timeout; 2xx and 3xx are up. A failing check marks an `available`
+or `in_use` environment `broken` (`status_by_health`, the error in
+`status_note`); a passing check makes an environment the check marked
+broken `available` again. Environments in maintenance or retired are not
+checked. A status change is audited (`environment.health`), notified to
+the owner and sent as the event `environment.status_changed`.
+
+**Runs, cycles and sessions.** Runs, test cycles and exploratory sessions
+select an environment item with `environment_id` (by id or name; "" none).
+The free-text `environment` of runs and cycles stays for compatibility: it
+holds the item's name (renaming the environment renames it), and a run
+created or changed with a free-text environment that names an environment
+of the project (or a shared one) is linked to it. Migration 0057 turned the
+distinct free-text environments of each project's runs and cycles into
+environment items. A cycle's runs get its environment. When an execution
+gets a final result it records `environment_id`, `environment_name` and
+`environment_components` (the versions at that moment; later changes of the
+environment do not change them; taking the result back clears them).
+`GET /releases/{id}/environments` and the release readiness report list the
+environments and versions the release's results were obtained in.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/environments` | the project's environments and the shared ones (`?shared=false`: only the project's) with `booked_now`, `next_booking` and `run_count`; `?q=` filters (fields `name`, `type`, `status`, `description`, `owner`, `tag`, `component` (alias `version`: a component name or "name version"), `url`, `shared`, `capacity`, `approval`, `health`, `booked`, `created_by`, `created_at`, `updated_at`) |
+| POST | `/projects/{pid}/environments` | `{name, type?, status?, status_note?, description?, urls?, components?, owner_id? (default: the caller), tags?, configuration_ids?, variant_ids?, capacity?, requires_approval?, credentials_ref?, secret?, health_url?, health_interval_minutes?, shared?}` → 201; names are unique per project (and among the shared ones), ignoring case |
+| GET | `/environments` | the shared environments |
+| GET | `/environments/{id}` | an environment (never its secret) |
+| PATCH | `/environments/{id}` | the fields above (only those given; `secret` "" keeps the stored one, `clear_secret: true` removes it) |
+| DELETE | `/environments/{id}` | 204; its bookings go, runs and results keep the name and the recorded versions |
+| POST | `/environments/{id}/secret` | `{secret}` (audited); 404 when none is stored |
+| POST | `/environments/{id}/check` | runs the health check now → the environment |
+| GET | `/environments/{id}/history` | revisions (never the secret) |
+| GET | `/releases/{id}/environments` | `[{environment_id, name, type, components, executions, passed, failed, blocked, last_at}]` |
+
+### Bookings
+
+A **booking** reserves an environment from `starts_at` to `ends_at` (at most
+366 days) for a `purpose`, for a project (the environment's, or for a
+shared environment the project it is booked for) and optionally a run,
+cycle or session of that project. Booking needs `run.execute` in that
+project. `pending` and `approved` bookings take up the capacity; a booking
+that would exceed it at some moment (bookings that only touch do not
+overlap) answers **409** `{"code": "booking_conflict", "error", "capacity",
+"overlapping": [Booking]}`. When the environment `requires_approval`, a
+booking is `pending` until its owner or an environment manager approves or
+rejects it (`environment.booking_requested` to them, `…_approved` /
+`…_rejected` to the booker); they book without approval themselves. Moving
+an approved booking of such an environment makes it pending again. A
+retired environment cannot be booked. A booking made for a project the
+caller does not see shows only its time and status (`hidden: true`). My
+work lists the bookings waiting for the caller's approval (reason
+`booking_approval`) and the caller's own waiting bookings
+(`awaiting_approval`, not counted).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/bookings` | the bookings of the project's environments and those made for the project; `?from=`, `?to=` (RFC 3339 or YYYY-MM-DD), `?status=` (comma separated) |
+| GET | `/environments/{id}/bookings` | the bookings of an environment (same parameters) |
+| POST | `/environments/{id}/bookings` | `{starts_at, ends_at, purpose?, project_id? (shared environments), run_id?, cycle_id?, session_id?}` → 201 Booking |
+| GET | `/bookings/{id}` | a booking |
+| PATCH | `/bookings/{id}` | the fields above (not `project_id`), by the booker, the environment's owner or a manager |
+| POST | `/bookings/{id}/decision` | `{decision: approved \| rejected, note?}` of a pending booking (owner or manager; approving checks the capacity again) |
+| POST | `/bookings/{id}/cancel` | cancels a pending or approved booking |
+| GET | `/runs/{id}/bookings`, `/cycles/{id}/bookings`, `/exploratory-sessions/{id}/bookings` | the bookings linked to the item |
+
+`POST /projects/{pid}/runs`, `POST /projects/{pid}/cycles` and `POST
+/projects/{pid}/exploratory-sessions` (and their PATCH) take `environment_id`
+and `booking: {starts_at, ends_at, purpose?}`: the item is created with the
+environment and the booking in one transaction (a booking conflict creates
+nothing).
+
+## Test data sets
+
+A **test data set** is named, versioned data shared by tests: a `table`
+of `parameters` and `data_rows` (the same rules as the [inline data of a
+test](#test-data-data-driven-tests)) or `files` (attachments of the set,
+`/test-data-sets/{id}/attachments` like the other attachments). It has a
+`classification` (`synthetic`, `anonymised`, `production_copy`: shown with
+a warning, it may hold personal or confidential data), an `owner_id`, an
+`expires_on` date (`expired`; `expiring` within 14 days), `tags` and a
+`status` (`active`, `archived`). Every change is a new `version`. Reading
+needs `test.read`, changing `test.write`.
+
+**Links.** A set is linked to tests, configurations and runs (`usage`
+`reference`). A table set linked to a data-driven test as `source` replaces
+the test's own rows: when the test's executions are created, each row of
+the active set becomes an iteration, and the run records the use
+(`test_data_usage`: set, version, run, test). A test has one source; an
+archived set is not used (the test's own rows are). **Refresh requests**
+ask the owner to refresh a set (`testdata.refresh_requested`); the owner
+closes them as done or rejected (`testdata.refresh_resolved`). My work lists
+the owner's sets that expired or expire soon (reasons `data_expired`,
+`data_expiring`) and the sets with open refresh requests
+(`refresh_requested`).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/test-data-sets` | `[DataSet]` with `links`, `usage_count`, `last_used_at`, `open_refreshes`, `file_count`, `expired`, `expiring`; `?q=` filters (fields `name`, `description`, `kind`, `classification`, `owner`, `status`, `tag`, `expires`, `expired`, `expiring`, `parameter`, `linked` (item keys and names), `version`, `usage`, `refresh`, `created_by`, `created_at`, `updated_at`) |
+| POST | `/projects/{pid}/test-data-sets` | `{name, description?, kind?, parameters?, data_rows?, classification?, owner_id?, expires_on?, tags?, status?}` → 201 |
+| GET | `/test-data-sets/{id}` | a set with its links |
+| PATCH | `/test-data-sets/{id}` | the fields above and `version` (optional: 409 when it was saved in the meantime) |
+| DELETE | `/test-data-sets/{id}` | 204 |
+| GET | `/test-data-sets/{id}/history` | revisions |
+| GET | `/test-data-sets/{id}/usage` | `[{data_version, run_id, run_name, test_case_id, test_key, used_at}]`, newest first (`?limit=`) |
+| POST | `/test-data-sets/{id}/links` | `{item_type: test \| configuration \| run, item_id, usage?: reference \| source}` → the set |
+| DELETE | `/test-data-sets/{id}/links/{link}` | 204 |
+| GET | `/tests/{id}/data-sets`, `/configurations/{id}/data-sets`, `/runs/{id}/data-sets` | the links of an item |
+| GET | `/test-data-sets/{id}/refresh-requests` | the refresh requests, newest first |
+| POST | `/test-data-sets/{id}/refresh-requests` | `{reason, needed_by?}` → 201 (needs `test.write` or `run.execute`) |
+| POST | `/test-data-refresh-requests/{id}/resolve` | `{status: done \| rejected, note?}` (the set's owner or `test.write`) |
+
 ## Exploratory testing
 
 Session-based exploratory testing (SBTM). A session has a charter (`title`,

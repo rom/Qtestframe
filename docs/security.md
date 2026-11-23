@@ -386,7 +386,7 @@ OIDC/SAML login neither creates nor changes that membership, so
 | change.create | | | ✔ | | ✔ | ✔ | ✔ |
 | change.approve | | | | | ✔ | ✔ | ✔ |
 | test.write, run.write, run.execute, token.manage | | | | ✔ | ✔ | ✔ | ✔ |
-| cycle.plan, script.execute, audit.read, settings.manage | | | | | ✔ | ✔ | ✔ |
+| cycle.plan, environment.manage, script.execute, audit.read, settings.manage | | | | | ✔ | ✔ | ✔ |
 | waiver.approve, project.create, project.update | | | | | | ✔ | ✔ |
 | project.delete, member.manage, role.manage, tenant.manage | | | | | | | ✔ |
 
@@ -454,7 +454,7 @@ OIDC/SAML login neither creates nor changes that membership, so
   organisation administrators (and super admins) keep theirs; a project
   member gets the *project-scoped* permissions of the union of their
   project roles in place of the organisation roles' (`project.read/update/delete`,
-  `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`,
+  `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`, `environment.manage`,
   `script.execute`, `export`, `comment.create`), in both modes – a direct
   membership wins over group memberships, several groups give the union
   of their roles; others get their organisation roles in an

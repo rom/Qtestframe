@@ -289,6 +289,11 @@ async function discover(request) {
   const linkedReq = reqs.find((r) => r.linked_tests > 0) ?? reqs[0]
   // the active test cycle (seed-demo: "Sprint 14 regression")
   const cycle = items(await api(request, 'GET', `/projects/${pid}/cycles`).catch(() => [])).find((c) => c.status === 'active')
+  // test environments and test data (seed-demo: staging with bookings, a set with a refresh request)
+  const envs = items(await api(request, 'GET', `/projects/${pid}/environments`).catch(() => []))
+  const stagingEnv = envs.find((e) => e.name === 'staging') ?? envs[0]
+  const dataSets = items(await api(request, 'GET', `/projects/${pid}/test-data-sets`).catch(() => []))
+  const tableSet = dataSets.find((d) => d.kind === 'table' && d.open_refreshes > 0) ?? dataSets[0]
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects', wait: '.project-cards .pc-meta' },
@@ -485,6 +490,19 @@ async function discover(request) {
     xDebriefed && { name: 'exploratory-debrief-dialog', path: `${p}/exploratory/${xDebriefed.id}`, open: 'section[aria-labelledby="xs-debrief-h"] button:has(.pi-check-square)', wait: '.p-dialog #xs-db-sum' },
     xOpen && { name: 'exploratory-session-runner', path: `${p}/exploratory/${xOpen.id}`, open: 'button[aria-controls="xs-keys"]', wait: '#xs-keys dl' },
     xOpen && { name: 'exploratory-defect-dialog', path: `${p}/exploratory/${xOpen.id}`, open: '.xs-notes li:first-child button:has(.pi-exclamation-circle)', wait: '.p-dialog #xs-d-title' },
+    // test environments: status board, list, booking calendar, the environment, its dialogs; test data sets
+    { name: 'environments', path: `${p}/environments`, wait: '.env-board, .empty-state' },
+    { name: 'environments-list', path: `${p}/environments?tab=list`, wait: '.p-datatable' },
+    { name: 'environments-calendar', path: `${p}/environments?tab=calendar`, wait: '.tl' },
+    { name: 'environment-new-dialog', path: `${p}/environments`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog .env-fieldset' },
+    { name: 'environment-book-dialog', path: `${p}/environments`, open: '.page-header .actions button:has(.pi-calendar-plus)', wait: '.p-dialog input[type="datetime-local"]' },
+    stagingEnv && { name: 'environment', path: `${p}/environments/${stagingEnv.id}`, wait: '.env-grid' },
+    stagingEnv && { name: 'environment-edit-dialog', path: `${p}/environments/${stagingEnv.id}`, open: '.page-header .actions button:has(.pi-pencil)', wait: '.p-dialog .env-fieldset' },
+    stagingEnv && { name: 'environment-booking-dialog', path: `${p}/environments/${stagingEnv.id}`, open: '.tl-bar', wait: '.p-dialog input[type="datetime-local"]' },
+    { name: 'run-new-environment', path: `${p}/runs`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog .env-field' },
+    { name: 'test-data', path: `${p}/test-data`, wait: '.p-datatable-tbody tr' },
+    tableSet && { name: 'test-data-set', path: `${p}/test-data?set=${tableSet.id}`, wait: '.p-dialog .td-table' },
+    tableSet && { name: 'test-data-refresh', path: `${p}/test-data?set=${tableSet.id}`, open: '.p-dialog [role="tab"]:nth-child(4)', wait: '.p-dialog textarea' },
     { name: 'soa', path: `${p}/soa`, wait: '[role="grid"] [role="gridcell"]' },
     { name: 'soa-control', path: `${p}/soa`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: ['Control+Enter'], wait: '.p-dialog' },
     hasReleases && { name: 'release-waivers', path: `${p}/releases`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.rel-waivers' },

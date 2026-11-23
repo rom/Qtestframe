@@ -53,6 +53,9 @@ type ExploratorySession struct {
 	Tester         string `json:"tester"`
 	TimeboxMinutes int    `json:"timebox_minutes"`
 	Status         string `json:"status"`
+	// EnvironmentID / EnvironmentName: the environment explored (nil none).
+	EnvironmentID   *string `json:"environment_id"`
+	EnvironmentName string  `json:"environment_name,omitempty"`
 	// The timer: StartedAt the first start, EndedAt the stop; while it runs
 	// RunningSince is set. ElapsedSeconds is the time recorded at the moment
 	// of reading (including the running part).

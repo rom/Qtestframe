@@ -38,6 +38,7 @@ import { formatDateTime, formatDuration } from '@/lib/format'
 import { deriveStatus } from '@/lib/summary'
 import { executionStatus, iterationStatus, resolvePlaceholders } from '@/lib/testData'
 import { P } from '@/lib/permissions'
+import { componentsText } from '@/lib/environments'
 import type { Execution, Iteration, TestRun } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
@@ -524,6 +525,7 @@ const statusOptions = computed(() => [
       <div class="sub row">
         <Tag v-if="test" :value="enumLabel('executionType', isAutomated ? 'automated' : 'manual')" :icon="isAutomated ? 'pi pi-bolt' : 'pi pi-user'" severity="secondary" />
         <Tag v-if="ex?.configuration_name" :value="ex.configuration_name" icon="pi pi-sliders-h" severity="info" :aria-label="t('configurations.runsIn', { name: ex.configuration_name })" />
+        <span v-if="ex?.environment_name" class="small"><i class="pi pi-server" aria-hidden="true" /> {{ t('environments.resultEnvironment') }}: {{ ex.environment_name }}<template v-if="ex.environment_components?.length"> ({{ componentsText(ex.environment_components) }})</template></span>
         <span v-if="index >= 0">{{ t('runner.executionOf', { n: index + 1, total: list.length }) }}</span>
         <span v-if="ex?.executed_by">{{ t('runner.lastExecuted', { user: ex.executed_by, date: formatDateTime(ex.finished_at) }) }}</span>
         <span v-if="ex?.duration_ms">· {{ formatDuration(ex.duration_ms) }}</span>
