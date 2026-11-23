@@ -77,6 +77,8 @@ const routes: RouteRecordRaw[] = [
       // the former "My reviews" page: now the reviews view of My work (?review=<id> kept)
       { path: 'reviews', name: 'reviews', redirect: (to) => ({ name: 'myWork', query: { ...to.query, view: 'reviews' } }) },
       { path: 'my-work', name: 'myWork', component: () => import('./views/MyWorkView.vue') },
+      // the personal cross-project home dashboard
+      { path: 'home', name: 'homeDashboard', component: () => import('./views/HomeDashboardView.vue') },
       { path: 'search', name: 'search', component: () => import('./views/SearchView.vue') },
       { path: 'go/:key', name: 'go', component: () => import('./views/GoView.vue') },
       {

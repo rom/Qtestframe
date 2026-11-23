@@ -21,6 +21,8 @@ const props = defineProps<{
   projectId: string
   /** id prefix of the headings (two instances never share a page, but keep ids unique) */
   idPrefix?: string
+  /** a dashboard widget: its frame shows the title */
+  hideTitle?: boolean
 }>()
 const { t, te } = useI18n()
 const range = ref<QualityRange>(90)
@@ -69,9 +71,10 @@ const listRoute = (it: QualityItem) => itemRoute(it, props.projectId)
 </script>
 
 <template>
-  <section class="quality" :aria-busy="loading" :aria-labelledby="`${pre}-h`">
+  <section class="quality" :aria-busy="loading" :aria-labelledby="hideTitle ? undefined : `${pre}-h`">
     <div class="row qhead">
-      <h2 :id="`${pre}-h`" class="plain-heading grow">{{ t('quality.title') }}</h2>
+      <h2 v-if="!hideTitle" :id="`${pre}-h`" class="plain-heading grow">{{ t('quality.title') }}</h2>
+      <span v-else class="grow" />
       <SelectButton v-model="range" :options="rangeOptions" option-label="label" option-value="value" :allow-empty="false" size="small" :aria-label="t('quality.range')" />
       <span class="row small nowrap" style="gap: 6px">
         <label :for="`${pre}-stale`">{{ t('quality.staleDays') }}</label>

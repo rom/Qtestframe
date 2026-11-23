@@ -152,6 +152,7 @@ const startOptions = computed(() => [
   { label: t('profile.startLastProject'), value: 'last_project' },
   { label: t('profile.startDefaultProject'), value: 'default_project' },
   { label: t('profile.startSearch'), value: 'search' },
+  { label: t('profile.startHomeDashboard'), value: 'home_dashboard' },
 ])
 const pageSizeOptions = computed(() => [{ label: t('profile.rowsDefault', { n: 25 }), value: 0 }, ...[10, 25, 50, 100].map((n) => ({ label: String(n), value: n }))])
 const sampleDate = new Date(Date.now() - 5 * 60 * 1000)

@@ -168,6 +168,10 @@ var projectArchiveTables = []archiveTable{
 	{"change_request_items", `cr_id IN (SELECT id FROM change_requests WHERE project_id = ?)`},
 	{"change_request_signoffs", `cr_id IN (SELECT id FROM change_requests WHERE project_id = ?)`},
 	{"change_request_events", `cr_id IN (SELECT id FROM change_requests WHERE project_id = ?)`},
+	// the project's dashboards (personal ones load for accounts that
+	// exist here) and its default dashboard
+	{"dashboards", ofProject},
+	{"dashboard_defaults", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},

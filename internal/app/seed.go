@@ -326,6 +326,10 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedAI(ctx, st, tenantID); err != nil {
 		return nil, err
 	}
+	// a shared dashboard next to the built-in ones (seeddashboards.go)
+	if err := seedDashboards(ctx, st, tenantID, p); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

@@ -188,7 +188,7 @@ Inställningarna sparas med ditt konto och gäller på alla enheter. Ändra dem 
 |---|---|
 | **Språk** | Engelska eller svenska; *Webbläsarens språk* följer webbläsaren. |
 | **Tema** | Färgtema. *Följ operativsystemet* växlar mellan ljust och mörkt enligt systemets inställning. |
-| **Startsida** | Det du ser efter inloggningen: projektlistan, det senast öppnade projektet, ett standardprojekt eller sökningen. |
+| **Startsida** | Det du ser efter inloggningen: projektlistan, det senast öppnade projektet, ett standardprojekt, sökningen eller din [hempanel](#anpassa-översiktspaneler). |
 | **Standardprojekt** | Projektet som öppnas när startsidan är *Standardprojekt*. |
 | **Standardorganisation** | Organisationen som väljs vid inloggning när du inte anger någon. |
 | **Rader per tabellsida** | 10, 25, 50 eller 100 rader i tabeller. |
@@ -2773,7 +2773,7 @@ Rapporten **Verifiering** och kravspecifikationen visar samma sak: rapporten har
 
 ## Översikten
 
-**Översikt** är den första sidan i varje projekt. Den har tre flikar: **Översikt** med läget i dag, **Trender** med hur det har förändrats och **Kvalitet** med det som behöver åtgärdas. Fliken ingår i adressen, så en länk kan öppna översikten på en viss flik. På en mobil visas diagrammen under varandra.
+**Översikt** är den första sidan i varje projekt. Den börjar med tre översiktspaneler som visas som flikar: **Översikt** med läget i dag, **Trender** med hur det har förändrats och **Kvalitet** med det som behöver åtgärdas. Varje översiktspanel är ett rutnät av widgetar som du kan ordna om och bygga ut, och ett projekt kan ha fler översiktspaneler (se [Anpassa översiktspaneler](#anpassa-översiktspaneler)). Fliken ingår i adressen, så en länk kan öppna översikten på en viss flik. På en mobil visas widgetarna under varandra.
 
 ![Översikten med nyckeltal, kravtäckning, utfall av exekveringar och de senaste körningarna](images/sv-dashboard.png)
 
@@ -2817,6 +2817,28 @@ Trenderna bygger på en ögonblicksbild av siffrorna som Qtestframe sparar en g�
 De extra nyckeltalen och diagrammen räknas fram på servern i en enda begäran, som läses in samtidigt med resten av översikten.
 
 Varje diagram har ett textalternativ med siffrorna för skärmläsare, och förklaringen namnger varje färg. Värmekartan är en tabell med rubrik, och varje ruta anger sin sannolikhet, konsekvens, nivå och antal risker.
+
+### Anpassa översiktspaneler
+
+Varje widget i en översiktspanel kan flyttas, ändras i storlek, ställas in och tas bort, och du kan lägga till widgetar och översiktspaneler.
+
+- **Delade översiktspaneler** syns för alla som får läsa projektet. De inbyggda **Översikt**, **Trender** och **Kvalitet** är delade; projektets administratörer (behörigheten *project.update*) kan ändra dem, lägga till fler delade översiktspaneler och välja den som projektet öppnas med (**⋮ → Gör till projektets standard**, markerad med en stjärna).
+- **Personliga översiktspaneler** är bara dina. Välj **⋮ → Ny översiktspanel** (om du vill med en kopia av den som visas som start), eller anpassa en delad översiktspanel som du inte får ändra: **Spara som min översiktspanel** sparar dina ändringar som en personlig kopia.
+- **Hem** i sidomenyn är din personliga **hempanel** över alla projekt: från början **Mitt arbete**, dina diskussioner och en anteckning. En widget som gäller ett projekt anger projektet i sina inställningar. Du kan göra den till din startsida under **Profil → Startsida**.
+
+Välj **Anpassa** för att redigera översiktspanelen som visas:
+
+- **Lägg till widget** listar de widgettyper du får se, med en kort beskrivning. Bland dem: nyckeltal, kravtäckning, verifieringsstatus, antal per status, allvarlighet eller nivå (som stapeldiagram, liggande staplar, ringdiagram eller tabell), trend för testresultat, instabila tester, defekter, riskvärmekartan, releaseberedskap (go / no-go per slutkriterium och per variant), burn-up för release, burn-down för cykel, kvalitetsmått, konsistenskontroller, Mitt arbete, diskussioner, senaste aktivitet, luckor i spårbarheten (krav utan tester och tester utan krav), utforskande testning, täckning av MITRE ATT&CK, D3FEND och EMB3D, en **sparad fråga** – valfri fråga i [frågespråket](#sökning-och-filter), som en tabell med de första objekten eller som ett antal – och en **anteckning** i Markdown.
+- Dra en widget i dess **flytthandtag** (pilarna bredvid rubriken) och ändra storleken med handtaget i nedre högra hörnet. Widgetar som är i vägen flyttas nedåt; **Städa upp** tar bort luckorna.
+- Med tangentbordet: ge flytt- eller storlekshandtaget fokus och använd **piltangenterna** (en cell per tryck; med **Skift** på flytthandtaget ändras storleken). **Home** och **End** går till första eller sista kolumnen (på storlekshandtaget: smalast och full bredd). **Enter** eller **blanksteg** tar upp widgeten och släpper den igen, **Escape** lägger tillbaka den där den var. Varje ändring läses upp för skärmläsare, till exempel ”Kravtäckning: kolumn 7, rad 1”.
+- **Inställningar** (kugghjulet) anger rubriken, bredden (1–12 kolumner) och höjden (rader på ungefär 80 pixlar) och widgetens inställningar: release, cykel eller variant, frågan, diagramtypen, perioden och så vidare. **Ta bort** (×) tar bort widgeten från översiktspanelen.
+- **Spara** sparar layouten; **Avbryt** kastar ändringarna.
+
+En del widgetar har egna snabbval, till exempel perioden för en trend eller releasen för en burn-up; de ändrar bara visningen tills du lämnar sidan.
+
+Menyn **⋮** har också **Byt namn**, **Exportera som JSON** och **Importera från JSON** (en översiktspanel som exporterats här eller från en annan server; widgetar av okända typer utelämnas), **Återställ till standard** (en inbyggd översiktspanel får tillbaka sin ursprungliga layout, en kopia layouten den kopierades från) och **Ta bort översiktspanelen**.
+
+Widgetar visar bara det du får se: en widget vars data kräver en behörighet du saknar, eller som gäller ett projekt du inte kan öppna, säger det i stället. Widgetarna på skärmen läser in sina data tillsammans i en begäran, och widgetar längre ned läses in när du rullar dit; **Uppdatera** läser in alla igen.
 
 ## Beroendegrafer
 

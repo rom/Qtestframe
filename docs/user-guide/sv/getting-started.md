@@ -118,7 +118,7 @@ Inställningarna sparas med ditt konto och gäller på alla enheter. Ändra dem 
 |---|---|
 | **Språk** | Engelska eller svenska; *Webbläsarens språk* följer webbläsaren. |
 | **Tema** | Färgtema. *Följ operativsystemet* växlar mellan ljust och mörkt enligt systemets inställning. |
-| **Startsida** | Det du ser efter inloggningen: projektlistan, det senast öppnade projektet, ett standardprojekt eller sökningen. |
+| **Startsida** | Det du ser efter inloggningen: projektlistan, det senast öppnade projektet, ett standardprojekt, sökningen eller din [hempanel](traceability-and-coverage.md#anpassa-översiktspaneler). |
 | **Standardprojekt** | Projektet som öppnas när startsidan är *Standardprojekt*. |
 | **Standardorganisation** | Organisationen som väljs vid inloggning när du inte anger någon. |
 | **Rader per tabellsida** | 10, 25, 50 eller 100 rader i tabeller. |

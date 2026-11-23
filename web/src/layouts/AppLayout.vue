@@ -284,6 +284,9 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : roles
         <RouterLink class="nav-item" :to="{ name: 'projects' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.projects') : ''">
           <i class="pi pi-folder-open" aria-hidden="true" /><span class="label">{{ t('nav.projects') }}</span>
         </RouterLink>
+        <RouterLink class="nav-item" :to="{ name: 'homeDashboard' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.homeDashboard') : ''">
+          <i class="pi pi-home" aria-hidden="true" /><span class="label">{{ t('nav.homeDashboard') }}</span>
+        </RouterLink>
         <RouterLink class="nav-item" :to="{ name: 'search' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.search') : ''">
           <i class="pi pi-search" aria-hidden="true" /><span class="label">{{ t('nav.search') }}</span>
         </RouterLink>

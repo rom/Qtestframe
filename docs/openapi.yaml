@@ -48,6 +48,8 @@ tags:
   description: API tokens
 - name: Projects
   description: Projects and dashboards
+- name: Dashboards
+  description: Customisable dashboards, the home dashboard and widget data
 - name: Folders and categories
   description: Folder trees and category values
 - name: Requirements
@@ -2884,6 +2886,349 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboards:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Dashboards
+      summary: List dashboards
+      operationId: getProjectsByPidDashboards
+      description: |-
+        The dashboards the caller sees in the project → `{items: [Dashboard], default_id, can_manage}`: the built-in layouts `overview`, `trends`, `quality` (the former fixed dashboard; `stored: false` until an administrator changes one, then the shared dashboard that replaces it, `builtin` set), the other shared dashboards, then the caller's personal ones. A Dashboard is `{id, project_id, owner_id (personal), name, builtin, source_id, widgets: [{id, type, title, x, y, w, h, settings}], shared, stored, default, editable}` on a grid of 12 columns. See "Dashboards" in docs/api.md.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Dashboards
+      summary: Create dashboard
+      operationId: postProjectsByPidDashboards
+      description: |-
+        `{name, shared?, widgets?, source_id?}` → Dashboard: a personal dashboard, or a shared one (needs `project.update`); `source_id` copies a dashboard the caller sees. Also takes an export (`{format: qtestframe-dashboard, version: 1, name, widgets}`). Widgets: x 0–11, w 1–12 within the columns, h 1–24, at most 60, known types (see `GET /dashboards/widgets`); at most 30 shared dashboards per project and 30 personal ones per user and project.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboards/default:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    put:
+      tags:
+      - Dashboards
+      summary: Set the default dashboard
+      operationId: putProjectsByPidDashboardsDefault
+      description: |-
+        `{dashboard_id}` (a shared dashboard or a built-in key; "" clears it: the overview) → the list as for GET. The dashboard the project opens with.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboards/{did}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: did
+      in: path
+      required: true
+      schema:
+        type: string
+      description: dashboard id (or the key of a built-in layout overview, trends, quality)
+    get:
+      tags:
+      - Dashboards
+      summary: Get dashboard
+      operationId: getProjectsByPidDashboardsByDid
+      description: |-
+        → Dashboard (also the export: the client adds format and version). Another user's personal dashboard: 404.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Dashboards
+      summary: Change dashboard
+      operationId: putProjectsByPidDashboardsByDid
+      description: |-
+        `{name?, widgets?}` → Dashboard. Personal: its owner; shared: `project.update`. Changing a built-in layout stores the shared dashboard that replaces it.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Dashboards
+      summary: Delete dashboard
+      operationId: deleteProjectsByPidDashboardsByDid
+      description: |-
+        Personal: its owner; shared: `project.update`. A built-in layout cannot be deleted (400); a project default naming the dashboard is cleared.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboards/{did}/reset:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: did
+      in: path
+      required: true
+      schema:
+        type: string
+      description: dashboard id (or the key of a built-in layout overview, trends, quality)
+    post:
+      tags:
+      - Dashboards
+      summary: Reset dashboard
+      operationId: postProjectsByPidDashboardsByDidReset
+      description: |-
+        Returns the dashboard to its default layout → Dashboard: a shared dashboard that replaces a built-in layout is removed (the built-in one applies again), any other gets the layout it was copied from (the built-in overview when that is gone).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/dashboards/home:
+    get:
+      tags:
+      - Dashboards
+      summary: Get home dashboard
+      operationId: getDashboardsHome
+      description: |-
+        The caller's personal cross-project home dashboard → Dashboard (`stored: false`: the built-in one with My work, discussions and a note).
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Dashboards
+      summary: Save home dashboard
+      operationId: putDashboardsHome
+      description: |-
+        `{name?, widgets}` → Dashboard. Widgets about a project name it in `settings.project_id`.
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Dashboards
+      summary: Reset home dashboard
+      operationId: deleteDashboardsHome
+      description: |-
+        Removes the stored home dashboard → the built-in one.
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/dashboards/widgets:
+    get:
+      tags:
+      - Dashboards
+      summary: List widget types
+      operationId: getDashboardsWidgets
+      description: |-
+        The widget registry → `{items: [{type, project, home, w, h}]}`: whether a type is about one project, may be placed on the home dashboard, and its default size.
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/dashboards/data:
+    post:
+      tags:
+      - Dashboards
+      summary: Widget data
+      operationId: postDashboardsData
+      description: |-
+        `{widgets: [{id, type, project_id?, settings?}]}` (at most 60) → `{results: {id: {data} | {data: null, error: {status, code, error}}}}`: the data of many widgets in one request. Each widget reads the API's own endpoints as the caller, so it needs the permissions of those (e.g. `requirement.read` for a saved query of requirements; a project the caller may not see answers 404 for its widgets); every endpoint is read once per request.
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/folders:

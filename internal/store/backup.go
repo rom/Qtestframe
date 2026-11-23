@@ -74,6 +74,8 @@ var BackupTables = []string{
 	// two-way sync with Jira and Azure DevOps: configurations and the
 	// conflicts waiting for a decision (0060)
 	"req_sync_configs", "req_sync_conflicts",
+	// customisable dashboards and the default of a project (0059)
+	"dashboards", "dashboard_defaults",
 }
 
 // tables that exist but are deliberately not part of a backup.
