@@ -87,7 +87,7 @@ async function purge() {
         <span v-if="view.enabled && view.next_run">&nbsp;{{ t('privacy.retention.nextRun', { date: formatDateTime(view.next_run) }) }}</span>
         <span v-if="view.last_run">&nbsp;{{ t('privacy.retention.lastRun', { date: formatDateTime(view.last_run) }) }}</span>
       </p>
-      <div class="table-scroll">
+      <div class="table-scroll" tabindex="0" role="region" :aria-label="t('privacy.retention.caption')">
         <table class="ret-table">
           <caption class="sr-only">{{ t('privacy.retention.caption') }}</caption>
           <thead>
