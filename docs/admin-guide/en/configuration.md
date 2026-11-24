@@ -371,6 +371,24 @@ Every key of the file, its type, its default and the environment variable that s
 | `tracing.sample_ratio` | string | `1` | — | Share of new traces that are recorded, 0–1 (`0.1` = one in ten). A request with a `traceparent` header follows the decision of its caller. |
 | `tracing.service_name` | string | `qtestframe` | — | `service.name` of the exported spans. |
 
+### `backup`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `backup.enabled` | bool | `false` | — | Take scheduled backups: the server writes the archive of `qtestframe backup` into `directory` on the `schedule`. With several servers on one database one of them takes each backup (a lock row in the database). |
+| `backup.schedule` | string | `daily 02:00` | — | When backups run, in UTC: `daily HH:MM`, `weekly DAY HH:MM` (`mon`–`sun`) or `every DURATION` (`15m` to `720h`, e.g. `every 6h`). A slot missed while no server ran is taken once at the next start. |
+| `backup.directory` | string | — | — | Absolute path of the directory the backup files are written to (created with mode 0700, writable under Landlock). Required for scheduled backups and *Run backup now*. Files are named `qtestframe-backup-YYYYMMDD-HHMMSS.zip` (`.zip.enc` when encrypted). |
+| `backup.keep_last` | integer | `7` | — | Keep the newest N backup files in `directory` and delete older ones (`0` = no limit). Only files named like scheduled backups are deleted. |
+| `backup.keep_days` | integer | `0` | — | Delete backup files older than N days (`0` = never). With `keep_last` a file goes when either rule says so; the newest file is always kept. |
+| `backup.passphrase_file` | string | — | — | File holding the passphrase that encrypts scheduled backups (AES-256-GCM with a key derived by scrypt). A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The passphrase can also be set in the system settings; without one, backups are not encrypted. |
+| `backup.s3.enabled` | bool | `false` | — | Upload every scheduled backup to S3-compatible object storage (Amazon S3, MinIO, Ceph, Garage …) after writing it. A failed upload fails the run; the local file is kept. |
+| `backup.s3.endpoint` | string | — | — | Base URL of the storage, e.g. `https://s3.eu-north-1.amazonaws.com` or `https://minio.example.com:9000` (path-style requests: `ENDPOINT/BUCKET/KEY`). The upload follows the `outbound` settings. |
+| `backup.s3.region` | string | `us-east-1` | — | Region of the signature (AWS Signature Version 4); `us-east-1` for most S3-compatible servers. |
+| `backup.s3.bucket` | string | — | — | Bucket the backups are uploaded to. Delete old objects with a lifecycle rule of the bucket: the retention rules apply to the local directory only. |
+| `backup.s3.prefix` | string | — | — | Prefix of the object keys, e.g. `qtestframe/` (empty = the top of the bucket). |
+| `backup.s3.access_key_id` | string | — | — | Access key ID of the credentials allowed to `PutObject` in the bucket. |
+| `backup.s3.secret_access_key_file` | string | — | — | File holding the secret access key. A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The key can also be set in the system settings (write-only). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -416,6 +434,7 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_OIDC_<NAME>_CLIENT_SECRET` | client secret of the OIDC provider `<name>` (upper case); wins over `client_secret_file` and a secret stored in the web client |
 | `CREDENTIALS_DIRECTORY` | set by systemd (`LoadCredential=`): relative `*_file` paths are resolved in it, and it is readable after the lock-down |
 | `STATE_DIRECTORY` | set by systemd (`StateDirectory=`): default place of the key file when the database is not SQLite |
+| `QTF_BACKUP_PASSPHRASE` | the passphrase of `qtestframe backup --encrypt`, `backup verify` and `restore` when `--passphrase-file` is not given (the server reads `backup.passphrase` instead) |
 | `QTF_URL`, `QTF_TOKEN`, `QTF_CONFIGURATION` | defaults of `--url`, `--token` and `--configuration` of `qtestframe report` |
 
 <!-- END GENERATED: environment -->

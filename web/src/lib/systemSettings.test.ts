@@ -116,6 +116,8 @@ const SERVER_KEYS = [
   'ai.enabled', 'ai.provider', 'ai.url', 'ai.model', 'ai.api_key', 'ai.timeout', 'ai.max_tokens', 'ai.temperature', 'ai.rate_limit',
   'ai.features.draft_tests', 'ai.features.improve_requirement', 'ai.features.summarize_run', 'ai.features.suggest_mappings', 'ai.features.suggest_criteria',
   'ai.price_input', 'ai.price_output',
+  'backup.enabled', 'backup.schedule', 'backup.directory', 'backup.keep_last', 'backup.keep_days', 'backup.passphrase',
+  'backup.s3.enabled', 'backup.s3.endpoint', 'backup.s3.region', 'backup.s3.bucket', 'backup.s3.prefix', 'backup.s3.access_key_id', 'backup.s3.secret_access_key',
 ]
 
 describe('system settings texts', () => {

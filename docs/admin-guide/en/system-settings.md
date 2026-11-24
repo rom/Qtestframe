@@ -41,6 +41,7 @@ Use environment variables or locks for what must not change from the web client 
 | Server and database | the HTTP read and write timeouts **after a restart**; everything else is set in the file and shown with its source (listen address, TLS files, database, first start, hardening, key provider) |
 | Metrics and tracing | **at once** – the switches, the token, the allowlist and the trace export; the separate metrics address (`metrics.listen`) **after a restart**. The section also shows the state: where `/metrics` is served, how it is protected, and the spans exported, failed and dropped with the last export and the last error |
 | Script and web test runner | **after a restart** – the runner and its sandbox are set up before the process is locked down (Landlock execute paths, work directory); the value is stored at once and the page shows the value in use until then |
+| Scheduled backups | **at once** (switch, schedule, retention, passphrase, upload); the directory **after a restart**, because the server opens it for writing before the process is locked down – see [Scheduled backups](backup-and-migration.md#scheduled-backups) |
 | Retention and backups, Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them (the trash keeps deleted items for 30 days, which is fixed) |
 
 Settings marked **Applies after restart** keep their value in use until the next start. A banner at the top of the page lists every saved change that waits for a restart, with a link to the setting.
@@ -184,6 +185,19 @@ The settings the page offers, generated from `internal/settings`:
 | AI assistance | `ai.features.suggest_criteria` | on/off | at once |
 | AI assistance | `ai.price_input` | text | at once |
 | AI assistance | `ai.price_output` | text | at once |
+| Scheduled backups | `backup.enabled` | on/off | at once |
+| Scheduled backups | `backup.schedule` | text | at once |
+| Scheduled backups | `backup.directory` | text | after a restart |
+| Scheduled backups | `backup.keep_last` | 0–1000 | at once |
+| Scheduled backups | `backup.keep_days` | 0–3650 | at once |
+| Scheduled backups | `backup.passphrase` | secret (write-only) | at once |
+| Scheduled backups | `backup.s3.enabled` | on/off | at once |
+| Scheduled backups | `backup.s3.endpoint` | text | at once |
+| Scheduled backups | `backup.s3.region` | text | at once |
+| Scheduled backups | `backup.s3.bucket` | text | at once |
+| Scheduled backups | `backup.s3.prefix` | text | at once |
+| Scheduled backups | `backup.s3.access_key_id` | text | at once |
+| Scheduled backups | `backup.s3.secret_access_key` | secret (write-only) | at once |
 
 <!-- END GENERATED: system-settings -->
 
@@ -203,7 +217,7 @@ What each key means is in the [configuration reference](configuration.md#referen
 - **Syslog over TLS** uses `ca_file`, `cert_file` and `key_file` from the file; they are readable after the lock-down because they are added to the Landlock read-only paths at start-up. A Unix socket that was not configured at start-up may be refused by Landlock; use `udp`, `tcp` or `tls`, or restart.
 - **Secrets** entered on the page (the SMTP password, OIDC client secrets) are write-only, stored [encrypted](security.md#encryption-of-stored-secrets), never logged and never shown again.
 - **Test buttons** (*Test connection* for OIDC discovery, *Test metadata* for SAML, *Send test message* for syslog, *Send test e-mail*, *Test the service* for embeddings and AI, *Check URL* for outgoing connections) make the server connect to an address the super administrator enters. They follow the outgoing-connection rules where they use HTTP; filter the server's egress if it can reach internal services.
-- **Not on the page:** a backup schedule (backups are made on demand or from a systemd timer with `qtestframe backup`), metrics endpoints (there is none; `/healthz` and `/readyz` are public and carry no data), CI and tracker defaults (they are per project), and per-organisation settings, which are on the organisation's own pages (AI assistance, Electronic records, Multi-factor authentication) or in its policy (Administration → Organisations).
+- **Not on the page:** the history of the scheduled backups (it is under Administration → Backup, see [Scheduled backups](backup-and-migration.md#scheduled-backups)), metrics endpoints (there is none; `/healthz` and `/readyz` are public and carry no data), CI and tracker defaults (they are per project), and per-organisation settings, which are on the organisation's own pages (AI assistance, Electronic records, Multi-factor authentication) or in its policy (Administration → Organisations).
 
 ## Embeddings service for similar items
 

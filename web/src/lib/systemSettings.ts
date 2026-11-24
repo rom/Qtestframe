@@ -180,7 +180,7 @@ export interface TestResult {
  * and link to the pages that manage them.
  */
 export const SECTION_GROUPS = {
-  server: ['general', 'server', 'logging', 'monitoring', 'retention'],
+  server: ['general', 'server', 'logging', 'monitoring', 'retention', 'backup'],
   access: ['security', 'tokens', 'oidc', 'mfa', 'authorisation'],
   services: ['email', 'outbound', 'runner', 'live', 'similarity', 'ai'],
 } as const

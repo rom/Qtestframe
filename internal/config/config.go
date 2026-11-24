@@ -19,6 +19,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/rom/qtestframe/internal/backup"
 	"github.com/rom/qtestframe/internal/tracing"
 )
 
@@ -63,6 +64,9 @@ type Config struct {
 	// Tracing configures the export of OpenTelemetry traces over OTLP/HTTP
 	// (off by default).
 	Tracing Tracing `yaml:"tracing"`
+	// Backup configures the scheduled backups the server takes itself
+	// (Administration → Backup, see internal/backup).
+	Backup Backup `yaml:"backup"`
 
 	// Meta records where values came from (file keys, environment
 	// variables); filled by Load, not part of the YAML.
@@ -470,6 +474,68 @@ func (e Embeddings) validate() []error {
 	}
 	if e.Timeout < 0 {
 		errs = append(errs, errors.New("similarity.embeddings.timeout must not be negative"))
+	}
+	return errs
+}
+
+// Backup configures scheduled backups: the server writes a logical backup
+// (the archive of `qtestframe backup`) into Directory on a schedule, keeps
+// the newest files by the retention rules, optionally encrypts them with a
+// passphrase and uploads them to S3-compatible storage. In a cluster one
+// server takes each backup (a lock row in the database).
+type Backup struct {
+	Enabled bool `yaml:"enabled"`
+	// Schedule: "daily HH:MM", "weekly DAY HH:MM" or "every DURATION"
+	// (UTC, see backup.ParseSchedule).
+	Schedule string `yaml:"schedule"`
+	// Directory receives the backup files (created with mode 0700).
+	Directory string `yaml:"directory"`
+	// KeepLast keeps the newest files (0 = no limit), KeepDays deletes
+	// older files (0 = never).
+	KeepLast int `yaml:"keep_last"`
+	KeepDays int `yaml:"keep_days"`
+	// Passphrase, when set, encrypts the archives (AES-256-GCM, key from
+	// scrypt); from passphrase_file or the system settings, never in the file.
+	PassphraseFile string   `yaml:"passphrase_file"`
+	Passphrase     string   `yaml:"-"`
+	S3             BackupS3 `yaml:"s3"`
+}
+
+// BackupS3 is the optional upload of scheduled backups to S3-compatible
+// object storage (path-style requests signed with Signature Version 4).
+type BackupS3 struct {
+	Enabled             bool   `yaml:"enabled"`
+	Endpoint            string `yaml:"endpoint"`
+	Region              string `yaml:"region"`
+	Bucket              string `yaml:"bucket"`
+	Prefix              string `yaml:"prefix"`
+	AccessKeyID         string `yaml:"access_key_id"`
+	SecretAccessKeyFile string `yaml:"secret_access_key_file"`
+	SecretAccessKey     string `yaml:"-"`
+}
+
+func (b Backup) validate() []error {
+	var errs []error
+	if err := backup.CheckSchedule(b.Schedule); err != nil {
+		errs = append(errs, fmt.Errorf("backup.schedule %w", err))
+	}
+	if b.Directory != "" && !filepath.IsAbs(b.Directory) {
+		errs = append(errs, errors.New("backup.directory must be an absolute path"))
+	}
+	if b.Enabled && b.Directory == "" {
+		errs = append(errs, errors.New("backup.directory is required for scheduled backups"))
+	}
+	if b.KeepLast < 0 || b.KeepLast > 1000 {
+		errs = append(errs, errors.New("backup.keep_last must be between 0 and 1000"))
+	}
+	if b.KeepDays < 0 || b.KeepDays > 3650 {
+		errs = append(errs, errors.New("backup.keep_days must be between 0 and 3650"))
+	}
+	if b.S3.Endpoint != "" {
+		u, err := url.Parse(b.S3.Endpoint)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errs = append(errs, errors.New("backup.s3.endpoint must be an absolute http(s) URL"))
+		}
 	}
 	return errs
 }
@@ -917,6 +983,7 @@ func Default() Config {
 		AI: AI{Provider: AIAnthropic, Timeout: 2 * time.Minute, MaxTokens: 8192, RateLimit: 30,
 			Features: AIFeatures{DraftTests: true, ImproveRequirement: true, SummarizeRun: true, SuggestMappings: true, SuggestCriteria: true}},
 		Tracing: Tracing{SampleRatio: "1", ServiceName: "qtestframe"},
+		Backup:  Backup{Schedule: "daily 02:00", KeepLast: 7, S3: BackupS3{Region: "us-east-1"}},
 		Secrets: Secrets{Provider: SecretsLocal, TPM: TPMKey{Device: "/dev/tpmrm0", PCRBank: "sha256"},
 			PKCS11: PKCS11Key{KeyLabel: "qtestframe-kek"}},
 	}
@@ -1195,6 +1262,18 @@ func (c *Config) resolveSecrets() error {
 		c.Tracing.Headers = env
 		c.Meta.EnvKeys["tracing.headers"] = "QTF_TRACING_HEADERS"
 	}
+	if c.Backup.PassphraseFile != "" {
+		if c.Backup.Passphrase, err = readSecret(c.Backup.PassphraseFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["backup.passphrase"] = true
+	}
+	if c.Backup.S3.SecretAccessKeyFile != "" {
+		if c.Backup.S3.SecretAccessKey, err = readSecret(c.Backup.S3.SecretAccessKeyFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["backup.s3.secret_access_key"] = true
+	}
 	if env := os.Getenv("QTF_EMAIL_PASSWORD"); env != "" {
 		c.Email.Password = env
 		c.Meta.EnvKeys["email.password"] = "QTF_EMAIL_PASSWORD"
@@ -1361,6 +1440,7 @@ func (c *Config) Validate() error {
 	errs = append(errs, c.Outbound.validate()...)
 	errs = append(errs, c.Metrics.validate()...)
 	errs = append(errs, c.Tracing.validate()...)
+	errs = append(errs, c.Backup.validate()...)
 	if c.Email.On() && c.Server.BaseURL == "" {
 		errs = append(errs, errors.New("server.base_url is required for e-mail (links in the messages)"))
 	}

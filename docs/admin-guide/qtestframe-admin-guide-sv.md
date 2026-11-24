@@ -17,7 +17,7 @@ De som *använder* Qtestframe – även organisationsadministratörer som hanter
 9. [E-post, webhooks och integrationer](#e-post-webhooks-och-integrationer) – SMTP, aviseringar, webhooks, Jira, GitHub och GitLab, körning av skript och webbtester.
 10. [Koppla ihop med andra verktyg](#koppla-ihop-med-andra-verktyg-oslc-och-reqif) – OSLC-kopplingar till IBM DOORS Next och ETM, Polarion och Codebeamer, dialoger i ramar, ReqIF.
 11. [Loggning och övervakning](#loggning-och-övervakning) – loggformat, syslog, hälsokontroller.
-12. [Säkerhetskopiering, återställning och migrering](#säkerhetskopiering-återställning-och-migrering) – vad en säkerhetskopia innehåller, återställning, uppgradering och nedgradering, flytt mellan SQLite och PostgreSQL.
+12. [Säkerhetskopiering, återställning och migrering](#säkerhetskopiering-återställning-och-migrering) – vad en säkerhetskopia innehåller, schemalagda och krypterade säkerhetskopior, verifiering, återställning, uppgradering och nedgradering, flytt mellan SQLite och PostgreSQL.
 13. [Driftrutiner](#driftrutiner) – återkommande uppgifter, kapacitet, felsökning, loggmeddelanden.
 14. [Kommandoradsreferens](#kommandoradsreferens) – alla `qtestframe`-kommandon och flaggor.
 15. [Funktioner som lagts till senare](#funktioner-som-lagts-till-senare) – administrationsanteckningar för nyare funktioner.
@@ -429,6 +429,16 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `auth.saml[].role_mapping` | mappning | — | — | Som för OIDC. |
 | `auth.saml[].allowed_domains` | lista | — | — | E-postdomäner som får logga in via leverantören, som för OIDC. Tom = alla. |
 
+### `auth`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `auth.passkeys.enabled` | bool | `true` | — | Användare kan registrera lösennycklar (passkeys) och använda dem. När det är av sparas registrerade lösennycklar men kan inte användas, inte heller som andra faktor. |
+| `auth.passkeys.passwordless` | bool | `true` | — | Användare med lokala konton kan logga in med bara en lösennyckel ("Logga in med lösennyckel"; autentiseraren måste verifiera användaren med PIN eller biometri). När det är av är lösennycklar bara en andra faktor. Konton från en identitetsleverantör loggar alltid in där. |
+| `auth.passkeys.require_for_admins` | bool | `false` | — | Superadministratörer och organisationsadministratörer måste ha en lösennyckel eller en autentiseringsapp: utan någon måste nästa inloggning först konfigurera en. |
+| `auth.passkeys.rp_id` | text | — | — | WebAuthn-id för den förlitande parten: domänen som lösennycklarna hör till, t.ex. `example.com` (tomt = värden i `server.base_url`). Om det ändras senare blir registrerade lösennycklar oanvändbara. |
+| `auth.passkeys.origins` | lista | — | — | Ursprung som webbläsaren får använda lösennycklar från, t.ex. `https://qtf.example.com` (tomt = ursprunget i `server.base_url`). Varje ursprung måste använda https (http bara för localhost) och ligga inom `rp_id`. |
+
 ### `runner`
 
 | Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
@@ -586,6 +596,43 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `outbound.denied_hosts` | lista | — | — | Värdar som utgående anrop aldrig når, t.ex. `metadata.google.internal` eller `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Neka utgående anrop till loopback-, privata, länklokala och andra icke-publika adresser (kontrolleras på adressen som faktiskt ansluts), om inte värden finns i `allowed_hosts`. Slå på den när servern nås från internet och användarna inte ska nå ert interna nät genom den. |
 
+### `metrics`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `metrics.enabled` | bool | `false` | `QTF_METRICS_ENABLED` | Visa Prometheus-mätvärden på `/metrics` (förfrågningar, svarstider, databaspoolen, Go-körtiden, bakgrundsjobb, inloggningar, liveanslutningar och antalet projekt, krav, tester och körningar). Av som standard. |
+| `metrics.listen` | text | — | — | En separat `värd:port` för `/metrics` (t.ex. `127.0.0.1:9090`) som öppnas vid start; huvudlyssnaren svarar då 404 på `/metrics`. Tom: huvudlyssnaren visar den. |
+| `metrics.token_file` | text | — | — | Fil med den bearer-token som en insamlare måste skicka (`Authorization: Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Token kan också sparas, krypterad, i systeminställningarna; den visas aldrig igen. `QTF_METRICS_TOKEN` vinner över båda. |
+| `metrics.allowed_ips` | lista | — | — | Adresser eller CIDR-intervall som får hämta `/metrics` (klientens adress, från `X-Forwarded-For` bara bakom `trusted_proxies`). Med en token också måste båda stämma; utan någon av dem får bara loopback-adressen hämta. |
+
+### `tracing`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `tracing.enabled` | bool | `false` | `QTF_TRACING_ENABLED` | Exportera OpenTelemetry-spår av HTTP-förfrågningar, databasfrågor och utgående anrop till `endpoint`. Av som standard. |
+| `tracing.endpoint` | text | — | `QTF_TRACING_ENDPOINT` | OTLP/HTTP-adress till insamlaren, t.ex. `http://otel-collector:4318`; `/v1/traces` läggs till en adress utan sökväg. Spann skickas som JSON i omgångar (var 5:e sekund eller 512 spann). |
+| `tracing.headers_file` | text | — | — | Fil med rubriker som skickas med varje export, `nyckel=värde`-par åtskilda med komma (t.ex. `Authorization=Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Kan också sparas, krypterade, i systeminställningarna. `QTF_TRACING_HEADERS` vinner över båda. |
+| `tracing.sample_ratio` | text | `1` | — | Andel nya spår som spelas in, 0–1 (`0.1` = vart tionde). En förfrågan med en `traceparent`-rubrik följer anroparens beslut. |
+| `tracing.service_name` | text | `qtestframe` | — | `service.name` för de exporterade spannen. |
+
+### `backup`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `backup.enabled` | bool | `false` | — | Ta schemalagda säkerhetskopior: servern skriver arkivet från `qtestframe backup` till `directory` enligt `schedule`. Med flera servrar mot samma databas tar en av dem varje säkerhetskopia (en låsrad i databasen). |
+| `backup.schedule` | text | `daily 02:00` | — | När säkerhetskopiorna tas, i UTC: `daily HH:MM`, `weekly DAG HH:MM` (`mon`–`sun`) eller `every TIDSLÄNGD` (`15m` till `720h`, t.ex. `every 6h`). En tidpunkt som missades medan ingen server körde tas en gång vid nästa start. |
+| `backup.directory` | text | — | — | Absolut sökväg till katalogen som säkerhetskopiorna skrivs till (skapas med läget 0700, skrivbar under Landlock). Krävs för schemalagda säkerhetskopior och *Säkerhetskopiera nu*. Filerna heter `qtestframe-backup-ÅÅÅÅMMDD-TTMMSS.zip` (`.zip.enc` när de är krypterade). |
+| `backup.keep_last` | heltal | `7` | — | Behåll de N nyaste säkerhetskopiorna i `directory` och ta bort äldre (`0` = ingen gräns). Bara filer som heter som schemalagda säkerhetskopior tas bort. |
+| `backup.keep_days` | heltal | `0` | — | Ta bort säkerhetskopior som är äldre än N dagar (`0` = aldrig). Tillsammans med `keep_last` tas en fil bort när någon av reglerna säger det; den nyaste filen behålls alltid. |
+| `backup.passphrase_file` | text | — | — | Fil med lösenfrasen som krypterar schemalagda säkerhetskopior (AES-256-GCM med en nyckel som härleds med scrypt). En relativ sökväg slås upp i `$CREDENTIALS_DIRECTORY`. Lösenfrasen kan också anges i systeminställningarna; utan den krypteras säkerhetskopiorna inte. |
+| `backup.s3.enabled` | bool | `false` | — | Ladda upp varje schemalagd säkerhetskopia till S3-kompatibel objektlagring (Amazon S3, MinIO, Ceph, Garage …) när den har skrivits. En misslyckad uppladdning gör att körningen misslyckas; den lokala filen behålls. |
+| `backup.s3.endpoint` | text | — | — | Bas-URL till lagringen, t.ex. `https://s3.eu-north-1.amazonaws.com` eller `https://minio.example.com:9000` (sökvägsadressering: `ENDPOINT/BUCKET/NYCKEL`). Uppladdningen följer inställningarna under `outbound`. |
+| `backup.s3.region` | text | `us-east-1` | — | Region för signaturen (AWS Signature Version 4); `us-east-1` för de flesta S3-kompatibla servrar. |
+| `backup.s3.bucket` | text | — | — | Bucket som säkerhetskopiorna laddas upp till. Ta bort gamla objekt med en livscykelregel för bucketen: gallringsreglerna gäller bara den lokala katalogen. |
+| `backup.s3.prefix` | text | — | — | Prefix för objektnycklarna, t.ex. `qtestframe/` (tomt = högst upp i bucketen). |
+| `backup.s3.access_key_id` | text | — | — | Åtkomstnyckel-ID för de inloggningsuppgifter som får göra `PutObject` i bucketen. |
+| `backup.s3.secret_access_key_file` | text | — | — | Fil med den hemliga åtkomstnyckeln. En relativ sökväg slås upp i `$CREDENTIALS_DIRECTORY`. Nyckeln kan också anges i systeminställningarna (kan bara skrivas). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler
@@ -608,6 +655,8 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_LIVE_ENABLED` | `live.enabled` (`1` eller `true` = på, allt annat = av) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
+| `QTF_METRICS_ENABLED` | `metrics.enabled` (`true` eller `1`) |
+| `QTF_METRICS_TOKEN` | bearer-token för `/metrics`; vinner över `metrics.token_file` och en token sparad i webbklienten |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` eller `true` = på) |
 | `QTF_RUNNER_WEB_BROWSERS_PATH` | `runner.web.browsers_path` |
 | `QTF_RUNNER_WEB_ENABLED` | `runner.web.enabled` (`1` eller `true` = på) |
@@ -623,9 +672,13 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_SERVER_BASE_URL` | `server.base_url` |
 | `QTF_SERVER_LISTEN` | `server.listen` |
 | `QTF_SERVER_PORT` | porten i `server.listen` (värden behålls) |
+| `QTF_TRACING_ENABLED` | `tracing.enabled` (`true` eller `1`) |
+| `QTF_TRACING_ENDPOINT` | `tracing.endpoint` |
+| `QTF_TRACING_HEADERS` | rubrikerna för spårexporten; vinner över `tracing.headers_file` och rubriker sparade i webbklienten |
 | `QTF_OIDC_<NAME>_CLIENT_SECRET` | klienthemligheten för OIDC-leverantören `<namn>` (versaler); vinner över `client_secret_file` och en hemlighet sparad i webbklienten |
 | `CREDENTIALS_DIRECTORY` | sätts av systemd (`LoadCredential=`): relativa `*_file`-sökvägar slås upp där, och den är läsbar efter låsningen |
 | `STATE_DIRECTORY` | sätts av systemd (`StateDirectory=`): standardplats för nyckelfilen när databasen inte är SQLite |
+| `QTF_BACKUP_PASSPHRASE` | lösenfrasen för `qtestframe backup --encrypt`, `backup verify` och `restore` när `--passphrase-file` inte anges (servern läser `backup.passphrase` i stället) |
 | `QTF_URL`, `QTF_TOKEN`, `QTF_CONFIGURATION` | standardvärden för `--url`, `--token` och `--configuration` i `qtestframe report` |
 
 <!-- END GENERATED: environment -->
@@ -709,7 +762,8 @@ Qtestframe känner till de här sätten att visa vem någon är:
 | Metod | För | Konfigureras i |
 |---|---|---|
 | Lokalt lösenord | personer | `auth.local`, lösenordsregler |
-| Andra faktor (TOTP-autentiseringsapp, återställningskoder) | personer med lokalt lösenord, valfritt efter OIDC | MFA-policyn i webbklienten; `local_mfa` per OIDC-leverantör |
+| Andra faktor (TOTP-autentiseringsapp, återställningskoder, lösennycklar) | personer med lokalt lösenord, valfritt efter OIDC | MFA-policyn i webbklienten; `local_mfa` per OIDC-leverantör |
+| Lösennyckel (WebAuthn), utan lösenord | personer med lokalt konto | `auth.passkeys` (filen eller systeminställningarna) |
 | OpenID Connect | personer | `auth.oidc` (filen eller systeminställningarna) |
 | SAML 2.0 | personer | `auth.saml` (bara filen) |
 | Inbjudan via e-post | en persons första inloggning | kräver e-post |
@@ -744,7 +798,37 @@ Gissning begränsas på tre sätt: varje kod räknas mot inloggningsgränsen ova
 
 **Borttappad telefon och återställningskoder:** en organisationsadministratör använder **Återställ tvåstegsverifiering** under **Medlemmar** (för medlemmar som bara tillhör den organisationen), en superadministratör under **Användare**. Det tar bort autentiseringsappen, återställningskoderna och ihågkomna enheter, loggar ut användaren och meddelar hen med avisering och e-post. Kontrollera begäran via en annan kanal först.
 
-TOTP-hemligheterna lagras krypterade (se [Säkerhet](#kryptering-av-lagrade-hemligheter)). API-nycklar och SCIM-token påverkas inte av MFA; skydda dem som lösenord. WebAuthn och passkeys finns inte.
+TOTP-hemligheterna lagras krypterade (se [Säkerhet](#kryptering-av-lagrade-hemligheter)). API-nycklar och SCIM-token påverkas inte av MFA; skydda dem som lösenord. [Lösennycklar](#lösennycklar) är också en andra faktor.
+
+## Lösennycklar
+
+En **lösennyckel** (passkey) är en WebAuthn-autentiseringsuppgift: ett nyckelpar som användarens enhet håller (en plattformsautentiserare med fingeravtryck, ansikte eller PIN, en lösenordshanterare som synkar den, eller en säkerhetsnyckel). Qtestframe sparar bara den publika nyckeln. Lösennycklar används på tre sätt:
+
+- **Inloggning utan lösenord** – **Logga in med lösennyckel** på inloggningssidan, och förslag på lösennycklar i e-postfältet där webbläsaren stöder det (villkorlig medling, conditional mediation). Den använder *upptäckbara* autentiseringsuppgifter och kräver **användarverifiering** (UV-flaggan: PIN eller biometri), så den räknas som flerfaktor i sig: ingen TOTP-kod efterfrågas. Bara **lokala konton** kan logga in så; konton från en identitetsleverantör loggar in där (Qtestframe låter inte en lösennyckel kringgå leverantören).
+- **Andra faktor** – efter lösenordet (och efter OIDC med `local_mfa`) kan en användare med lösennycklar bekräfta med en sådan i stället för en TOTP-kod. Användarverifiering föredras men krävs inte (användarnärvaro krävs). En lösennyckel räknas som andra faktor för alla MFA-policyer, så en användare kan ha lösennycklar, en autentiseringsapp eller båda.
+- **Ny bekräftelse av identiteten** – att lägga till och ta bort lösennycklar kräver en inloggning för mindre än 10 minuter sedan; annars bekräftar användaren sin identitet igen med lösenordet, en TOTP- eller återställningskod eller en lösennyckel (`POST /api/v1/auth/reauth`).
+
+Användarna hanterar sina lösennycklar i sin profil (flera per konto, högst 25, var och en med namn, datum då den lades till och senaste användning; byt namn och ta bort). Att ta bort den sista andra faktorn för ett konto som en policy kräver MFA för nekas.
+
+**Inställningar** (Systeminställningar → Inloggning och lösenord, eller konfigurationsfilen):
+
+| Inställning | Standard | Betydelse |
+|---|---|---|
+| `auth.passkeys.enabled` | på | Användare kan registrera och använda lösennycklar. Av behåller registrerade lösennycklar men de kan inte användas, inte heller som andra faktor. |
+| `auth.passkeys.passwordless` | på | Inloggning utan lösenord erbjuds (kräver också `auth.local`). Av: lösennycklar är bara en andra faktor. |
+| `auth.passkeys.require_for_admins` | av | Superadministratörer och organisationsadministratörer måste ha en lösennyckel eller en autentiseringsapp, utan övergångsperiod: deras nästa inloggning måste först konfigurera en. |
+| `auth.passkeys.rp_id` | värden i `server.base_url` | WebAuthn-id för den förlitande parten (RP-id), domänen som lösennycklarna gäller för (`example.com` låter `qtf.example.com` och andra underdomäner använda dem). |
+| `auth.passkeys.origins` | ursprunget i `server.base_url` | Webbursprungen som får använda lösennycklarna. Vart och ett måste vara `https` (`http` bara för `localhost`) och ligga inom RP-id:t. |
+
+Lösennycklar kräver en **https**-adress i `server.base_url` (eller de två inställningarna ovan): webbläsare erbjuder WebAuthn bara i ett säkert sammanhang, och RP-id:t binder varje lösennyckel till domänen. Utan en sådan ser användarna att lösennycklar inte är konfigurerade. **Välj RP-id innan användarna registrerar lösennycklar**: om det ändras, eller om servern flyttas till en annan domän, blir alla registrerade lösennycklar oanvändbara (användarna loggar då in med lösenordet och registrerar nya).
+
+**Vad servern kontrollerar.** Utmaningarna är 32 slumpmässiga byte, sparas på servern, gäller i 5 minuter och tas bort när de besvaras (engångsbruk). De är bundna till webbläsarsessionen, till den påbörjade inloggningen med andra faktor eller, för inloggning utan lösenord, till en kortlivad `qtf_passkey`-kaka i webbläsaren som bad om den. För varje ceremoni kontrollerar servern klientdatans typ, utmaning och ursprung (inga ramar från andra ursprung), SHA-256 av RP-id:t i autentiseringsdatan, flaggan för användarnärvaro och, där det krävs, flaggan för användarverifiering, samt signaturen. Registreringar accepterar intygsformaten `none` (det Qtestframe ber om) och `packed` (självintyg, eller ett x5c-certifikat vars signatur kontrolleras men som inte kedjas till ett betrott rotcertifikat: Qtestframe avgör inte efter autentiserarmodell), med algoritmerna ES256, EdDSA (Ed25519) och RS256 (minst 2048 bitar). **Signaturräknaren** måste öka för autentiserare som har en: om den inte gör det släpps inloggningen igenom, men en varning loggas och händelsen `passkey.counter_regressed` registreras i händelseloggen, eftersom det kan betyda en klonad autentiserare. Synkade lösennycklar har ingen räknare. Implementationen använder bara Gos standardbibliotek (en liten, begränsad CBOR-avkodare för intygsobjekten); den lägger inte till något WebAuthn-beroende.
+
+**Gränser.** Inloggning utan lösenord räknas mot inloggningsgränsen för klientadressen; dess alternativ begränsas till 60 per 5 minuter och adress. En lösennyckel som andra faktor räknas som en kod (10 försök per 15 minuter och konto, 5 per påbörjad inloggning).
+
+**Administratörer** ser antalet lösennycklar per användare under **Medlemmar** (kolumnen *Lösennycklar*) och **Användare**, och kan **Återkalla lösennycklar** (en borttappad eller komprometterad enhet): alla användarens lösennycklar tas bort och användaren loggas ut överallt. Precis som för MFA-återställningar kan organisationsadministratörer göra detta för medlemmar som bara tillhör deras organisation.
+
+**Händelselogg:** `passkey.register`, `passkey.rename`, `passkey.delete`, `user.reauth`, `member.revoke_passkeys`, `user.revoke_passkeys`, `passkey.counter_regressed`, och inloggningarna som `login` med metoden `passkey` (utan lösenord) eller `mfa=passkey` (andra faktor), med lösennyckelns namn. Misslyckade inloggningar med lösennyckel registreras i inloggningshistoriken med metoden *passkey*.
 
 ## OpenID Connect
 
@@ -1047,7 +1131,9 @@ Använd miljövariabler eller lås för det som inte får ändras från webbklie
 | Allmänt, Inloggning och lösenord, API-tokens, Enkel inloggning, Loggning och syslog, E-post (SMTP), Utgående anslutningar, Likhet, AI-assistans | **direkt** – e-postavsändaren, OIDC-leverantörerna (oförändrade leverantörer behålls, så pågående inloggningar fortsätter), loggningen, inloggningsgränserna och den utgående HTTP-klienten följer de nya värdena |
 | Liveuppdateringar | brytaren och pulsen **direkt** (nya anslutningar); anslutningsgränserna, repriskbufferten och tidsgränsen för närvaro **efter en omstart** |
 | Server och databas | HTTP-tidsgränserna för läsning och skrivning **efter en omstart**; allt annat anges i filen och visas med sin källa (lyssningsadress, TLS-filer, databas, första start, härdning, nyckelleverantör) |
+| Mätvärden och spårning | **direkt** – brytarna, token, adresslistan och spårexporten; den separata adressen för mätvärden (`metrics.listen`) **efter en omstart**. Avsnittet visar också läget: var `/metrics` visas, hur den skyddas, och antalet exporterade, misslyckade och kastade spann med senaste export och senaste fel |
 | Körning av skript och webbtester | **efter en omstart** – körningen och dess sandlåda sätts upp innan processen låses (Landlocks körbara sökvägar, arbetskatalogen); värdet sparas direkt och sidan visar värdet som används tills dess |
+| Schemalagda säkerhetskopior | **direkt** (på/av, schema, gallring, lösenfras, uppladdning); katalogen **efter omstart**, eftersom servern öppnar den för skrivning innan processen låses – se [Schemalagda säkerhetskopior](#schemalagda-säkerhetskopior) |
 | Gallring och säkerhetskopior, Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem (papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast) |
 
 Inställningar märkta **Gäller efter omstart** behåller sitt värde tills nästa start. En banderoll överst på sidan listar varje sparad ändring som väntar på en omstart, med en länk till inställningen.
@@ -1096,6 +1182,11 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Inloggning och lösenord | `auth.login_max_attempts` | 1–1000 | direkt |
 | Inloggning och lösenord | `auth.login_lockout` | 1m–24h | direkt |
 | Inloggning och lösenord | `auth.cookie_secure` | på/av | visas bara (filen) |
+| Inloggning och lösenord | `auth.passkeys.enabled` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.passwordless` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.require_for_admins` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.rp_id` | text | direkt |
+| Inloggning och lösenord | `auth.passkeys.origins` | lista | direkt |
 | API-tokens | `auth.token_max_days` | 0–3650 | direkt |
 | API-tokens | `auth.token_require_expiry` | på/av | direkt |
 | Enkel inloggning | `auth.oidc` | lista med leverantörer | direkt |
@@ -1110,6 +1201,15 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Loggning och syslog | `logging.syslog.ca_file` | text | visas bara (filen) |
 | Loggning och syslog | `logging.syslog.cert_file` | text | visas bara (filen) |
 | Loggning och syslog | `logging.syslog.key_file` | text | visas bara (filen) |
+| Mätvärden och spårning | `metrics.enabled` | på/av | direkt |
+| Mätvärden och spårning | `metrics.listen` | text | efter omstart |
+| Mätvärden och spårning | `metrics.token` | hemlighet (skrivskyddad läsning) | direkt |
+| Mätvärden och spårning | `metrics.allowed_ips` | lista | direkt |
+| Mätvärden och spårning | `tracing.enabled` | på/av | direkt |
+| Mätvärden och spårning | `tracing.endpoint` | text | direkt |
+| Mätvärden och spårning | `tracing.headers` | hemlighet (skrivskyddad läsning) | direkt |
+| Mätvärden och spårning | `tracing.sample_ratio` | text | direkt |
+| Mätvärden och spårning | `tracing.service_name` | text | direkt |
 | E-post (SMTP) | `email.enabled` | på/av | direkt |
 | E-post (SMTP) | `email.host` | text | direkt |
 | E-post (SMTP) | `email.port` | 1–65535 | direkt |
@@ -1177,6 +1277,19 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | AI-assistans | `ai.features.suggest_criteria` | på/av | direkt |
 | AI-assistans | `ai.price_input` | text | direkt |
 | AI-assistans | `ai.price_output` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.enabled` | på/av | direkt |
+| Schemalagda säkerhetskopior | `backup.schedule` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.directory` | text | efter omstart |
+| Schemalagda säkerhetskopior | `backup.keep_last` | 0–1000 | direkt |
+| Schemalagda säkerhetskopior | `backup.keep_days` | 0–3650 | direkt |
+| Schemalagda säkerhetskopior | `backup.passphrase` | hemlighet (skrivskyddad läsning) | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.enabled` | på/av | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.endpoint` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.region` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.bucket` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.prefix` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.access_key_id` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.secret_access_key` | hemlighet (skrivskyddad läsning) | direkt |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1196,7 +1309,7 @@ Vad varje nyckel betyder står i [konfigurationsreferensen](#referens). Varje ny
 - **Syslog över TLS** använder `ca_file`, `cert_file` och `key_file` från filen; de är läsbara efter låsningen eftersom de läggs till bland Landlocks skrivskyddade sökvägar vid start. En Unix-socket som inte var konfigurerad vid start kan nekas av Landlock; använd `udp`, `tcp` eller `tls`, eller starta om.
 - **Hemligheter** som anges på sidan (SMTP-lösenordet, OIDC-klienthemligheter) kan bara skrivas, lagras [krypterade](#kryptering-av-lagrade-hemligheter), loggas aldrig och visas aldrig igen.
 - **Testknapparna** (*Testa anslutningen* för OIDC-discovery, *Testa metadata* för SAML, *Skicka testmeddelande* för syslog, *Skicka testmejl*, *Testa tjänsten* för inbäddningar och AI, *Kontrollera adress* för utgående anslutningar) får servern att ansluta till en adress som superadministratören anger. De följer reglerna för utgående anslutningar när de använder HTTP; filtrera serverns utgående trafik om den når interna tjänster.
-- **Inte på sidan:** schema för säkerhetskopior (de görs vid behov eller från en systemd-timer med `qtestframe backup`), metrikslutpunkter (det finns ingen; `/healthz` och `/readyz` är publika och innehåller inga data), standardvärden för CI och ärendehanterare (de är per projekt) och inställningar per organisation, som finns på organisationens egna sidor (AI-assistans, Elektroniska poster, Flerfaktorsautentisering) eller i dess regler (Administration → Organisationer).
+- **Inte på sidan:** historiken för de schemalagda säkerhetskopiorna (den finns under Administration → Säkerhetskopiering, se [Schemalagda säkerhetskopior](#schemalagda-säkerhetskopior)), metrikslutpunkter (det finns ingen; `/healthz` och `/readyz` är publika och innehåller inga data), standardvärden för CI och ärendehanterare (de är per projekt) och inställningar per organisation, som finns på organisationens egna sidor (AI-assistans, Elektroniska poster, Flerfaktorsautentisering) eller i dess regler (Administration → Organisationer).
 
 ## Tjänst för inbäddningar för liknande objekt
 
@@ -1924,10 +2037,12 @@ Servern skriver strukturerade loggposter (Go `log/slog`) till **standard error**
 
 Det här loggas:
 
-- **Varje begäran** utom `/healthz` och `/readyz`: metod, sökväg (utan frågesträng), status, byte, tid och klientadress (från `X-Forwarded-For` bara för `trusted_proxies`). Begäranden som besvaras med 5xx loggas på nivån ERROR, övriga på INFO.
+- **Varje begäran** utom `/healthz`, `/readyz` och `/metrics`: metod, sökväg (utan frågesträng), status, byte, tid och klientadress (från `X-Forwarded-For` bara för `trusted_proxies`). Begäranden som besvaras med 5xx loggas på nivån ERROR, övriga på INFO.
 - **Granskningsposter** (`msg=audit`, INFO) med organisation, användare, åtgärd, objekt och id, en för varje post i händelseloggen.
 - **Säkerhetshändelser**: `login failed` och `second factor failed` (WARN, med e-post och klientadress), problem med konfiguration och nycklar vid start, raden `hardening`.
 - **Bakgrundsarbete**: migreringar, rensade sessioner och papperskorgsposter, mätpunkter, fel vid e-post och webhooks, återställda jobb.
+
+När en begäran hör till ett spår (en inkommande `traceparent`-rubrik, eller spårning på) får dess poster `trace_id`, och `span_id` för den här serverns spann, så att en loggrad kan hittas från ett spår och tvärtom.
 
 Lösenord, token, kakor och `Authorization`-huvuden loggas aldrig. Oväntade fel besvaras bara med "internal server error"; detaljerna finns i loggraden `request failed` (sökväg och fel).
 
@@ -1964,17 +2079,94 @@ Exempel på mottagare för rsyslog (`imtcp` med `gtls`) och syslog-ng (`network(
 | Adress | Svarar | Användning |
 |---|---|---|
 | `GET /healthz` | `200 {"status":"ok","version":"…"}` så länge processen besvarar begäranden | liveness-kontroll |
-| `GET /readyz` | `200 {"status":"ready"}`, eller `503` när databasen inte svarar inom 2 sekunder | readiness-kontroll, lastbalanserare |
+| `GET /readyz` | `200 {"status":"ready","checks":{"database":"ok","migrations":"ok"}}`, eller `503` när databasen inte svarar inom 2 sekunder eller migreringar inte är gjorda (en annan process migrerar fortfarande) | readiness-kontroll, lastbalanserare |
 
 Båda kräver ingen inloggning och skrivs inte i begärandeloggen. `qtestframe healthcheck` kontrollerar `/healthz` på den lokala servern för hälsokontroller i containrar.
 
-Det finns **ingen adress för mätvärden** (ingen Prometheus-exporter). *Trenderna* på översiktspanelen är projektdata (dagliga mätpunkter), inte servermätvärden.
+## Prometheus-mätvärden
+
+`GET /metrics` visar mätvärden i Prometheus textformat. Den är **av som standard**; slå på den med `metrics.enabled` (eller `QTF_METRICS_ENABLED=true`, eller **Administration → Systeminställningar → Mätvärden och spårning**). *Trenderna* på översiktspanelen är projektdata (dagliga mätpunkter), inte servermätvärden.
+
+| Mätvärde | Typ | Etiketter | Betydelse |
+|---|---|---|---|
+| `qtf_http_requests_total` | counter | `route`, `method`, `status` | förfrågningar per vägmall (`/api/v1/tests/{id}`, aldrig själva id:t), metod och statusklass (`2xx` … `5xx`) |
+| `qtf_http_request_duration_seconds` | histogram | `route`, `method` | förfrågningarnas svarstid (utan händelseströmmar) |
+| `qtf_http_requests_in_flight` | gauge | | förfrågningar som besvaras just nu (utan händelseströmmar) |
+| `qtf_live_connections` | gauge | | öppna strömmar för liveuppdateringar (Server-Sent Events) |
+| `qtf_db_connections` | gauge | `state` (`in_use`, `idle`) | anslutningar i databaspoolen |
+| `qtf_db_max_open_connections` | gauge | | poolens gräns |
+| `qtf_db_wait_total`, `qtf_db_wait_duration_seconds_total` | counter | | frågor som väntade på en ledig anslutning, och hur länge |
+| `qtf_db_closed_connections_total` | counter | `reason` | anslutningar som poolen stängt |
+| `qtf_jobs_total` | counter | `kind` (`script_job`, `req_sync`, `report_mail`), `result` | avslutade bakgrundsjobb: automatiserade tester (`passed`, `failed`, `skipped`, `cancelled`, `error`, `interrupted`), kravsynkningar (`ok`, `partial`, `error`) och schemalagda rapporter (`ok`, `error`) |
+| `qtf_script_jobs_running` | gauge | | automatiserade tester som körs i den här processen |
+| `qtf_logins_total` | counter | `method` (`local`, `oidc`, `saml`, `mfa`, `invitation`, `external`, `other`), `result` (`success`, `failure`) | inloggningsförsök |
+| `qtf_tenants`, `qtf_users`, `qtf_projects`, `qtf_requirements`, `qtf_tests`, `qtf_runs` | gauge | | installationens storlek, räknas högst en gång i minuten |
+| `qtf_tracing_spans_total` | counter | `outcome` (`exported`, `failed`, `dropped`) | spann i spårexporten |
+| `qtf_build_info` | gauge | `version`, `goversion` | alltid 1 |
+| `process_start_time_seconds` | gauge | | när processen startade (Unix-tid) |
+| `go_goroutines`, `go_memstats_alloc_bytes`, `go_memstats_heap_inuse_bytes`, `go_memstats_heap_objects`, `go_memstats_sys_bytes`, `go_gc_next_bytes` | gauge | | Go-körtiden |
+| `go_gc_cycles_total`, `go_gc_pause_seconds_total` | counter | | skräpsamling |
+
+Slutpunkten skyddas av det som är konfigurerat, och en förfrågan måste klara **varje** konfigurerad kontroll:
+
+- **`metrics.token`** – insamlaren skickar `Authorization: Bearer <token>`. Token är en hemlighet: kan bara skrivas i systeminställningarna (sparas krypterad), eller kommer från `metrics.token_file` eller `QTF_METRICS_TOKEN`. En saknad eller fel token ger `401`.
+- **`metrics.allowed_ips`** – adresser eller CIDR-intervall (`10.0.0.0/8`). Klientens adress tas från `X-Forwarded-For` bara bakom `server.trusted_proxies`. Andra adresser får `403`.
+- Utan **någon av dem** får bara loopback-adressen (`127.0.0.1`, `::1`) hämta: alla andra får `403`.
+
+`metrics.listen` (t.ex. `127.0.0.1:9090`, gäller efter en omstart) visar `/metrics`, `/healthz` och `/readyz` på en egen lyssnare, med vanlig HTTP; huvudlyssnaren svarar då `404` på `/metrics`. Håll den adressen på ett internt nät.
+
+```yaml
+metrics:
+  enabled: true
+  listen: "10.0.0.5:9090"          # valfritt
+  token_file: metrics-token        # relativ: i $CREDENTIALS_DIRECTORY
+  allowed_ips: [10.0.0.0/24]
+```
+
+Motsvarande jobb i Prometheus:
+
+```yaml
+scrape_configs:
+  - job_name: qtestframe
+    scheme: http
+    authorization:
+      credentials_file: /etc/prometheus/qtestframe-token
+    static_configs:
+      - targets: ["10.0.0.5:9090"]
+```
+
+En exempelpanel för Grafana (`examples/monitoring/grafana-dashboard.json`) och larmregler (`examples/monitoring/prometheus-alerts.yml`) finns i förrådet: felandel, svarstid, mättad databaspool, misslyckade jobb och misslyckade inloggningar.
+
+## OpenTelemetry-spårning
+
+Med spårning på spelar servern in ett spann för varje förfrågan (namngivet efter vägen, t.ex. `GET /api/v1/tests/{id}`), ett underordnat spann för varje databasfråga i förfrågan (satsen utan värden) och ett klientspann för varje utgående anrop (webhooks, ärendesystem, AI, …). Spannen skickas i omgångar till en OpenTelemetry-insamlare över **OTLP/HTTP med JSON** (var 5:e sekund eller 512 spann; högst 4096 väntar, fler kastas och räknas).
+
+| Inställning | Betydelse |
+|---|---|
+| `tracing.enabled` | på/av (av som standard) |
+| `tracing.endpoint` | insamlaren, t.ex. `http://otel-collector:4318`; `/v1/traces` läggs till en adress utan sökväg |
+| `tracing.headers` | rubriker för varje export som `nyckel=värde`-par åtskilda med komma, t.ex. `Authorization=Bearer <token>`; en hemlighet (kan bara skrivas, sparas krypterad, eller `tracing.headers_file`, `QTF_TRACING_HEADERS`) |
+| `tracing.sample_ratio` | andel nya spår som spelas in, `0`–`1` (standard `1`) |
+| `tracing.service_name` | spannens `service.name` (standard `qtestframe`) |
+
+W3C Trace Context följs åt båda hållen: en förfrågan med en `traceparent`-rubrik fortsätter anroparens spår (och dess urvalsbeslut), och utgående anrop får en egen `traceparent`-rubrik. Hälsokontroller och insamlingar spåras inte. Exporten går inte genom serverns regler för utgående anslutningar (precis som syslog). Avsnittet **Mätvärden och spårning** i systeminställningarna visar antalet exporterade, misslyckade och kastade spann och insamlarens senaste fel.
+
+```yaml
+tracing:
+  enabled: true
+  endpoint: "http://otel-collector:4318"
+  headers_file: otlp-headers       # t.ex. Authorization=Bearer <token>
+  sample_ratio: "0.2"
+  service_name: qtestframe
+```
 
 ## Vad som bör övervakas
 
 | Signal | Hur |
 |---|---|
 | liveness och readiness | `/healthz`, `/readyz` (t.ex. Prometheus `blackbox_exporter`, modulen `http_2xx`) |
+| felandel och svarstid | `qtf_http_requests_total{status="5xx"}`, `qtf_http_request_duration_seconds` (se larmreglerna i `examples/monitoring/`) |
+| bakgrundsarbete | `qtf_jobs_total` med `result` `error`, `failed` eller `partial` |
 | tjänstens tillstånd | `systemctl is-active qtestframe`; enheten startar om servern vid fel |
 | fel | loggposter med `level=ERROR`; `stored system settings are invalid`; `tls reload failed` |
 | angrepp | många `login failed`, `second factor failed` eller misslyckade SCIM-autentiseringar från en adress |
@@ -2009,9 +2201,9 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**I en säkerhetskopia** (116 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`, `step_definitions`.
+**I en säkerhetskopia** (117 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `webauthn_credentials`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`, `step_definitions`.
 
-**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Inte i en säkerhetskopia:** `backup_locks`, `backup_runs`, `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`, `webauthn_challenges`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -2046,6 +2238,75 @@ WantedBy=timers.target
 
 Katalogen måste finnas och vara skrivbar för `qtestframe`. Kopiera filerna till en annan värd (restic, borg) och ta bort gamla.
 
+## Schemalagda säkerhetskopior
+
+I stället för en timer kan servern ta säkerhetskopiorna själv. Slå på dem under **Administration → Systeminställningar → Schemalagda säkerhetskopior** (eller i avsnittet `backup` i konfigurationsfilen):
+
+| Inställning | Betydelse |
+|---|---|
+| `backup.enabled` | ta schemalagda säkerhetskopior |
+| `backup.schedule` | när, i UTC: `daily 02:00`, `weekly sun 03:30` eller `every 6h` (15 minuter till 30 dagar) |
+| `backup.directory` | absolut sökväg till katalogen som filerna skrivs till, t.ex. `/var/backups/qtestframe`; den gäller **efter omstart**, eftersom servern öppnar den för skrivning innan processen låses (Landlock) |
+| `backup.keep_last`, `backup.keep_days` | gallring: behåll de N nyaste filerna, ta bort filer som är äldre än N dagar |
+| `backup.passphrase` | kryptera filerna (se nedan); kan bara skrivas |
+| `backup.s3.*` | ladda också upp dem till S3-kompatibel lagring (se nedan) |
+
+```yaml
+backup:
+  enabled: true
+  schedule: daily 02:00
+  directory: /var/backups/qtestframe
+  keep_last: 14
+  keep_days: 30
+  passphrase_file: backup-passphrase   # i $CREDENTIALS_DIRECTORY
+```
+
+Vad som händer:
+
+- En goroutine i servern kontrollerar schemat varje minut. En säkerhetskopiering skriver samma arkiv som `qtestframe backup` till en tillfällig fil i katalogen, byter namn på den till `qtestframe-backup-ÅÅÅÅMMDD-TTMMSS.zip` (`.zip.enc` när den är krypterad) och registrerar dess storlek och **SHA-256**.
+- **Flera servrar** mot samma PostgreSQL-databas: varje säkerhetskopiering tar en låsrad i databasen (`backup_locks`) med ett lån på fem minuter som servern förnyar medan den skriver, så att exakt en server tar varje säkerhetskopia; låset för en server som kraschat löper ut. Ge alla servrar samma katalog bara om den är delad lagring; annars sprids filerna över servrarna.
+- En tidpunkt som missades medan ingen server körde (en uppgradering kl. 02.00) tas en gång, vid nästa kontroll. En misslyckad säkerhetskopiering görs inte om varje minut utan vid nästa tidpunkt; använd **Säkerhetskopiera nu** för att försöka igen direkt.
+- Efter en lyckad säkerhetskopiering tar **gallringsreglerna** bort gamla filer: `keep_last` behåller de N nyaste, `keep_days` tar bort filer som är äldre än N dagar, och med båda tas en fil bort när någon av reglerna säger det. Den nyaste filen behålls alltid, och bara filer som heter som schemalagda säkerhetskopior tas någonsin bort. `0` stänger av en regel; med båda på `0` tas ingenting bort.
+- Varje körning registreras (tabellen `backup_runs`: start, slut, fil, storlek, SHA-256, kryptering, uppladdning, status, fel) och granskas: `admin.backup.completed` eller `admin.backup.failed` (systemposter), `admin.backup.run` när en superadministratör startar en. En misslyckad säkerhetskopiering **skickas också med e-post till alla superadministratörer** när e-post är konfigurerad. En säkerhetskopiering som fortfarande pågår när servern stoppas registreras som misslyckad (`interrupted`) av nästa.
+
+**Administration → Säkerhetskopiering** visar schemat, nästa säkerhetskopia och historiken, med **Säkerhetskopiera nu** (`POST /api/v1/admin/backups/run`, även utan schema när katalogen är angiven), **nedladdning** av en fil (`GET /api/v1/admin/backups/{id}/download`, granskas som `admin.backup.download`) och **verifiering** (nedan). Historiken och låset ingår inte i en säkerhetskopia; filerna ligger utanför databasen, så kopiera katalogen till en annan värd eller använd uppladdningen.
+
+## Krypterade säkerhetskopior
+
+Med en lösenfras krypteras arkivet: AES-256-GCM i block om 1 MiB med en nyckel som härleds från lösenfrasen med scrypt (N = 2^15, r = 8, p = 1, slumpmässigt salt). Varje block autentiseras, så en ändrad, avkortad eller omkastad fil upptäcks; fel lösenfras och en skadad fil ger samma fel. Den krypterade filen börjar med `QTFENC01`.
+
+- Schemalagda säkerhetskopior: ange `backup.passphrase` i systeminställningarna (minst 12 tecken; lagras krypterad med nyckeln för de lagrade hemligheterna, visas aldrig) eller `backup.passphrase_file` i konfigurationsfilen.
+- Kommandoraden: `qtestframe backup --out FIL.zip.enc --encrypt` läser lösenfrasen från `--passphrase-file FIL`, annars `QTF_BACKUP_PASSPHRASE`, annars en rad på standard input. Inledande och avslutande mellanslag ignoreras.
+- Återställning: `qtestframe restore --in FIL.zip.enc --yes` känner igen en krypterad fil och frågar efter lösenfrasen på samma sätt; den dekrypteras till en tillfällig fil bredvid säkerhetskopian (eller i `$TMPDIR`), som tas bort efteråt. Under **Administration → Säkerhetskopiering** skriver du lösenfrasen i återställningsformuläret, eller lämnar den tom för att använda lösenfrasen för de schemalagda säkerhetskopiorna.
+
+Förvara lösenfrasen någon annanstans än säkerhetskopiorna – i en lösenordshanterare eller ett förseglat kuvert. Utan den kan ingen återställa en krypterad säkerhetskopia. Lösenfrasen skyddar hela arkivet; de lagrade hemligheterna i det är dessutom krypterade med serverns nyckel som tidigare.
+
+## Verifiera en säkerhetskopia
+
+```sh
+qtestframe backup verify /var/backups/qtestframe/qtestframe-backup-20261124-020000.zip.enc
+```
+
+Kontrollen behöver ingen databas: den dekrypterar en krypterad fil (lösenfras som ovan), öppnar ZIP-arkivet och läser varje post till slutet (vilket kontrollerar dess CRC-32), kontrollerar manifestet (formatversion, en fil för varje tabell som det listar och inga andra) och att varje rad är ett JSON-objekt, och jämför antalet rader med manifestet. Den skriver ut SHA-256, när säkerhetskopian skapades, version, drivrutin och schemaversion och avslutar med `1` när något är fel. Flaggorna står före filen. Den kontrollerar inte att schemaversionen passar en databas – det gör en återställning.
+
+**Verifiera** i historiken gör samma sak på servern och jämför dessutom filens SHA-256 med den som registrerades när den skrevs (`POST /api/v1/admin/backups/{id}/verify`, granskas som `admin.backup.verify`; resultatet visas i historiken). Verifiera en säkerhetskopia då och då, och återställ en i en testinstallation ibland: bara en återställning bevisar en säkerhetskopia.
+
+## Uppladdning till S3-kompatibel lagring
+
+Schemalagda säkerhetskopior kan också laddas upp till Amazon S3 eller annan S3-kompatibel objektlagring (MinIO, Ceph, Garage, …). Qtestframe skickar en `PUT` per fil med vanlig HTTPS, signerad med AWS Signature Version 4 – ingen SDK och ingen uppladdning i flera delar, så en fil kan vara högst 5 GiB. Begäran bär filens SHA-256 som innehållshash, så lagringen avvisar en skadad uppladdning.
+
+| Inställning | Exempel |
+|---|---|
+| `backup.s3.enabled` | `true` |
+| `backup.s3.endpoint` | `https://s3.eu-north-1.amazonaws.com`, `https://minio.example.com:9000` |
+| `backup.s3.region` | `eu-north-1` (`us-east-1` för de flesta S3-kompatibla servrar) |
+| `backup.s3.bucket` | `qtf-backups` |
+| `backup.s3.prefix` | `qtestframe/` |
+| `backup.s3.access_key_id` | åtkomstnyckelns ID |
+| `backup.s3.secret_access_key` | kan bara skrivas; eller `backup.s3.secret_access_key_file` i konfigurationsfilen |
+
+Begärandena använder sökvägsadressering (`ENDPOINT/BUCKET/NYCKEL`) och går via inställningarna för utgående anslutningar (proxy, tillåtna och nekade värdar). Inloggningsuppgifterna behöver bara `s3:PutObject` på prefixet. En misslyckad uppladdning gör att körningen misslyckas (och skickas med e-post); den lokala filen behålls. Gallringsreglerna gäller bara katalogen: ta bort gamla objekt med en **livscykelregel** för bucketen, och överväg objektlås (WORM) så att en komprometterad server inte kan ta bort sina säkerhetskopior.
+
 ## Återställning
 
 En återställning **ersätter alla data** i installationen med säkerhetskopian, i **en transaktion**: varje tabell töms och fylls på nytt, så antingen återställs allt eller så ändras ingenting.
@@ -2056,7 +2317,7 @@ sudo -u qtestframe qtestframe restore --config /etc/qtestframe/config.yaml --in 
 sudo systemctl start qtestframe
 ```
 
-Kommandot skriver ut antalet rader per tabell och granskas (`admin.restore`). Superadministratörer kan också återställa under **Administration → Säkerhetskopiering** (`POST /api/v1/admin/restore`, bekräftas genom att skriva `RESTORE`); uppladdningen begränsas av `server.read_timeout`, så använd kommandoraden för stora säkerhetskopior. Stoppa servern för en återställning på kommandoraden: en server som kör behåller sina nycklar och cachade data från före återställningen.
+Kommandot skriver ut antalet rader per tabell och granskas (`admin.restore`). En krypterad säkerhetskopia (`.zip.enc`) dekrypteras först, se [Krypterade säkerhetskopior](#krypterade-säkerhetskopior). Superadministratörer kan också återställa under **Administration → Säkerhetskopiering** (`POST /api/v1/admin/restore`, bekräftas genom att skriva `RESTORE`); uppladdningen begränsas av `server.read_timeout`, så använd kommandoraden för stora säkerhetskopior. Stoppa servern för en återställning på kommandoraden: en server som kör behåller sina nycklar och cachade data från före återställningen.
 
 En återställning avvisas, utan att något ändras, när:
 
@@ -2155,6 +2416,8 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 62 | `0062_project_logo.sql` |
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
+| 65 | `0065_backup_schedule.sql` |
+| 67 | `0067_passkeys.sql` |
 | 70 | `0070_gherkin.sql` |
 
 <!-- END GENERATED: migrations -->
@@ -2382,21 +2645,32 @@ Lägger till demoprojekten i en organisation (standard `bootstrap.tenant_slug`, 
 
 ### `qtestframe backup`
 
-Skriver en logisk säkerhetskopia av alla data (alla organisationer) till en ZIP-fil, via en tillfällig fil som byter namn när den är klar. Granskas som `admin.backup`.
+Skriver en logisk säkerhetskopia av alla data (alla organisationer) till en ZIP-fil, via en tillfällig fil som byter namn när den är klar, och skriver ut dess SHA-256. `--encrypt` krypterar den med en lösenfras (AES-256-GCM, nyckeln härleds med scrypt) som läses från `--passphrase-file`, `QTF_BACKUP_PASSPHRASE` eller en rad på standard input. Granskas som `admin.backup`.
 
 | Flagga | Värde | Betydelse |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--encrypt` | — | encrypt the backup with a passphrase (AES-256-GCM, key derived with scrypt) |
 | `--out` | `string` | backup file to write (ZIP) |
+| `--passphrase-file` | `string` | file holding the passphrase of --encrypt (default $QTF_BACKUP_PASSPHRASE, else standard input) |
+
+### `qtestframe backup verify`
+
+Kontrollerar en säkerhetskopia utan databas: dekrypterar en krypterad (lösenfras som för `backup --encrypt`), kontrollerar ZIP-strukturen och kontrollsumman för varje post, manifestet, att varje rad är ett JSON-objekt och att antalet rader stämmer med manifestet. Skriver ut SHA-256, manifestet och `intact`; slutstatus `1` för en skadad fil eller fel lösenfras. Flaggorna står före filen.
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 
 ### `qtestframe restore`
 
-Ersätter **alla** data med en säkerhetskopia, i en transaktion, och loggar ut alla. Kräver `--yes`. Granskas som `admin.restore`.
+Ersätter **alla** data med en säkerhetskopia, i en transaktion, och loggar ut alla. En krypterad säkerhetskopia dekrypteras först till en tillfällig fil (lösenfras som för `backup --encrypt`). Kräver `--yes`. Granskas som `admin.restore`.
 
 | Flagga | Värde | Betydelse |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
-| `--in` | `string` | backup file to restore (ZIP) |
+| `--in` | `string` | backup file to restore (ZIP, or encrypted) |
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 | `--yes` | — | confirm that ALL existing data is replaced |
 
 ### `qtestframe secrets`

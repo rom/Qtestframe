@@ -2,9 +2,12 @@ package api
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/backup"
 	"github.com/rom/qtestframe/internal/store"
 )
 
@@ -12,6 +15,7 @@ import (
 func (s *Server) routesBackup(h routeFunc) {
 	h("GET /api/v1/admin/backup", s.handleBackup)
 	h("POST /api/v1/admin/restore", s.handleRestore)
+	s.routesBackups(h)
 }
 
 // handleBackup streams a logical backup of the whole database (all
@@ -67,7 +71,29 @@ func (s *Server) handleRestore(w http.ResponseWriter, r *http.Request, p *Princi
 		return
 	}
 	defer f.Close()
-	counts, err := s.Store.Restore(r.Context(), f, fhs[0].Size)
+	var src io.ReaderAt = f
+	size := fhs[0].Size
+	head := make([]byte, len(backup.Magic))
+	if n, _ := f.ReadAt(head, 0); backup.IsEncrypted(head[:n]) {
+		// an encrypted archive (scheduled backups, qtestframe backup
+		// --encrypt): the passphrase of the form, else the one of the
+		// scheduled backups
+		pass := ""
+		if v := r.MultipartForm.Value["passphrase"]; len(v) == 1 {
+			pass = strings.TrimSpace(v[0])
+		}
+		if pass == "" {
+			pass = s.conf().Backup.Passphrase
+		}
+		a, err := backup.DecryptToTemp(io.NewSectionReader(f, 0, size), pass, "")
+		if err != nil {
+			s.fail(w, r, badRequest("%v", err))
+			return
+		}
+		defer a.Close()
+		src, size = a, a.Size
+	}
+	counts, err := s.Store.Restore(r.Context(), src, size)
 	if err != nil {
 		s.fail(w, r, err)
 		return

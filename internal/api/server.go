@@ -106,6 +106,8 @@ type Server struct {
 	erec erecCache
 	// obs holds the metrics and the tracer (observability.go)
 	obs *observability
+	// bk is the state of the scheduled backups (backups.go)
+	bk backupState
 }
 
 // New creates a server and its identity providers. cfg is the

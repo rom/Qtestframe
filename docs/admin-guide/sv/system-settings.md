@@ -41,6 +41,7 @@ Använd miljövariabler eller lås för det som inte får ändras från webbklie
 | Server och databas | HTTP-tidsgränserna för läsning och skrivning **efter en omstart**; allt annat anges i filen och visas med sin källa (lyssningsadress, TLS-filer, databas, första start, härdning, nyckelleverantör) |
 | Mätvärden och spårning | **direkt** – brytarna, token, adresslistan och spårexporten; den separata adressen för mätvärden (`metrics.listen`) **efter en omstart**. Avsnittet visar också läget: var `/metrics` visas, hur den skyddas, och antalet exporterade, misslyckade och kastade spann med senaste export och senaste fel |
 | Körning av skript och webbtester | **efter en omstart** – körningen och dess sandlåda sätts upp innan processen låses (Landlocks körbara sökvägar, arbetskatalogen); värdet sparas direkt och sidan visar värdet som används tills dess |
+| Schemalagda säkerhetskopior | **direkt** (på/av, schema, gallring, lösenfras, uppladdning); katalogen **efter omstart**, eftersom servern öppnar den för skrivning innan processen låses – se [Schemalagda säkerhetskopior](backup-and-migration.md#schemalagda-säkerhetskopior) |
 | Gallring och säkerhetskopior, Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem (papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast) |
 
 Inställningar märkta **Gäller efter omstart** behåller sitt värde tills nästa start. En banderoll överst på sidan listar varje sparad ändring som väntar på en omstart, med en länk till inställningen.
@@ -184,6 +185,19 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | AI-assistans | `ai.features.suggest_criteria` | på/av | direkt |
 | AI-assistans | `ai.price_input` | text | direkt |
 | AI-assistans | `ai.price_output` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.enabled` | på/av | direkt |
+| Schemalagda säkerhetskopior | `backup.schedule` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.directory` | text | efter omstart |
+| Schemalagda säkerhetskopior | `backup.keep_last` | 0–1000 | direkt |
+| Schemalagda säkerhetskopior | `backup.keep_days` | 0–3650 | direkt |
+| Schemalagda säkerhetskopior | `backup.passphrase` | hemlighet (skrivskyddad läsning) | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.enabled` | på/av | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.endpoint` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.region` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.bucket` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.prefix` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.access_key_id` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.secret_access_key` | hemlighet (skrivskyddad läsning) | direkt |
 
 <!-- END GENERATED: system-settings -->
 
@@ -203,7 +217,7 @@ Vad varje nyckel betyder står i [konfigurationsreferensen](configuration.md#ref
 - **Syslog över TLS** använder `ca_file`, `cert_file` och `key_file` från filen; de är läsbara efter låsningen eftersom de läggs till bland Landlocks skrivskyddade sökvägar vid start. En Unix-socket som inte var konfigurerad vid start kan nekas av Landlock; använd `udp`, `tcp` eller `tls`, eller starta om.
 - **Hemligheter** som anges på sidan (SMTP-lösenordet, OIDC-klienthemligheter) kan bara skrivas, lagras [krypterade](security.md#kryptering-av-lagrade-hemligheter), loggas aldrig och visas aldrig igen.
 - **Testknapparna** (*Testa anslutningen* för OIDC-discovery, *Testa metadata* för SAML, *Skicka testmeddelande* för syslog, *Skicka testmejl*, *Testa tjänsten* för inbäddningar och AI, *Kontrollera adress* för utgående anslutningar) får servern att ansluta till en adress som superadministratören anger. De följer reglerna för utgående anslutningar när de använder HTTP; filtrera serverns utgående trafik om den når interna tjänster.
-- **Inte på sidan:** schema för säkerhetskopior (de görs vid behov eller från en systemd-timer med `qtestframe backup`), metrikslutpunkter (det finns ingen; `/healthz` och `/readyz` är publika och innehåller inga data), standardvärden för CI och ärendehanterare (de är per projekt) och inställningar per organisation, som finns på organisationens egna sidor (AI-assistans, Elektroniska poster, Flerfaktorsautentisering) eller i dess regler (Administration → Organisationer).
+- **Inte på sidan:** historiken för de schemalagda säkerhetskopiorna (den finns under Administration → Säkerhetskopiering, se [Schemalagda säkerhetskopior](backup-and-migration.md#schemalagda-säkerhetskopior)), metrikslutpunkter (det finns ingen; `/healthz` och `/readyz` är publika och innehåller inga data), standardvärden för CI och ärendehanterare (de är per projekt) och inställningar per organisation, som finns på organisationens egna sidor (AI-assistans, Elektroniska poster, Flerfaktorsautentisering) eller i dess regler (Administration → Organisationer).
 
 ## Tjänst för inbäddningar för liknande objekt
 

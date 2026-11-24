@@ -22,11 +22,13 @@ import (
 	"net/mail"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/backup"
 	"github.com/rom/qtestframe/internal/config"
 	"github.com/rom/qtestframe/internal/tracing"
 )
@@ -72,7 +74,7 @@ const (
 )
 
 // Sections of the administration view, in order.
-var Sections = []string{"general", "server", "security", "tokens", "oidc", "logging", "monitoring", "email", "outbound", "runner", "live", "similarity", "ai", "retention"}
+var Sections = []string{"general", "server", "security", "tokens", "oidc", "logging", "monitoring", "email", "outbound", "runner", "live", "similarity", "ai", "retention", "backup"}
 
 // Def describes one setting.
 type Def struct {
@@ -327,6 +329,63 @@ var Registry = []*Def{
 	flag("ai.features.suggest_criteria", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Features.SuggestCriteria }),
 	checked(optional(str("ai.price_input", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceInput })), checkPrice),
 	checked(optional(str("ai.price_output", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceOutput })), checkPrice),
+
+	// backup: scheduled backups into a directory (written by the server:
+	// the directory is opened for writing before the process is locked
+	// down, so it applies at the next start)
+	flag("backup.enabled", "backup", Runtime, func(c *config.Config) *bool { return &c.Backup.Enabled }),
+	checked(str("backup.schedule", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.Schedule }), func(v any) error { return backup.CheckSchedule(v.(string)) }),
+	checked(optional(str("backup.directory", "backup", Restart, func(c *config.Config) *string { return &c.Backup.Directory })), checkDirectory),
+	num("backup.keep_last", "backup", Runtime, 0, 1000, func(c *config.Config) *int { return &c.Backup.KeepLast }),
+	num("backup.keep_days", "backup", Runtime, 0, 3650, func(c *config.Config) *int { return &c.Backup.KeepDays }),
+	{Key: "backup.passphrase", Section: "backup", Kind: Secret, Apply: Runtime, Optional: true, Check: checkPassphrase,
+		get: func(c *config.Config) any { return c.Backup.Passphrase }, set: func(c *config.Config, v any) { c.Backup.Passphrase = v.(string) }},
+	flag("backup.s3.enabled", "backup", Runtime, func(c *config.Config) *bool { return &c.Backup.S3.Enabled }),
+	checked(optional(str("backup.s3.endpoint", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.Endpoint })), checkBaseURL),
+	checked(optional(str("backup.s3.region", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.Region })), checkTagOrEmpty),
+	checked(optional(str("backup.s3.bucket", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.Bucket })), checkBucket),
+	checked(optional(str("backup.s3.prefix", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.Prefix })), checkPrefix),
+	checked(optional(str("backup.s3.access_key_id", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.AccessKeyID })), oneLine),
+	{Key: "backup.s3.secret_access_key", Section: "backup", Kind: Secret, Apply: Runtime, Optional: true,
+		get: func(c *config.Config) any { return c.Backup.S3.SecretAccessKey }, set: func(c *config.Config, v any) { c.Backup.S3.SecretAccessKey = v.(string) }},
+}
+
+// checkDirectory: an absolute path (or empty).
+func checkDirectory(v any) error {
+	s := v.(string)
+	if s == "" {
+		return nil
+	}
+	if !filepath.IsAbs(s) || strings.ContainsAny(s, "\r\n") {
+		return errors.New("must be an absolute path such as /var/backups/qtestframe")
+	}
+	return nil
+}
+
+// checkPassphrase: at least 12 characters (or empty: no encryption).
+func checkPassphrase(v any) error {
+	if s := v.(string); s != "" && len([]rune(s)) < 12 {
+		return errors.New("must be at least 12 characters")
+	}
+	return nil
+}
+
+var bucketRE = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`)
+
+func checkBucket(v any) error {
+	if s := v.(string); s != "" && !bucketRE.MatchString(s) {
+		return errors.New("must be a bucket name: 3-63 lower-case letters, digits, dots and dashes")
+	}
+	return nil
+}
+
+var prefixRE = regexp.MustCompile(`^[A-Za-z0-9!_.*'()/-]{0,200}$`)
+
+func checkPrefix(v any) error {
+	if s := v.(string); !prefixRE.MatchString(s) || strings.Contains(s, "..") {
+		return errors.New("must be a key prefix of letters, digits and !_.*'()/- such as qtestframe/")
+	}
+	return nil
 }
 
 // FileOnly are the keys of the configuration file that are not in the
@@ -339,6 +398,8 @@ var FileOnly = map[string]string{
 	"ai.api_key_file":                    "a secret file read at start-up (the key itself can be set here)",
 	"metrics.token_file":                 "a secret file read at start-up (the token itself can be set here)",
 	"tracing.headers_file":               "a secret file read at start-up (the headers themselves can be set here)",
+	"backup.passphrase_file":             "a secret file read at start-up (the passphrase itself can be set here)",
+	"backup.s3.secret_access_key_file":   "a secret file read at start-up (the key itself can be set here)",
 	"bootstrap.admin_password":           "a secret used once, at the first start",
 	"bootstrap.admin_password_file":      "a secret file used once, at the first start",
 	"auth.saml":                          "SAML providers need key and certificate files: listed read-only",
