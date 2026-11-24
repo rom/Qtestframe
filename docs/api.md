@@ -2259,6 +2259,30 @@ never executes such a script: `run-automated` skips it with the code
 `external` and `run-script` refuses it. Regeneration is the client's job:
 `qtestframe stubs` merges with the files on disk (see the CI/CD guide).
 
+A test in the Gherkin format (`"format": "gherkin"`) gets its own feature
+as the Cucumber stub, tagged `@KEY @qtestframe-stub` (comments and a
+`# language:` header are kept); the other frameworks list its scenarios'
+steps as TODO comments.
+
+**Gherkin tests.** A test with `"format": "gherkin"` holds a feature in
+`gherkin` (English or Swedish keywords; see internal/gherkin); saving one
+that does not parse fails with 400 and the errors with their lines. A run
+gives every scenario, and every Examples row of a Scenario Outline, an
+iteration whose step results are the Background and scenario steps
+(`step_id` `gherkin:<line>`); `GET /tests/{id}/gherkin-results` maps the
+latest results back to the lines. `POST /projects/{pid}/gherkin/check
+{"source"}` returns the errors, steps (defined or not, with a suggested
+Cucumber expression) and scenarios; `POST /projects/{pid}/gherkin/convert`
+converts between the formats (`to`: `gherkin` or `steps`). The step
+library: `GET|POST /projects/{pid}/step-definitions` (with usage, where
+used and undefined steps), `PATCH|DELETE /step-definitions/{id}`, `POST
+/step-definitions/{id}/rename {"pattern"}` (rewrites the step in every
+test). `POST /projects/{pid}/tests/features/import {"files": [{name,
+content}], "mode": "scenario"|"feature", "folder_id", "dry_run"}` makes
+tests of `.feature` files (requirement keys in tags become trace links);
+`GET /projects/{pid}/tests/features?q=&ids=` (or POST
+`…/features/export`) returns them as a zip of `.feature` files.
+
 **Server-side posting.** With `ci.provider` `gitlab`, a token and
 `post_status` or `post_note`, every result upload (`POST /runs/{id}/junit`,
 `POST /runs/{id}/results`) with `?commit=` (or a build with a commit)

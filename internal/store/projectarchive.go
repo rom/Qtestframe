@@ -180,6 +180,8 @@ var projectArchiveTables = []archiveTable{
 	{"test_data_links", `data_set_id IN (SELECT id FROM test_data_sets WHERE project_id = ?)`},
 	{"test_data_usage", `data_set_id IN (SELECT id FROM test_data_sets WHERE project_id = ?)`},
 	{"test_data_refresh_requests", `data_set_id IN (SELECT id FROM test_data_sets WHERE project_id = ?)`},
+	// the step library of BDD tests (0070)
+	{"step_definitions", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},

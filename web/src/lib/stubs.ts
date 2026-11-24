@@ -9,6 +9,7 @@ export const STUB_FRAMEWORKS = [
   { id: 'jest', name: 'Jest (TypeScript)', package: '' },
   { id: 'vitest', name: 'Vitest (TypeScript)', package: '' },
   { id: 'robot', name: 'Robot Framework', package: '' },
+  // a test in the Gherkin format gets its own feature, tagged with its key
   { id: 'cucumber', name: 'Cucumber (Gherkin)', package: '' },
 ] as const
 

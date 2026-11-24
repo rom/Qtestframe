@@ -390,6 +390,7 @@ func (s *Server) routes() {
 	s.routesCode(h)
 	s.routesCI(h)
 	s.routesStubs(h)
+	s.routesGherkin(h)
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)

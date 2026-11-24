@@ -32,7 +32,7 @@ var (
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "owner", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention", "open_discussions",
-			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability", "cycle", "d3fend", "emb3d", "cr"},
+			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability", "cycle", "d3fend", "emb3d", "cr", "format"},
 		Aliases: map[string]string{"change_request": "cr", "change-request": "cr", "change_requests": "cr", "crs": "cr", "type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
 			"open-discussion": "open_discussions", "open-discussions": "open_discussions", "open_discussion": "open_discussions",
@@ -491,9 +491,16 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 			calls = append(calls, st.CallTestKey)
 		}
 	}
+	if t.Format == model.FormatGherkin && t.Gherkin != "" {
+		steps = append(steps, t.Gherkin)
+	}
+	format := t.Format
+	if format == "" {
+		format = model.FormatSteps
+	}
 	linkedKeys := pc.t2rKeys[t.ID]
 	return withCustom(t.CustomFields, query.MapRecord{
-		"id": {t.ID}, "key": {t.Key}, "title": {t.Title}, "description": {t.Description},
+		"id": {t.ID}, "format": {format}, "key": {t.Key}, "title": {t.Title}, "description": {t.Description},
 		"preconditions": {t.Preconditions}, "execution_type": {t.ExecutionType},
 		"script_language": {t.ScriptLanguage}, "script": {t.Script}, "expected": {t.ExpectedResult},
 		"step": steps, "priority": {t.Priority}, "status": {t.Status}, "estimate": {strconv.Itoa(t.EstimatedMin)},

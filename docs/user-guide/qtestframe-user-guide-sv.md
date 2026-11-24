@@ -985,6 +985,7 @@ Sidan fungerar som [kravsidan](#kravsidan): mappträd, filterfält med snabbfilt
 |---|---|
 | **Titel** | Ett kort namn (obligatoriskt). |
 | **Exekveringstyp** | **Manuellt** eller **Automatiserat**. |
+| **Format** | **Steg** (förutsättningar och steg) eller **Gherkin** (en egenskap med scenarier, se [Gherkin-testfall](#gherkin-testfall-bdd)). |
 | **Beskrivning** | Vad testfallet handlar om. |
 | **Förutsättningar** | Vad som måste gälla innan testet börjar, till exempel *ett kundkonto finns*. Visas för testaren i exekveringsvyn. |
 | **Status** | Utkast, Klart, Granskning eller Utfasat. |
@@ -1067,6 +1068,63 @@ När testfallet läggs till i en körning blir varje rad en **iteration** av exe
 
 Testdatan ingår i testfallets versionshistorik och i exporten (**Exportera → Testdata**: en rad per datarad och parameter).
 
+## Gherkin-testfall (BDD)
+
+Ett testfall kan skrivas som en **Gherkin**-egenskap i stället för förutsättningar och steg, på det sätt som beteendedriven utveckling (BDD) och Cucumber beskriver beteende: *Givet* ett sammanhang, *När* något händer, *Så* ett utfall. Välj format med **Steg** / **Gherkin** bredvid exekveringstypen i testfallsredigeraren.
+
+```gherkin
+# language: sv
+@kassa @REQ-12
+Egenskap: Kassan
+  Bakgrund:
+    Givet en kund med ett sparat kort
+
+  @rök
+  Scenario: Betala med det sparade kortet
+    När kunden betalar 25 kr
+    Så är ordern "betald"
+
+  Scenariomall: Betala <belopp>
+    När kunden betalar <belopp> kr
+    Så visar kvittot <belopp> kr
+
+    Exempel:
+      | belopp |
+      | 5      |
+      | 10     |
+```
+
+En egenskap har ett namn och en beskrivning, en valfri **Bakgrund** (steg som körs före varje scenario), **Scenarier** och **Scenariomallar** med **Exempel**-tabeller (ett scenario per rad; `<belopp>` ersätts med radens värde), **Regler** som grupperar scenarier, **taggar** (`@rök`) på egenskaper, regler, scenarier och exempel, **dokumentsträngar** (text mellan rader med `"""` eller ```` ``` ````) och **datatabeller** under ett steg. Både svenska och engelska nyckelord fungerar i alla testfall: *Egenskap/Feature*, *Bakgrund/Background*, *Scenario*, *Scenariomall/Abstrakt scenario/Scenario Outline*, *Exempel/Examples*, *Regel/Rule*, *Givet/Given*, *När/When*, *Så/Then*, *Och/And*, *Men/But*. En första rad `# language: sv` markerar en svensk egenskap (språket känns också igen på nyckelorden).
+
+**Redigeraren** färgmarkerar nyckelord, taggar, strängar, tal, platshållare, tabeller, dokumentsträngar och kommentarer och kontrollerar texten medan du skriver: en rad med fel stryks under och listas under redigeraren med sitt radnummer (välj det för att gå till raden), och steg som inget steg i [stegbiblioteket](#stegbiblioteket) matchar markeras som *odefinierade*. Ett testfall vars Gherkin-text har fel kan inte sparas. Tangentbord:
+
+| Tangenter | Gör |
+|---|---|
+| **Ctrl+Mellanslag** | Föreslår nyckelord i början av en rad och steg ur stegbiblioteket efter ett stegnyckelord (förslag visas också medan du skriver). **↑**/**↓** väljer, **Retur** eller **Tabb** infogar, **Esc** stänger. Ett infogat steg markerar sin första parameter, till exempel `{int}`, så att du kan skriva över den. |
+| **Retur** | En ny rad med samma indrag, en nivå djupare efter en rubrik som *Scenario:*. |
+| **Alt+Skift+F** | Justerar kolumnerna i alla tabeller (även **Justera tabeller**). Inget annat ändras. |
+| **Tabb** | Lämnar redigeraren (när inget förslag är öppet), som i alla andra fält. Gör indrag med mellanslag. |
+
+**Konvertera:** när ett befintligt testfall byter från **Steg** till **Gherkin** skrivs förutsättningarna som *Givet*-steg, varje åtgärd som ett *När*-steg, varje förväntat resultat som ett *Så*-steg, stegdata som en dokumentsträng och testdata som en *Scenariomall* med *Exempel*. Byter du tillbaka skrivs *Bakgrund* och de första *Givet*-stegen som förutsättningar, varje *När*-steg som ett steg med de följande *Så*-stegen som förväntat resultat, och den första *Exempel*-tabellen som testdata. **Konvertera från stegen** och **Konvertera från Gherkin** gör om konverteringen (de ersätter det som finns). Konverteringen görs så gott det går: regler, flera *Exempel*-tabeller och anropade testfall förenklas, och redigeraren säger till.
+
+**Köra ett Gherkin-testfall:** i en körning är varje scenario, och varje *Exempel*-rad i en scenariomall, en [iteration](runs.md#datadrivna-testfall-iterationer) av exekveringen, med scenariots namn (en mall får radens värden i namnet). Stegen är *Bakgrund*-stegen följda av scenariots steg, med dokumentsträngar och tabeller vid steget, och testaren anger ett utfall per steg som vanligt. Utfallen förs tillbaka till raderna i egenskapen: redigeraren visar det senaste utfallet för varje steg i marginalen (grönt godkänt, rött underkänt) och listar dem under **Senaste utfall per steg**.
+
+**Cucumber**-stubbarna från [Generera testkod](ci-cd.md#generera-testkod) för ett Gherkin-testfall är själva egenskapen, taggad med testfallets nyckel och `@qtestframe-stub`, så att scenarierna som teamet skrev är de scenarier som Cucumber kör. Frågefältet `format` hittar testfall efter format: `format:gherkin`.
+
+### Stegbiblioteket
+
+**Stegbibliotek** (i redigeraren och i menyn **Importera** på testfallssidan) innehåller projektets återanvändbara steg. Varje steg är ett **Cucumber-uttryck** som `kunden betalar {int} kr` eller `jag loggar in som {string}` (parametrarna `{int}`, `{float}`, `{word}`, `{string}` och `{}`; `artikel(n)` för valfri text; `in/på` för alternativ; ett omvänt snedstreck skyddar `{`, `(` och `/`) eller, med typen **Reguljärt uttryck**, ett mönster som `^jag betalar (\d+) kr$`. Ett steg kan ha ett nyckelord (*Givet*, *När* eller *Så*: föreslås först efter det nyckelordet) och en beskrivning, som visas i förslagen.
+
+Listan visar hur ofta varje steg används och, under **Var det används**, testfallen och raderna. **Odefinierade steg** listar stegen i Gherkin-testfallen som ingen definition matchar, med ett föreslaget uttryck (text inom citattecken blir `{string}`, tal `{int}` eller `{float}`); **Lägg till i biblioteket** fyller i formuläret med det. Samma erbjudande finns under redigeraren för det öppna testfallets odefinierade steg.
+
+**Byt namn i alla testfall** ändrar ett stegs uttryck och skriver om varje steg som använde det i alla Gherkin-testfall i projektet, med parametrarna kvar: byter du `kunden betalar {int} kr` till `kunden betalar {int} kronor` blir *kunden betalar 25 kr* till *kunden betalar 25 kronor*. Det nya uttrycket måste ha lika många parametrar som det gamla. Varje ändrat testfall får en ny version, så ändringen syns i dess historik. Tar du bort ett steg ur biblioteket lämnas testfallen som de är; deras steg blir odefinierade. Att läsa biblioteket kräver **Läsare**, att ändra det **Testare**.
+
+### Import och export av feature-filer
+
+**Importera → Importera .feature-filer** på testfallssidan skapar Gherkin-testfall av `.feature`-filer: välj **Ett testfall per scenario** (vart och ett med egenskapens *Bakgrund*; en scenariomall behåller sina *Exempel*) eller **Ett testfall per feature-fil**. Förhandsvisningen listar testfallen som skapas och filerna som har fel (med raden), som hoppas över. Taggar blir testfallens taggar, utom taggar som namnger ett krav i projektet, som i stället länkar testfallet till kravet: `@SHOP-REQ-12`, `@req:SHOP-REQ-12` eller `@REQ-12` utan projektnyckeln.
+
+**Importera → Exportera som .feature-filer** laddar ned en zip-fil med en `.feature`-fil per testfall i listan (eller i urvalet): ett Gherkin-testfall som det är skrivet, ett testfall i stegformat konverterat, vart och ett taggat med sin nyckel och nycklarna till kraven det verifierar.
+
 ## Kategorier
 
 Kategorier klassificerar testfall och krav längs **dimensioner**. Nya projekt får dessa standardvärden:
@@ -1082,7 +1140,7 @@ Kategorier klassificerar testfall och krav längs **dimensioner**. Nya projekt f
 
 Ett objekt kan ha hur många kategorivärden som helst, även flera i samma dimension. Hantera dem under **Kategorier & inställningar**:
 
-![Sidan Kategorier och inställningar med kravkategorier, testfallskategorier och deras färger](images/sv-settings-categories.png)
+![Sidan Kategorier och inställningar med kravkategorier, testfallskategorier och deras färger](../images/sv-settings-categories.png)
 
 - **Ny dimension** skapar en dimension med dess första värde; **Lägg till värde** lägger till fler.
 - Välj en färgruta för att ändra ett värdes färg; värdet visas i den färgen överallt.
@@ -1092,17 +1150,17 @@ Ett objekt kan ha hur många kategorivärden som helst, även flera i samma dime
 
 I frågor matchar `category:Negative` värdets namn och `dimension:Polarity/Negative` den fullständiga formen.
 
-På samma sida finns projektets **Namn**, **Beskrivning**, **URL-mall för felhanteringssystem** (se [Defekter](#defekter)), avsnittet [Spara och läs in](#spara-och-läs-in-projekt) (**Spara projekt**, **Duplicera projekt**, **Läs in projekt**) och, för administratörer, **Ta bort projekt**. Att redigera kategorier kräver **Ansvarig** (eller skrivbehörighet för deras område, Testare för testfallskategorier).
+På samma sida finns projektets **Namn**, **Beskrivning**, **URL-mall för felhanteringssystem** (se [Defekter](runs.md#defekter)), avsnittet [Spara och läs in](reports-and-export.md#spara-och-läs-in-projekt) (**Spara projekt**, **Duplicera projekt**, **Läs in projekt**) och, för administratörer, **Ta bort projekt**. Att redigera kategorier kräver **Ansvarig** (eller skrivbehörighet för deras område, Testare för testfallskategorier).
 
 ## Markera många tester som klara på en gång
 
-Den som har `test.review` kan markera många tester som *Klart* i ett steg: kryssa i testerna och välj **Markera som klara…**, eller välj **Massgranskning** ovanför listan när inget är markerat. Precis som för krav (se [Godkänn många krav på en gång](#godkänn-många-krav-på-en-gång)) väljer du tester (markerade, de som visas i listan eller alla), vilka statusar de får komma från (som standard *Granskning*; lägg till *Utkast* för att ta med utkast) och en valfri kommentar, och en förhandsgranskning visar vad som ändras.
+Den som har `test.review` kan markera många tester som *Klart* i ett steg: kryssa i testerna och välj **Markera som klara…**, eller välj **Massgranskning** ovanför listan när inget är markerat. Precis som för krav (se [Godkänn många krav på en gång](requirements.md#godkänn-många-krav-på-en-gång)) väljer du tester (markerade, de som visas i listan eller alla), vilka statusar de får komma från (som standard *Granskning*; lägg till *Utkast* för att ta med utkast) och en valfri kommentar, och en förhandsgranskning visar vad som ändras.
 
 Utöver kontrollerna för krav (den senaste granskningen begärde ändringar, öppna granskningsförfrågningar, misstänkta länkar) hoppas ett test över när det inte kan köras som det är skrivet: ett **manuellt test utan steg** eller ett **automatiserat test utan skript**. Välj kontrollen under **Ta med ändå, trots** för att markera dem som klara ändå.
 
 ## Kalkylbladsvy
 
-Välj **Kalkylblad** för att redigera testfall som i ett kalkylblad; det fungerar som för [krav](#kalkylbladsvy) (tangentbord, kopiera och klistra in från Excel, fyll nedåt, nya rader, sparande, konflikter, ångra och **Exportera vyn**). Kolumnerna är **Nyckel**, **Titel**, **Beskrivning**, **Prioritet**, **Status**, **Exekvering**, **Förutsättningar**, **Förväntat resultat**, **Uppskattning (min)**, **Kategorier**, **Taggar**, **Mapp** och de skrivskyddade **Steg** (antalet steg), **Senaste utfall**, **Krav**, **Skapad av** och **Version**. Steg, skript och testdata redigeras i redigeraren (dubbelklicka på nyckeln eller tryck **Ctrl+Enter**). Att sätta ett testfall till *Klart* är ett granskningsbeslut och kräver `test.review`, i bladet som i redigeraren.
+Välj **Kalkylblad** för att redigera testfall som i ett kalkylblad; det fungerar som för [krav](requirements.md#kalkylbladsvy) (tangentbord, kopiera och klistra in från Excel, fyll nedåt, nya rader, sparande, konflikter, ångra och **Exportera vyn**). Kolumnerna är **Nyckel**, **Titel**, **Beskrivning**, **Prioritet**, **Status**, **Exekvering**, **Förutsättningar**, **Förväntat resultat**, **Uppskattning (min)**, **Kategorier**, **Taggar**, **Mapp** och de skrivskyddade **Steg** (antalet steg), **Senaste utfall**, **Krav**, **Skapad av** och **Version**. Steg, skript och testdata redigeras i redigeraren (dubbelklicka på nyckeln eller tryck **Ctrl+Enter**). Att sätta ett testfall till *Klart* är ett granskningsbeslut och kräver `test.review`, i bladet som i redigeraren.
 
 ## Kopiera ett testfall
 
@@ -1120,7 +1178,7 @@ Ett testfall kan **bero på** andra testfall: de är dess förutsättningar och 
 
 I testfallsredigeraren listar avsnittet **Beror på** förutsättningarna med deras senaste utfall. Välj **Lägg till förutsättning** för att välja testfall i samma projekt, och **×** för att ta bort en *(Testare)*. **Krävs av** listar de testfall som väntar på det här. Ett testfall kan inte bero på sig självt, och beroenden får inte bilda en cykel.
 
-När testfallet exekveras räknas en förutsättning som godkänd när dess exekvering i samma körning har godkänts; när förutsättningen inte ingår i körningen räknas dess senaste utfall. Fram till dess visar exekveringsvyn varför testfallet inte kan startas, om inte [inställningarna för testexekvering](#inställningar-för-testexekvering) tillåter det. Kolumnen **Relationer** i testfallslistan visar *beror på* och *krävs av*, [beroendegrafen](#beroendegrafer) ritar dem, och filtret `depends_on:SHOP-TC-1` (eller `depends:`) hittar testfallen som beror på SHOP-TC-1.
+När testfallet exekveras räknas en förutsättning som godkänd när dess exekvering i samma körning har godkänts; när förutsättningen inte ingår i körningen räknas dess senaste utfall. Fram till dess visar exekveringsvyn varför testfallet inte kan startas, om inte [inställningarna för testexekvering](administration.md#inställningar-för-testexekvering) tillåter det. Kolumnen **Relationer** i testfallslistan visar *beror på* och *krävs av*, [beroendegrafen](traceability-and-coverage.md#beroendegrafer) ritar dem, och filtret `depends_on:SHOP-TC-1` (eller `depends:`) hittar testfallen som beror på SHOP-TC-1.
 
 ## Testflöde
 
@@ -1140,9 +1198,9 @@ När testfallet exekveras räknas en förutsättning som godkänd när dess exek
 
 Fliken **Exekveringar** listar alla exekveringar av testfallet i alla körningar, nyast först, med körning, miljö och bygge, utfall, vem som exekverade, när, tidsåtgång och eventuella defekter. Använd den för att se om ett testfall är instabilt eller när det började underkännas.
 
-![Fliken Exekveringar för ett testfall med utfall från flera körningar](images/sv-tests-executions.png)
+![Fliken Exekveringar för ett testfall med utfall från flera körningar](../images/sv-tests-executions.png)
 
-I körningar med [konfigurationer](#konfigurationer-i-en-körning) visas varje exekverings konfiguration under körningen, och en datadriven exekvering länkar till sina iterationer i exekveringsvyn.
+I körningar med [konfigurationer](runs.md#konfigurationer-i-en-körning) visas varje exekverings konfiguration under körningen, och en datadriven exekvering länkar till sina iterationer i exekveringsvyn.
 
 Kolumnen **Senaste utfall** visar det senaste utfallet (i vilken konfiguration som helst). I frågor hittar `last_result:failed` testfall vars senaste utfall är underkänt och `defect:SHOP-*` testfall med en sådan defekt.
 
@@ -3727,7 +3785,7 @@ Nyckelord och fältnamn är skiftlägesokänsliga. Värden med blanksteg behöve
 
 ### Testfall
 
-`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: åtgärd, förväntat resultat och data för alla steg), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (nycklar för länkade krav), `last_result` (`result`), `defect` (`defects`), `calls` (nycklar för anropade testfall), `depends_on` (`depends`: nycklar för förutsättningar), `comments`, `open_discussions` (`open-discussion`: olösta trådar, `has:open-discussion`), `mention` (@-namn i texterna och stegen, och personerna som nämns i diskussionen; `mentions:me` för dig själv), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` för [instabila testfall](#instabila-testfall): `flaky:true`), `flakiness` (`flips`: antalet växlingar mellan godkänt och underkänt bland de senaste utfallen: `flakiness>=3`), `catalog` (katalogposten testfallet kopierades från), `variant` (`variants`: varianterna testfallet gäller), `applicability` (`all` eller `selected`).
+`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: åtgärd, förväntat resultat och data för alla steg, och Gherkin-texten i ett Gherkin-testfall), `format` (`steps` eller `gherkin`: `format:gherkin`), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (nycklar för länkade krav), `last_result` (`result`), `defect` (`defects`), `calls` (nycklar för anropade testfall), `depends_on` (`depends`: nycklar för förutsättningar), `comments`, `open_discussions` (`open-discussion`: olösta trådar, `has:open-discussion`), `mention` (@-namn i texterna och stegen, och personerna som nämns i diskussionen; `mentions:me` för dig själv), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` för [instabila testfall](#instabila-testfall): `flaky:true`), `flakiness` (`flips`: antalet växlingar mellan godkänt och underkänt bland de senaste utfallen: `flakiness>=3`), `catalog` (katalogposten testfallet kopierades från), `variant` (`variants`: varianterna testfallet gäller), `applicability` (`all` eller `selected`).
 
 ### Ägare och tilldelade
 

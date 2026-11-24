@@ -42,6 +42,8 @@ import BulkRelationsDialog from './BulkRelationsDialog.vue'
 import BulkItemLinksDialog from './BulkItemLinksDialog.vue'
 import BulkRequirementIssuesDialog from './BulkRequirementIssuesDialog.vue'
 import TestStubsDialog from './TestStubsDialog.vue'
+import FeatureImportDialog from './FeatureImportDialog.vue'
+import StepLibraryDialog from './StepLibraryDialog.vue'
 import BulkProposeDialog from './BulkProposeDialog.vue'
 import type { ImportResult } from '@/lib/reqImport'
 import { api, ApiError, asItems } from '@/lib/api'
@@ -113,6 +115,9 @@ const bulkLinksOpen = ref(false)
 const bulkIssuesOpen = ref(false)
 /** "Generate test code" of the selection or the listed tests */
 const stubsOpen = ref(false)
+// BDD: .feature import and export, the step library
+const featureImportOpen = ref(false)
+const stepLibraryOpen = ref(false)
 const shownIds = computed(() => items.value.map((i) => i.id))
 const canLink = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
 /** the bulk "Propose change" (change requests) */
@@ -376,6 +381,15 @@ function openExchange(mode: ExchangeMode | ImportSourceId) {
   exchangeMode.value = mode
   exchangeOpen.value = true
 }
+async function exportFeatures() {
+  try {
+    const ids = selectedIds.value
+    const name = await api.download(`/projects/${pid.value}/tests/features`, ids.length ? { ids: ids.join(',') } : { q: composed.value || undefined }, 'features.zip')
+    notify.ok(t('featureImport.exported', { name }))
+  } catch (e) {
+    notify.fail(e, t('exchange.exportFailed'))
+  }
+}
 async function exportRoundTrip() {
   try {
     const name = await api.download(`/projects/${pid.value}/exchange/xlsx`, { kind: props.kind, q: composed.value || undefined, folder_id: selectedFolder.value || undefined, recursive: String(recursive.value) }, `${props.kind}s-roundtrip.xlsx`)
@@ -395,6 +409,9 @@ const exchangeItems = computed(() => [
     : []),
   ...(canExport.value ? [{ label: t('exchange.exportXlsx'), icon: 'pi pi-file-excel', command: exportRoundTrip }] : []),
   ...(canWrite.value ? [{ label: t('exchange.importXlsx'), icon: 'pi pi-file-import', command: () => openExchange('xlsx') }] : []),
+  ...(!isReq.value && canWrite.value ? [{ label: t('featureImport.menu'), icon: 'pi pi-upload', command: () => (featureImportOpen.value = true) }] : []),
+  ...(!isReq.value && canExport.value ? [{ label: t('featureImport.exportMenu'), icon: 'pi pi-download', command: exportFeatures }] : []),
+  ...(!isReq.value ? [{ label: t('stepLibrary.button'), icon: 'pi pi-book', command: () => (stepLibraryOpen.value = true) }] : []),
 ])
 
 async function onFoldersChanged() {
@@ -999,6 +1016,8 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
   <BulkItemLinksDialog v-if="canWrite" v-model:visible="bulkLinksOpen" :source-type="isReq ? 'requirement' : 'test'" :project-id="pid" :selected="selectedIds" />
   <BulkRelationsDialog v-if="isReq && canWrite" v-model:visible="bulkRelationsOpen" :project-id="pid" :selected="selectedIds" @done="load" />
   <BulkRequirementIssuesDialog v-if="isReq && canWrite" v-model:visible="bulkIssuesOpen" :project-id="pid" :selected="selectedIds" />
+  <FeatureImportDialog v-if="!isReq && canWrite" v-model:visible="featureImportOpen" :project-id="pid" :folders="folders" :folder-id="selectedFolder" @imported="load" />
+  <StepLibraryDialog v-if="!isReq" v-model:visible="stepLibraryOpen" :project-id="pid" :can-write="canWrite" @changed="load" />
   <TestStubsDialog v-if="!isReq" v-model:visible="stubsOpen" :project-id="pid" :ids="selectedIds" :query="composed" :shown="items.length" :can-write="canWrite" @marked="load" />
   <BulkProposeDialog v-if="canPropose" v-model:visible="bulkProposeOpen" :project-id="pid" :kind="isReq ? 'requirement' : 'test'" :rows="selection" @proposed="load" />
 </template>

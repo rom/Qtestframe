@@ -76,6 +76,9 @@ import { useNotify } from '@/composables/notify'
 import AssistMenu, { type AssistAction } from './AssistMenu.vue'
 import AssistDialog, { type AssistApply } from './AssistDialog.vue'
 import { draftPreconditions, type AiFeature } from '@/lib/ai'
+import GherkinEditor from './GherkinEditor.vue'
+import StepLibraryDialog from './StepLibraryDialog.vue'
+import { starter, type GherkinLang } from '@/lib/gherkin'
 
 const props = defineProps<{
   projectId: string
@@ -90,7 +93,7 @@ const emit = defineEmits<{ saved: [item: TestCase]; deleted: [id: string]; copie
 const meta = useMetaStore()
 const proj = useProjectStore()
 const notify = useNotify()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const tabsId = newId('test-tabs')
 const linkCount = ref<number | null>(null)
 /** commits and merge / pull requests of the Code tab */
@@ -151,6 +154,8 @@ function blank() {
     category_ids: [] as string[],
     folder_id: (props.folderId ?? null) as string | null,
     steps: [] as StepRow[],
+    format: 'steps' as 'steps' | 'gherkin',
+    gherkin: '',
     parameters: [] as string[],
     data_rows: [] as DataRow[],
     custom_fields: defaultValues(useProjectStore().customFieldsFor('test')) as CustomValues,
@@ -229,6 +234,8 @@ async function load() {
           call_test_title: s.call_test_title,
         })),
       custom_fields: { ...(t.custom_fields ?? {}) } as CustomValues,
+      format: t.format === 'gherkin' ? 'gherkin' : 'steps',
+      gherkin: t.gherkin ?? '',
       parameters: [...(t.parameters ?? [])],
       data_rows: (t.data_rows ?? []).map((r) => ({ name: r.name ?? '', values: { ...(r.values ?? {}) } })),
     }
@@ -317,6 +324,78 @@ function moveStep(i: number, d: number) {
 }
 function onReorder(e: { value: StepRow[] }) {
   form.value.steps = e.value
+}
+
+// ---------- format: steps or Gherkin, converting between them ----------
+const isGherkin = computed(() => form.value.format === 'gherkin')
+const libraryOpen = ref(false)
+const gherkinEditor = ref<InstanceType<typeof GherkinEditor> | null>(null)
+const converting = ref(false)
+const formatOptions = computed(() => [
+  { label: t('gherkin.formatSteps'), value: 'steps', icon: 'pi pi-list' },
+  { label: t('gherkin.formatGherkin'), value: 'gherkin', icon: 'pi pi-book' },
+])
+const gherkinLang = computed<GherkinLang>(() => (String(locale.value).startsWith('sv') ? 'sv' : 'en'))
+const hasSteps = computed(() => form.value.steps.some((s) => s.call_test_id || s.action.trim() || s.expected.trim()) || !!form.value.preconditions.trim())
+interface ConvertResult {
+  gherkin?: string
+  preconditions: string
+  steps: { action: string; expected: string; data: string }[]
+  parameters: string[]
+  data_rows: DataRow[]
+  warnings: string[]
+}
+async function convertToGherkin() {
+  const f = form.value
+  converting.value = true
+  try {
+    const steps = f.steps.map((s) => ({ action: s.action, expected: s.expected, data: s.data, call_test_id: s.call_test_id ?? null, call_test_key: s.call_test_key ?? '', call_test_title: s.call_test_title ?? '' }))
+    const r = await api.post<ConvertResult>(`/projects/${props.projectId}/gherkin/convert`, {
+      to: 'gherkin', language: gherkinLang.value, title: f.title, description: '', preconditions: f.preconditions, steps, parameters: f.parameters, data_rows: f.data_rows, tags: [],
+    })
+    f.gherkin = r.gherkin ?? ''
+    if (r.warnings.length) notify.info(t('gherkin.convertWarnings'), r.warnings.join('; '))
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    converting.value = false
+  }
+}
+async function convertToSteps() {
+  const f = form.value
+  converting.value = true
+  try {
+    const r = await api.post<ConvertResult>(`/projects/${props.projectId}/gherkin/convert`, { to: 'steps', gherkin: f.gherkin })
+    f.preconditions = r.preconditions
+    f.steps = r.steps.map((s) => ({ uid: ++uid, action: s.action, expected: s.expected, data: s.data }))
+    if (r.parameters.length) {
+      f.parameters = r.parameters
+      f.data_rows = r.data_rows
+    }
+    if (r.warnings.length) notify.info(t('gherkin.convertWarnings'), r.warnings.join('; '))
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    converting.value = false
+  }
+}
+/** switching the format fills the empty side from the other one */
+async function onFormat(v: 'steps' | 'gherkin') {
+  const f = form.value
+  if (v === 'gherkin' && !f.gherkin.trim()) {
+    if (hasSteps.value) await convertToGherkin()
+    else f.gherkin = starter(f.title, gherkinLang.value)
+  } else if (v === 'steps' && f.gherkin.trim() && !hasSteps.value) {
+    await convertToSteps()
+  }
+}
+/** the library changed (a rename may have rewritten this test): reload unless there are unsaved changes */
+async function onLibraryChanged() {
+  if (props.itemId && !dirty.value) await load()
+  await gherkinEditor.value?.refresh()
+}
+function confirmConvert(to: 'steps' | 'gherkin') {
+  notify.confirmDanger(to === 'gherkin' ? t('gherkin.confirmFromSteps') : t('gherkin.confirmToSteps'), () => (to === 'gherkin' ? convertToGherkin() : convertToSteps()), t('gherkin.convertHeader'), t('gherkin.convert'))
 }
 
 // ---------- save ----------
@@ -652,6 +731,10 @@ const scriptPlaceholder = computed(() => {
       <SelectButton v-model="form.execution_type" :options="execOptions" option-label="label" option-value="value" :allow-empty="false" :disabled="!canWrite" :aria-label="t('tests.executionType')">
         <template #option="{ option }"><i :class="option.icon" /> {{ option.label }}</template>
       </SelectButton>
+      <SelectButton v-model="form.format" :options="formatOptions" option-label="label" option-value="value" :allow-empty="false" :disabled="!canWrite || converting" :aria-label="t('gherkin.formatLabel')" data-testid="test-format" @update:model-value="onFormat">
+        <template #option="{ option }"><i :class="option.icon" aria-hidden="true" /> {{ option.label }}</template>
+      </SelectButton>
+      <HelpTip id="test.gherkin" :label="t('gherkin.formatLabel')" />
     </div>
     <div class="form-grid">
       <div v-field class="field full">
@@ -668,7 +751,7 @@ const scriptPlaceholder = computed(() => {
         :details="[form.preconditions, form.expected_result, ...form.steps.map((s) => `${s.action} ${s.expected}`)]"
         :exclude-id="item?.id"
       />
-      <div v-field class="field full">
+      <div v-if="!isGherkin" v-field class="field full">
         <label>{{ t('tests.preconditions') }}</label>
         <HelpTip id="test.preconditions" :label="t('tests.preconditions')" />
         <MentionInput v-model="form.preconditions" suggest="test.preconditions" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
@@ -730,11 +813,22 @@ const scriptPlaceholder = computed(() => {
       <Textarea v-model="form.script" class="code-input w-full" rows="12" :placeholder="scriptPlaceholder" :aria-label="t('tests.script')" spellcheck="false" :disabled="!canWrite" style="font-family: var(--qtf-mono)" />
     </template>
 
-    <div>
+    <div v-if="isGherkin">
+      <div class="section-title">
+        <i class="pi pi-book" aria-hidden="true" /> {{ t('gherkin.title') }}
+        <HelpTip id="test.gherkin" :label="t('gherkin.title')" />
+        <span class="grow" />
+        <Button v-if="canWrite && hasSteps" size="small" :label="t('gherkin.fromSteps')" icon="pi pi-sync" text :loading="converting" @click="confirmConvert('gherkin')" />
+        <Button size="small" :label="t('stepLibrary.button')" icon="pi pi-book" text aria-haspopup="dialog" @click="libraryOpen = true" />
+      </div>
+      <GherkinEditor ref="gherkinEditor" v-model="form.gherkin" :project-id="projectId" :test-id="item?.id ?? null" :disabled="!canWrite" :label="t('gherkin.title')" />
+    </div>
+    <div v-else>
       <div class="section-title">
         <i class="pi pi-list" /> {{ t('tests.steps', { count: form.steps.length }) }}
         <HelpTip id="test.steps" :label="t('tests.steps', { count: form.steps.length })" />
         <span class="grow" />
+        <Button v-if="canWrite && form.gherkin.trim()" size="small" :label="t('gherkin.toSteps')" icon="pi pi-sync" text :loading="converting" @click="confirmConvert('steps')" />
         <Button v-if="canWrite" size="small" :label="t('tests.insertCall')" icon="pi pi-directions" text v-tooltip.bottom="t('tests.insertCallHint')" @click="openCallPicker()" />
         <HelpTip id="test.calls" :label="t('tests.insertCall')" />
         <Button v-if="canWrite" size="small" :label="t('tests.addStep')" icon="pi pi-plus" text @click="addStep()" />
@@ -784,12 +878,13 @@ const scriptPlaceholder = computed(() => {
     </div>
 
     <TestDataEditor
+      v-if="!isGherkin"
       v-model:parameters="form.parameters"
       v-model:rows="form.data_rows"
       :can-write="canWrite"
       :texts="[form.description, form.preconditions, form.expected_result, ...form.steps.flatMap((s) => [s.action, s.expected, s.data])]"
     />
-    <TestDataSources v-if="itemId" :project-id="projectId" :test-id="itemId" />
+    <TestDataSources v-if="itemId && !isGherkin" :project-id="projectId" :test-id="itemId" />
 
     <div v-field class="field">
       <label>{{ t('tests.overallExpected') }}</label>
@@ -860,5 +955,6 @@ const scriptPlaceholder = computed(() => {
   </template>
   <ImpactConfirmDialog v-model:visible="impactOpen" :impact="impactPreview" :project-id="projectId" :changed="impactFields" :saving="saving" @confirm="confirmImpact" />
   <AssistDialog v-model:visible="assistOpen" :project-id="projectId" :feature="assistFeature" :body="assistBody" mode="emit" @apply="onAssistApply" />
+  <StepLibraryDialog v-model:visible="libraryOpen" :project-id="projectId" :can-write="canWrite" @changed="onLibraryChanged" />
   <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

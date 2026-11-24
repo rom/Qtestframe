@@ -83,6 +83,8 @@ var BackupTables = []string{
 	// environment bookings and test data sets (0057; environments come
 	// before test_runs above)
 	"environment_bookings", "test_data_sets", "test_data_links", "test_data_usage", "test_data_refresh_requests",
+	// the step library of BDD tests (0070)
+	"step_definitions",
 }
 
 // tables that exist but are deliberately not part of a backup.

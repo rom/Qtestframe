@@ -65,6 +65,7 @@ const guideEn = {
     test_steps: "The steps of a manual test: an action, the expected result and optional test data. The tester records a result per step in the runner.",
     test_expected: "The overall expected result of the test, for tests without steps or as a summary.",
     test_calls: "Steps borrowed from other tests (shared steps). A change to the called test applies to every test that calls it, in runs created afterwards.",
+    test_gherkin: "Write the test as a Gherkin feature (Given, When, Then) instead of steps. English and Swedish keywords both work. A run shows each scenario, and each Examples row of an outline, as an iteration with its steps.",
     test_data: "Parameters and data rows of a data-driven test. Steps use a parameter by its name in double curly braces; a run executes the test once per row, as an iteration.",
     run_configurations: "The configurations the run targets, for example browsers or operating systems. Each test is executed once per configuration, and results and coverage are shown per configuration.",
     runner_iterations: "One iteration per data row. Each has its own step results and notes; the overall result follows the iterations: failed before blocked before passed.",

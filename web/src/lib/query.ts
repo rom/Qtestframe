@@ -167,7 +167,7 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' |
     'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'open_discussions', 'version', 'mention', 'depends_on', 'suspect', 'flaky', 'flakiness', 'catalog', 'stale',
     'element',
     'variant', 'applicability', 'cr',
-    'cycle',
+    'cycle', 'format',
   ],
   run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at', 'configuration', 'variant', 'cycle'],
   execution: ['key', 'title', 'status', 'assignee', 'executed_by', 'notes', 'output', 'defect', 'mention'],
