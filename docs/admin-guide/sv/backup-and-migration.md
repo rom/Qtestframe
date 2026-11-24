@@ -164,6 +164,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 62 | `0062_project_logo.sql` |
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
+| 68 | `0068_privacy_retention.sql` |
 
 <!-- END GENERATED: migrations -->
 

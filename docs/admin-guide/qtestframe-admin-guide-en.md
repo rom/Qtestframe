@@ -14,13 +14,14 @@ The people who *use* Qtestframe – including organisation administrators who ma
 6. [Authorisation](#authorisation) – roles, custom roles, the permission matrix, restricted and shared projects.
 7. [Runtime system settings](#runtime-system-settings) – what super administrators can change in the web client, and what needs a restart.
 8. [Security](#security) – TLS, hardening with Landlock and seccomp, encryption of stored secrets and the key providers, key rotation, disaster recovery, the audit log, security headers.
-9. [E-mail, webhooks and integrations](#e-mail-webhooks-and-integrations) – SMTP, notifications, webhooks, Jira, GitHub and GitLab, the script and web test runner.
-10. [Connecting other tools](#connecting-other-tools-oslc-and-reqif) – OSLC connections with IBM DOORS Next and ETM, Polarion and Codebeamer, dialogs in frames, ReqIF.
-11. [Logging and monitoring](#logging-and-monitoring) – log formats, syslog, health endpoints.
-12. [Backup, restore and migration](#backup-restore-and-migration) – what a backup contains, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
-13. [Operations runbook](#operations-runbook) – routine tasks, capacity, troubleshooting, log messages.
-14. [Command line reference](#command-line-reference) – every `qtestframe` command and flag.
-15. [Features added later](#features-added-later) – administration notes of newer features.
+9. [Privacy and data retention](#privacy-and-data-retention) – retention periods and the nightly purge, legal hold, exporting and erasing personal data, and what regulations require to keep.
+10. [E-mail, webhooks and integrations](#e-mail-webhooks-and-integrations) – SMTP, notifications, webhooks, Jira, GitHub and GitLab, the script and web test runner.
+11. [Connecting other tools](#connecting-other-tools-oslc-and-reqif) – OSLC connections with IBM DOORS Next and ETM, Polarion and Codebeamer, dialogs in frames, ReqIF.
+12. [Logging and monitoring](#logging-and-monitoring) – log formats, syslog, health endpoints.
+13. [Backup, restore and migration](#backup-restore-and-migration) – what a backup contains, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
+14. [Operations runbook](#operations-runbook) – routine tasks, capacity, troubleshooting, log messages.
+15. [Command line reference](#command-line-reference) – every `qtestframe` command and flag.
+16. [Features added later](#features-added-later) – administration notes of newer features.
 
 ## Conventions
 
@@ -586,6 +587,27 @@ Every key of the file, its type, its default and the environment variable that s
 | `outbound.denied_hosts` | list | — | — | Hosts outgoing calls never reach, e.g. `metadata.google.internal` or `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Refuse outgoing calls to loopback, private, link-local and other non-public addresses (checked on the address actually connected to), unless the host is in `allowed_hosts`. Turn it on when the server is reachable from the internet and its users should not reach your internal network through it. |
 
+### `retention`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `retention.enabled` | bool | `false` | — | Run the nightly retention job, which deletes records older than their retention period (see *Privacy and data retention*). Check the dry-run preview under **Administration → System settings → Retention and backups** before turning it on. |
+| `retention.hour` | integer | `2` | — | Hour of the day (UTC, 0–23) the retention job runs. |
+| `retention.runs_days` | integer | `0` | — | Days to keep test runs with their results, step results, comments and attachments (0 = forever). Runs in progress, of a project or release under legal hold or with an electronic signature are kept. |
+| `retention.runs_keep_latest` | integer | `0` | — | Always keep the runs holding one of the latest N results of each test, however old (0 = no exception). |
+| `retention.logs_days` | integer | `0` | — | Days to keep logs and uploaded artifacts: the sign-in log, finished test runner jobs, CI status posts, tracker sync logs and web test evidence (screenshots, traces, videos) (0 = forever). |
+| `retention.notifications_days` | integer | `0` | — | Days to keep in-app notifications, read or not (0 = forever). |
+| `retention.sessions_days` | integer | `0` | — | Days to keep sign-in sessions not used for that long and API tokens that expired that long ago (0 = forever). |
+| `retention.chat_days` | integer | `0` | — | Days to keep the chat message history (sent or failed messages with their text) and the personal input suggestion history (0 = forever). |
+| `retention.exploratory_days` | integer | `0` | — | Days to keep the notes of completed or debriefed exploratory sessions, counted from the session's last change (0 = forever). The session and its debrief stay. |
+
+### `privacy`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `privacy.truncate_ip` | bool | `false` | — | Store and log client addresses shortened: IPv4 to /24, IPv6 to /48 (sign-in log, sessions, remembered devices, request log). Rate limits still use the full address in memory. |
+| `privacy.notice_url` | string | — | — | Link to your privacy notice, shown on the sign-in page (empty = none). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -1047,7 +1069,8 @@ Use environment variables or locks for what must not change from the web client 
 | Live updates | the switch and the heartbeat **at once** (new connections); the connection limits, the replay buffer and the presence timeout **after a restart** |
 | Server and database | the HTTP read and write timeouts **after a restart**; everything else is set in the file and shown with its source (listen address, TLS files, database, first start, hardening, key provider) |
 | Script and web test runner | **after a restart** – the runner and its sandbox are set up before the process is locked down (Landlock execute paths, work directory); the value is stored at once and the page shows the value in use until then |
-| Retention and backups, Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them (the trash keeps deleted items for 30 days, which is fixed) |
+| Retention and backups, Privacy | **at once** – the retention periods are read by the next preview and the next purge (the nightly job at `retention.hour` UTC); see [Privacy and data retention](#privacy-and-data-retention). The trash keeps deleted items for 30 days, which is fixed |
+| Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them |
 
 Settings marked **Applies after restart** keep their value in use until the next start. A banner at the top of the page lists every saved change that waits for a restart, with a link to the setting.
 
@@ -1176,6 +1199,17 @@ The settings the page offers, generated from `internal/settings`:
 | AI assistance | `ai.features.suggest_criteria` | on/off | at once |
 | AI assistance | `ai.price_input` | text | at once |
 | AI assistance | `ai.price_output` | text | at once |
+| Retention and backups | `retention.enabled` | on/off | at once |
+| Retention and backups | `retention.hour` | 0–23 | at once |
+| Retention and backups | `retention.runs_days` | 0–36500 | at once |
+| Retention and backups | `retention.runs_keep_latest` | 0–1000 | at once |
+| Retention and backups | `retention.logs_days` | 0–36500 | at once |
+| Retention and backups | `retention.notifications_days` | 0–36500 | at once |
+| Retention and backups | `retention.sessions_days` | 0–36500 | at once |
+| Retention and backups | `retention.chat_days` | 0–36500 | at once |
+| Retention and backups | `retention.exploratory_days` | 0–36500 | at once |
+| Privacy | `privacy.truncate_ip` | on/off | at once |
+| Privacy | `privacy.notice_url` | text | at once |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1486,6 +1520,8 @@ The audit log of each organisation is a **hash chain** (the system entries of th
 
 The chain in backups, restores and project archives is described in [Backup, restore and migration](#the-audit-trail-in-backups).
 
+**Data protection.** The retention job never purges the audit trail, and erasing a user leaves the entries about them unchanged: see [Privacy and data retention](#privacy-and-data-retention) for the reasons and for legal holds.
+
 ## Electronic-records mode (21 CFR Part 11 / EU GMP Annex 11)
 
 An organisation setting under **Administration → Electronic records** (change: `tenant.manage`; read and report: `audit.read`; `GET`/`PUT /api/v1/erecords`), **off by default**. When it is on, the server enforces:
@@ -1553,6 +1589,85 @@ Project administrators (`project.update`) choose the URLs of trackers and webhoo
 - [ ] SELinux module or AppArmor profile loaded; `systemd-analyze security qtestframe` ≤ 2.0
 - [ ] `server.trusted_proxies` set behind a reverse proxy
 - [ ] backups encrypted, stored off-host and a restore tested
+
+# Privacy and data retention
+
+This chapter is for super administrators and data protection officers. It explains how long Qtestframe keeps data, how the retention job deletes older records, what a **legal hold** protects, how to answer a **data subject request** (export and erasure under the GDPR) and where regulatory record-keeping rules win over erasure.
+
+## Retention policy
+
+Super administrators set the retention under **Administration → System settings → Retention and backups**. Every period is in **days; 0 keeps the data forever**, which is the default. Nothing is deleted until you turn on the nightly job.
+
+| Setting | What it deletes when older than the period |
+|---|---|
+| `retention.runs_days` | Test runs with their executions, step results, iterations, comments, defect and item links and attachments. Runs in progress are kept. |
+| `retention.runs_keep_latest` | Not a period: runs that hold one of the latest *N* results of a test are always kept, however old (0 = no exception). |
+| `retention.logs_days` | Logs and uploaded artifacts: the sign-in log, finished test runner jobs, CI status posts that were sent or gave up, finished tracker sync logs, and web test evidence (screenshots, traces, videos) of old executions – the results themselves stay. |
+| `retention.notifications_days` | In-app notifications, read or not. |
+| `retention.sessions_days` | Sign-in sessions not used for that long, and API tokens that expired that long ago. |
+| `retention.chat_days` | The chat message history (messages sent or given up, with their text) and the personal input suggestion history. |
+| `retention.exploratory_days` | The notes of completed or debriefed exploratory sessions, counted from the session's last change. The session and its debrief stay. |
+| `retention.enabled`, `retention.hour` | The nightly job and the hour (UTC) it runs. |
+
+**Per-organisation overrides.** Under **Administration → Organisations → (organisation) → Policy → Data retention** a super administrator can give one organisation its own periods (for example a customer contract that requires 10 years for runs). An empty field uses the system setting. The sign-in log and sign-in sessions belong to no organisation and always use the system setting.
+
+**The audit trail is never purged.** It is a hash chain ([Tamper-evident audit trail](#tamper-evident-audit-trail)): verification walks every entry from the first, and signed checkpoints name entries by sequence number, so deleting old entries would break the chain. The chain code has no sealed starting point that would allow cutting it safely, so Qtestframe keeps the trail whole. To limit what the live database holds, archive the trail with **Export with hashes** to write-once storage; the archive verifies on its own (`qtestframe audit verify --file`). Electronic signatures and sign-offs are not purged either.
+
+### Preview before you enable it
+
+Below the settings, **Preview and purge** shows what the job would delete *now*: per organisation and category the number of records older than the period, and how many older records are **held** – kept by a legal hold or an electronic signature. The preview changes nothing. Check it, adjust the periods, and only then turn on `retention.enabled`.
+
+**Purge now** runs the purge at once (also while the nightly job is off) after you type `PURGE`. API: `GET /api/v1/admin/retention` (preview), `POST /api/v1/admin/retention/run` with `{"confirm": "PURGE"}`.
+
+Every purge is recorded in the audit trail as `retention.purge`, in each organisation where something was deleted and in the system trail, with the counts per category and the held records. Deleted records cannot be restored except from a [backup](#backup-restore-and-migration); take one before the first purge.
+
+## Legal hold
+
+A legal hold protects a whole **project** or a single **release** when data must be preserved – litigation, an authority's request, an audit. While the hold is on:
+
+- the retention job deletes nothing of it (runs of the project or release, their results and evidence, its logs, exploratory notes and chat history);
+- the project, the organisation that holds it, and the runs of a held release **cannot be deleted** (409).
+
+Organisation administrators (`tenant.manage`) and super administrators set and lift holds in the project's **Settings → Legal hold**, with a reason that is shown with the hold. Setting and lifting are audited (`legal_hold.set`, `legal_hold.lift`). The retention page lists every project and release under hold across organisations. API: `GET`/`PUT /api/v1/projects/{pid}/legal-hold` and `PUT /api/v1/projects/{pid}/releases/{rid}/legal-hold` with `{"on": true, "reason": "…"}`.
+
+## Data subject requests
+
+### Access and portability (export)
+
+In **Administration → Users**, **Export personal data** downloads a ZIP of JSON files with everything the server holds about the person: profile and preferences, memberships and roles, project roles, comments they wrote, comments that mention them, sessions, API tokens (names and dates, never the secret), the sign-in log, remembered devices, notifications, electronic signatures, input history and the audit entries by or about them. Passwords, second-factor secrets and token hashes are never exported. API: `GET /api/v1/users/{id}/export`.
+
+Every user can download the same export for themselves on their **Profile** (**Download my data**, `GET /api/v1/auth/me/export`). Both are audited as `user.data_export`.
+
+The content a person created in projects (requirements, tests, runs, documents) belongs to the organisation; export it with the project exports if the request covers it.
+
+### Erasure (anonymisation)
+
+**Erase user** in **Administration → Users** anonymises an account after you type its e-mail address:
+
+- its name and address become a pseudonym, **Former user #*n*** (`former-user-n@erased.invalid`), numbered in order;
+- deleted: personal settings, avatar, sessions, API tokens, second factor and recovery codes, remembered devices, pending signing tickets, notifications, the sign-in log, input history, invitations, SCIM links, memberships and project roles;
+- the account is disabled, has no password and **can never sign in again**; single sign-on can no longer match it;
+- content the person authored stays and is **attributed to the pseudonym**: fields that name the author by e-mail address (created by, assignee, owner, tester, uploaded by and similar) are rewritten, and `@` mentions of the person in comments become `@former-user-n`.
+
+You cannot erase your own account or the last super administrator. The erasure is audited as `user.erase` with the pseudonym and counts – not with the erased address. API: `POST /api/v1/users/{id}/erase` with `{"confirm": "<e-mail address>"}`.
+
+### What erasure keeps, and why
+
+- **Electronic signatures and sign-offs** (baseline, waiver and change-request sign-offs, `esignatures`) keep the signer's printed name and e-mail exactly as signed. 21 CFR Part 11 (§11.50, §11.70) and EU GMP Annex 11 (§14) require the signature manifestation to stay linked to the signed record; changing it would invalidate the record. GDPR art. 17(3)(b) allows keeping data needed to comply with such a legal obligation.
+- **The audit trail** keeps the e-mail address of the entries the person made, and entries that name them in their details. Rewriting an entry breaks the hash chain, and the trail is itself a regulatory record (Part 11 §11.10(e), Annex 11 §9). The user list and new audit views show the pseudonym for the account.
+- **Backups** made before the erasure still contain the original data. Keep backups only as long as your retention schedule says, and repeat the erasure after a restore.
+- **Free text** – a name typed into a description, a step or an owner field as plain text – is not searched and replaced; review it if the request requires.
+
+Document these exceptions in your records of processing and in the answer to the person.
+
+## Privacy settings
+
+| Setting | Effect |
+|---|---|
+| `privacy.truncate_ip` | Client addresses are stored and logged shortened – IPv4 to /24 (`192.0.2.0`), IPv6 to /48 – in the sign-in log, sessions, remembered devices, the request log and the failed sign-in messages. Rate limits still use the full address, in memory only. Audit entries never contain client addresses. |
+| `privacy.notice_url` | A link to your privacy notice, shown on the sign-in page (empty = none). |
+
+Both are in **Administration → System settings → Privacy** and apply at once.
 
 # E-mail, webhooks and integrations
 
@@ -2154,6 +2269,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 62 | `0062_project_logo.sql` |
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
+| 68 | `0068_privacy_retention.sql` |
 
 <!-- END GENERATED: migrations -->
 

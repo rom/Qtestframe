@@ -40,7 +40,8 @@ Använd miljövariabler eller lås för det som inte får ändras från webbklie
 | Liveuppdateringar | brytaren och pulsen **direkt** (nya anslutningar); anslutningsgränserna, repriskbufferten och tidsgränsen för närvaro **efter en omstart** |
 | Server och databas | HTTP-tidsgränserna för läsning och skrivning **efter en omstart**; allt annat anges i filen och visas med sin källa (lyssningsadress, TLS-filer, databas, första start, härdning, nyckelleverantör) |
 | Körning av skript och webbtester | **efter en omstart** – körningen och dess sandlåda sätts upp innan processen låses (Landlocks körbara sökvägar, arbetskatalogen); värdet sparas direkt och sidan visar värdet som används tills dess |
-| Gallring och säkerhetskopior, Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem (papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast) |
+| Gallring och säkerhetskopior, Integritet | **direkt** – lagringstiderna läses av nästa förhandsvisning och nästa gallring (den nattliga körningen vid `retention.hour` UTC); se [Integritet och gallring](privacy.md). Papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast |
+| Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem |
 
 Inställningar märkta **Gäller efter omstart** behåller sitt värde tills nästa start. En banderoll överst på sidan listar varje sparad ändring som väntar på en omstart, med en länk till inställningen.
 
@@ -169,6 +170,17 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | AI-assistans | `ai.features.suggest_criteria` | på/av | direkt |
 | AI-assistans | `ai.price_input` | text | direkt |
 | AI-assistans | `ai.price_output` | text | direkt |
+| Gallring och säkerhetskopior | `retention.enabled` | på/av | direkt |
+| Gallring och säkerhetskopior | `retention.hour` | 0–23 | direkt |
+| Gallring och säkerhetskopior | `retention.runs_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.runs_keep_latest` | 0–1000 | direkt |
+| Gallring och säkerhetskopior | `retention.logs_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.notifications_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.sessions_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.chat_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.exploratory_days` | 0–36500 | direkt |
+| Integritet | `privacy.truncate_ip` | på/av | direkt |
+| Integritet | `privacy.notice_url` | text | direkt |
 
 <!-- END GENERATED: system-settings -->
 

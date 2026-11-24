@@ -14,13 +14,14 @@ De som *använder* Qtestframe – även organisationsadministratörer som hanter
 6. [Behörigheter](#behörigheter) – roller, egna roller, behörighetsmatrisen, begränsade och delade projekt.
 7. [Systeminställningar under drift](#systeminställningar-under-drift) – vad superadministratörer kan ändra i webbklienten, och vad som kräver omstart.
 8. [Säkerhet](#säkerhet) – TLS, härdning med Landlock och seccomp, kryptering av lagrade hemligheter och nyckelleverantörerna, nyckelbyte, katastrofåterställning, granskningsloggen, säkerhetshuvuden.
-9. [E-post, webhooks och integrationer](#e-post-webhooks-och-integrationer) – SMTP, aviseringar, webhooks, Jira, GitHub och GitLab, körning av skript och webbtester.
-10. [Koppla ihop med andra verktyg](#koppla-ihop-med-andra-verktyg-oslc-och-reqif) – OSLC-kopplingar till IBM DOORS Next och ETM, Polarion och Codebeamer, dialoger i ramar, ReqIF.
-11. [Loggning och övervakning](#loggning-och-övervakning) – loggformat, syslog, hälsokontroller.
-12. [Säkerhetskopiering, återställning och migrering](#säkerhetskopiering-återställning-och-migrering) – vad en säkerhetskopia innehåller, återställning, uppgradering och nedgradering, flytt mellan SQLite och PostgreSQL.
-13. [Driftrutiner](#driftrutiner) – återkommande uppgifter, kapacitet, felsökning, loggmeddelanden.
-14. [Kommandoradsreferens](#kommandoradsreferens) – alla `qtestframe`-kommandon och flaggor.
-15. [Funktioner som lagts till senare](#funktioner-som-lagts-till-senare) – administrationsanteckningar för nyare funktioner.
+9. [Integritet och gallring](#integritet-och-gallring) – lagringstider och den nattliga gallringen, juridiskt bevarande, export och radering av personuppgifter, och vad regelverken kräver att spara.
+10. [E-post, webhooks och integrationer](#e-post-webhooks-och-integrationer) – SMTP, aviseringar, webhooks, Jira, GitHub och GitLab, körning av skript och webbtester.
+11. [Koppla ihop med andra verktyg](#koppla-ihop-med-andra-verktyg-oslc-och-reqif) – OSLC-kopplingar till IBM DOORS Next och ETM, Polarion och Codebeamer, dialoger i ramar, ReqIF.
+12. [Loggning och övervakning](#loggning-och-övervakning) – loggformat, syslog, hälsokontroller.
+13. [Säkerhetskopiering, återställning och migrering](#säkerhetskopiering-återställning-och-migrering) – vad en säkerhetskopia innehåller, återställning, uppgradering och nedgradering, flytt mellan SQLite och PostgreSQL.
+14. [Driftrutiner](#driftrutiner) – återkommande uppgifter, kapacitet, felsökning, loggmeddelanden.
+15. [Kommandoradsreferens](#kommandoradsreferens) – alla `qtestframe`-kommandon och flaggor.
+16. [Funktioner som lagts till senare](#funktioner-som-lagts-till-senare) – administrationsanteckningar för nyare funktioner.
 
 ## Konventioner
 
@@ -586,6 +587,27 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `outbound.denied_hosts` | lista | — | — | Värdar som utgående anrop aldrig når, t.ex. `metadata.google.internal` eller `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Neka utgående anrop till loopback-, privata, länklokala och andra icke-publika adresser (kontrolleras på adressen som faktiskt ansluts), om inte värden finns i `allowed_hosts`. Slå på den när servern nås från internet och användarna inte ska nå ert interna nät genom den. |
 
+### `retention`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `retention.enabled` | bool | `false` | — | Kör den nattliga gallringen, som raderar poster som är äldre än sin lagringstid (se *Integritet och gallring*). Kontrollera förhandsvisningen under **Administration → Systeminställningar → Gallring och säkerhetskopior** innan du slår på den. |
+| `retention.hour` | heltal | `2` | — | Timme på dygnet (UTC, 0–23) då gallringen körs. |
+| `retention.runs_days` | heltal | `0` | — | Dagar att behålla testkörningar med resultat, stegresultat, kommentarer och bilagor (0 = för alltid). Pågående körningar, körningar i ett projekt eller en release med juridiskt bevarande och körningar med en elektronisk signatur behålls. |
+| `retention.runs_keep_latest` | heltal | `0` | — | Behåll alltid de körningar som innehåller något av de N senaste resultaten för varje test, hur gamla de än är (0 = inget undantag). |
+| `retention.logs_days` | heltal | `0` | — | Dagar att behålla loggar och uppladdade artefakter: inloggningsloggen, avslutade jobb i testkörningen, CI-statusposter, synkloggar mot ärendesystem och bevis från webbtester (skärmbilder, spår, videor) (0 = för alltid). |
+| `retention.notifications_days` | heltal | `0` | — | Dagar att behålla aviseringar i appen, lästa eller inte (0 = för alltid). |
+| `retention.sessions_days` | heltal | `0` | — | Dagar att behålla inloggningssessioner som inte använts så länge och API-tokens som gick ut för så länge sedan (0 = för alltid). |
+| `retention.chat_days` | heltal | `0` | — | Dagar att behålla historiken för chattmeddelanden (skickade eller misslyckade meddelanden med sin text) och den personliga historiken för inmatningsförslag (0 = för alltid). |
+| `retention.exploratory_days` | heltal | `0` | — | Dagar att behålla anteckningarna från avslutade eller genomgångna utforskande sessioner, räknat från sessionens senaste ändring (0 = för alltid). Sessionen och dess genomgång finns kvar. |
+
+### `privacy`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `privacy.truncate_ip` | bool | `false` | — | Lagra och logga klientadresser förkortade: IPv4 till /24, IPv6 till /48 (inloggningslogg, sessioner, betrodda enheter, begäranslogg). Begränsningar av antal försök använder fortfarande hela adressen i minnet. |
+| `privacy.notice_url` | text | — | — | Länk till er integritetspolicy, visas på inloggningssidan (tom = ingen). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler
@@ -1048,7 +1070,8 @@ Använd miljövariabler eller lås för det som inte får ändras från webbklie
 | Liveuppdateringar | brytaren och pulsen **direkt** (nya anslutningar); anslutningsgränserna, repriskbufferten och tidsgränsen för närvaro **efter en omstart** |
 | Server och databas | HTTP-tidsgränserna för läsning och skrivning **efter en omstart**; allt annat anges i filen och visas med sin källa (lyssningsadress, TLS-filer, databas, första start, härdning, nyckelleverantör) |
 | Körning av skript och webbtester | **efter en omstart** – körningen och dess sandlåda sätts upp innan processen låses (Landlocks körbara sökvägar, arbetskatalogen); värdet sparas direkt och sidan visar värdet som används tills dess |
-| Gallring och säkerhetskopior, Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem (papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast) |
+| Gallring och säkerhetskopior, Integritet | **direkt** – lagringstiderna läses av nästa förhandsvisning och nästa gallring (den nattliga körningen vid `retention.hour` UTC); se [Integritet och gallring](#integritet-och-gallring). Papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast |
+| Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem |
 
 Inställningar märkta **Gäller efter omstart** behåller sitt värde tills nästa start. En banderoll överst på sidan listar varje sparad ändring som väntar på en omstart, med en länk till inställningen.
 
@@ -1177,6 +1200,17 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | AI-assistans | `ai.features.suggest_criteria` | på/av | direkt |
 | AI-assistans | `ai.price_input` | text | direkt |
 | AI-assistans | `ai.price_output` | text | direkt |
+| Gallring och säkerhetskopior | `retention.enabled` | på/av | direkt |
+| Gallring och säkerhetskopior | `retention.hour` | 0–23 | direkt |
+| Gallring och säkerhetskopior | `retention.runs_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.runs_keep_latest` | 0–1000 | direkt |
+| Gallring och säkerhetskopior | `retention.logs_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.notifications_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.sessions_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.chat_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.exploratory_days` | 0–36500 | direkt |
+| Integritet | `privacy.truncate_ip` | på/av | direkt |
+| Integritet | `privacy.notice_url` | text | direkt |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1487,6 +1521,8 @@ Händelseloggen i varje organisation är en **hashkedja** (kommandoradens system
 
 Kedjan i säkerhetskopior, återställningar och projektarkiv beskrivs i [Säkerhetskopiering, återställning och migrering](#händelseloggen-i-säkerhetskopior).
 
+**Dataskydd.** Gallringen rensar aldrig granskningsloggen, och när en användare raderas lämnas posterna om personen oförändrade: se [Integritet och gallring](#integritet-och-gallring) för skälen och för juridiskt bevarande.
+
 ## Läge för elektroniska poster (21 CFR Part 11 / EU GMP Annex 11)
 
 En organisationsinställning under **Administration → Elektroniska poster** (ändra: `tenant.manage`; läsa och rapport: `audit.read`; `GET`/`PUT /api/v1/erecords`), **av som standard**. När läget är på kräver servern:
@@ -1554,6 +1590,85 @@ Projektadministratörer (`project.update`) väljer adresserna till ärendesystem
 - [ ] SELinux-modul eller AppArmor-profil inläst; `systemd-analyze security qtestframe` ≤ 2.0
 - [ ] `server.trusted_proxies` satt bakom en omvänd proxy
 - [ ] säkerhetskopior krypterade, lagrade utanför värden och en återställning provad
+
+# Integritet och gallring
+
+Det här kapitlet är för superadministratörer och dataskyddsombud. Det förklarar hur länge Qtestframe sparar uppgifter, hur gallringen raderar äldre poster, vad ett **juridiskt bevarande** skyddar, hur du besvarar en **begäran från en registrerad** (export och radering enligt GDPR) och var regelverkens krav på arkivering går före radering.
+
+## Gallringspolicy
+
+Superadministratörer anger gallringen under **Administration → Systeminställningar → Gallring och säkerhetskopior**. Varje tid anges i **dagar; 0 sparar uppgifterna för alltid**, vilket är standard. Ingenting raderas förrän du slår på den nattliga gallringen.
+
+| Inställning | Vad som raderas när det är äldre än tiden |
+|---|---|
+| `retention.runs_days` | Testkörningar med exekveringar, stegresultat, iterationer, kommentarer, defekt- och objektlänkar och bilagor. Pågående körningar behålls. |
+| `retention.runs_keep_latest` | Ingen tid: körningar som innehåller något av de *N* senaste resultaten för ett test behålls alltid, hur gamla de än är (0 = inget undantag). |
+| `retention.logs_days` | Loggar och uppladdade artefakter: inloggningsloggen, avslutade jobb i testkörningen, CI-statusposter som skickats eller gett upp, avslutade synkloggar mot ärendesystem och bevis från webbtester (skärmbilder, spår, videor) för gamla exekveringar – själva resultaten finns kvar. |
+| `retention.notifications_days` | Aviseringar i appen, lästa eller inte. |
+| `retention.sessions_days` | Inloggningssessioner som inte använts så länge, och API-tokens som gick ut för så länge sedan. |
+| `retention.chat_days` | Historiken för chattmeddelanden (skickade eller uppgivna meddelanden med sin text) och den personliga historiken för inmatningsförslag. |
+| `retention.exploratory_days` | Anteckningarna från avslutade eller genomgångna utforskande sessioner, räknat från sessionens senaste ändring. Sessionen och dess genomgång finns kvar. |
+| `retention.enabled`, `retention.hour` | Den nattliga gallringen och den timme (UTC) den körs. |
+
+**Egen gallring per organisation.** Under **Administration → Organisationer → (organisation) → Regler → Gallring** kan en superadministratör ge en organisation egna tider (till exempel ett kundavtal som kräver 10 år för körningar). Ett tomt fält använder systeminställningen. Inloggningsloggen och inloggningssessionerna hör inte till någon organisation och använder alltid systeminställningen.
+
+**Granskningsloggen gallras aldrig.** Den är en hashkedja ([Manipuleringssäker händelselogg](#manipuleringssäker-händelselogg)): verifieringen går igenom varje post från den första, och signerade kontrollpunkter pekar ut poster med löpnummer, så att radera gamla poster skulle bryta kedjan. Kedjan har ingen förseglad startpunkt som skulle göra det säkert att kapa den, så Qtestframe behåller hela loggen. För att begränsa vad den levande databasen innehåller arkiverar du loggen med **Exportera med hashar** till lagring som bara kan skrivas en gång; arkivet kan verifieras fristående (`qtestframe audit verify --file`). Elektroniska signaturer och godkännanden gallras inte heller.
+
+### Förhandsvisa innan du slår på den
+
+Under inställningarna visar **Förhandsvisning och gallring** vad gallringen skulle radera *nu*: per organisation och kategori antalet poster som är äldre än tiden, och hur många äldre poster som är **bevarade** – behålls av juridiskt bevarande eller en elektronisk signatur. Förhandsvisningen ändrar ingenting. Kontrollera den, justera tiderna och slå först därefter på `retention.enabled`.
+
+**Gallra nu** kör gallringen direkt (även när den nattliga gallringen är av) när du har skrivit `PURGE`. API: `GET /api/v1/admin/retention` (förhandsvisning), `POST /api/v1/admin/retention/run` med `{"confirm": "PURGE"}`.
+
+Varje gallring registreras i granskningsloggen som `retention.purge`, i varje organisation där något raderades och i systemets logg, med antalen per kategori och de bevarade posterna. Raderade poster kan bara återställas från en [säkerhetskopia](#säkerhetskopiering-återställning-och-migrering); ta en före den första gallringen.
+
+## Juridiskt bevarande
+
+Ett juridiskt bevarande skyddar ett helt **projekt** eller en enskild **release** när uppgifter måste sparas – en tvist, en begäran från en myndighet, en revision. Så länge bevarandet gäller:
+
+- raderar gallringen ingenting av det (körningar i projektet eller releasen, deras resultat och bevis, loggar, utforskande anteckningar och chatthistorik);
+- **kan projektet**, organisationen som har det och körningarna i en bevarad release **inte tas bort** (409).
+
+Organisationsadministratörer (`tenant.manage`) och superadministratörer inför och häver bevarande i projektets **Inställningar → Juridiskt bevarande**, med ett skäl som visas med bevarandet. Att införa och häva registreras i granskningsloggen (`legal_hold.set`, `legal_hold.lift`). Gallringssidan listar alla projekt och releaser med bevarande i alla organisationer. API: `GET`/`PUT /api/v1/projects/{pid}/legal-hold` och `PUT /api/v1/projects/{pid}/releases/{rid}/legal-hold` med `{"on": true, "reason": "…"}`.
+
+## Begäran från registrerade
+
+### Tillgång och dataportabilitet (export)
+
+Under **Administration → Användare** laddar **Exportera personuppgifter** ner en ZIP-fil med JSON-filer med allt servern har om personen: profil och inställningar, medlemskap och roller, projektroller, kommentarer personen skrivit, kommentarer som nämner personen, sessioner, API-tokens (namn och datum, aldrig hemligheten), inloggningsloggen, betrodda enheter, aviseringar, elektroniska signaturer, inmatningshistorik och granskningsposter av eller om personen. Lösenord, hemligheter för andra faktorn och tokenhashvärden exporteras aldrig. API: `GET /api/v1/users/{id}/export`.
+
+Varje användare kan ladda ner samma export om sig själv på sin **Profil** (**Ladda ner mina uppgifter**, `GET /api/v1/auth/me/export`). Båda registreras som `user.data_export`.
+
+Innehåll som personen skapat i projekt (krav, tester, körningar, dokument) tillhör organisationen; exportera det med projektexporterna om begäran omfattar det.
+
+### Radering (anonymisering)
+
+**Radera användare** under **Administration → Användare** anonymiserar ett konto när du har skrivit dess e-postadress:
+
+- namnet och adressen blir en pseudonym, **Former user #*n*** (`former-user-n@erased.invalid`), numrerad i ordning;
+- raderas: personliga inställningar, profilbild, sessioner, API-tokens, andra faktorn och reservkoder, betrodda enheter, väntande signeringsbiljetter, aviseringar, inloggningsloggen, inmatningshistorik, inbjudningar, SCIM-kopplingar, medlemskap och projektroller;
+- kontot inaktiveras, saknar lösenord och **kan aldrig logga in igen**; enkel inloggning kan inte längre matcha det;
+- innehåll som personen skrivit finns kvar och **tillskrivs pseudonymen**: fält som anger upphovspersonen med e-postadress (skapad av, tilldelad, ägare, testare, uppladdad av och liknande) skrivs om, och `@`-omnämnanden av personen i kommentarer blir `@former-user-n`.
+
+Du kan inte radera ditt eget konto eller den sista superadministratören. Raderingen registreras i granskningsloggen som `user.erase` med pseudonymen och antal – inte med den raderade adressen. API: `POST /api/v1/users/{id}/erase` med `{"confirm": "<e-postadress>"}`.
+
+### Vad raderingen behåller, och varför
+
+- **Elektroniska signaturer och godkännanden** (godkännanden av baslinjer, avsteg och ändringsbegäranden, `esignatures`) behåller signerarens namn och e-postadress precis som de signerades. 21 CFR Part 11 (§11.50, §11.70) och EU GMP Annex 11 (§14) kräver att signaturens manifestation förblir kopplad till den signerade posten; att ändra den skulle göra posten ogiltig. GDPR art. 17.3 b tillåter att uppgifter som behövs för att uppfylla en sådan rättslig förpliktelse sparas.
+- **Granskningsloggen** behåller e-postadressen i de poster personen gjort, och poster som nämner personen i sina detaljer. Att skriva om en post bryter hashkedjan, och loggen är själv en post som regelverken kräver (Part 11 §11.10(e), Annex 11 §9). Användarlistan och nya vyer av granskningsloggen visar pseudonymen för kontot.
+- **Säkerhetskopior** som tagits före raderingen innehåller fortfarande de ursprungliga uppgifterna. Spara säkerhetskopior bara så länge er gallringsplan anger, och upprepa raderingen efter en återställning.
+- **Fritext** – ett namn som skrivits som vanlig text i en beskrivning, ett steg eller ett ägarfält – söks inte igenom och ersätts inte; granska den om begäran kräver det.
+
+Dokumentera undantagen i registret över behandlingar och i svaret till personen.
+
+## Integritetsinställningar
+
+| Inställning | Verkan |
+|---|---|
+| `privacy.truncate_ip` | Klientadresser lagras och loggas förkortade – IPv4 till /24 (`192.0.2.0`), IPv6 till /48 – i inloggningsloggen, sessioner, betrodda enheter, begäransloggen och meddelandena om misslyckade inloggningar. Begränsningar av antal försök använder fortfarande hela adressen, bara i minnet. Granskningsposter innehåller aldrig klientadresser. |
+| `privacy.notice_url` | En länk till er integritetspolicy, visas på inloggningssidan (tom = ingen). |
+
+Båda finns under **Administration → Systeminställningar → Integritet** och gäller direkt.
 
 # E-post, webhooks och integrationer
 
@@ -2155,6 +2270,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 62 | `0062_project_logo.sql` |
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
+| 68 | `0068_privacy_retention.sql` |
 
 <!-- END GENERATED: migrations -->
 

@@ -416,6 +416,8 @@ func (s *Server) routes() {
 	s.routesLogo(h)
 	// the solution preamble of software projects (solution.go)
 	s.routesSolution(h)
+	// privacy and data retention (privacy.go)
+	s.routesPrivacy(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -555,7 +557,7 @@ func (s *Server) logRequests(next http.Handler) http.Handler {
 		}
 		s.Log.Log(r.Context(), lvl, "http request", "method", r.Method, "path", r.URL.Path,
 			"status", sw.status, "bytes", sw.bytes, "duration_ms", time.Since(start).Milliseconds(),
-			"remote", s.clientIP(r))
+			"remote", s.loggedIP(r))
 	})
 }
 

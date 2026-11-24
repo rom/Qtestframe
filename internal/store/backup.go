@@ -127,6 +127,7 @@ var boolColumns = map[string]bool{
 	"projects.ai_disabled":          true,
 	"req_sync_configs.enabled":      true,
 	"environments.status_by_health": true, "environments.requires_approval": true,
+	"projects.legal_hold": true, "releases.legal_hold": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

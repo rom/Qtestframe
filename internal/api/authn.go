@@ -251,7 +251,7 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 	}
 	// polling of the client is no activity
 	if r.Header.Get(headerBackground) == "" {
-		if err := s.Store.TouchSessionEvery(ctx, sess, s.clientIP(r), s.touchInterval(ctx, sess)); err != nil {
+		if err := s.Store.TouchSessionEvery(ctx, sess, s.loggedIP(r), s.touchInterval(ctx, sess)); err != nil {
 			s.Log.Warn("session touch failed", "err", err)
 		}
 	}
@@ -347,7 +347,7 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.U
 	sess := &model.Session{
 		ID: auth.HashToken(tok), UserID: u.ID, TenantID: tenantID,
 		CSRF: auth.RandomToken(24), ExpiresAt: time.Now().Add(s.conf().Auth.SessionTTL),
-		IP: s.clientIP(r), UserAgent: r.UserAgent(), MFAEnrolRequired: enrolMFA,
+		IP: s.loggedIP(r), UserAgent: r.UserAgent(), MFAEnrolRequired: enrolMFA,
 	}
 	if err := s.Store.CreateSession(ctx, sess); err != nil {
 		return nil, err
@@ -427,7 +427,7 @@ func (s *Server) loginInfo(ctx context.Context, p *Principal, res *meResponse) e
 
 // recordLogin stores a sign-in attempt; failures are only logged.
 func (s *Server) recordLogin(r *http.Request, userID, method string, ok bool) {
-	e := &model.LoginEvent{UserID: userID, Success: ok, Method: method, IP: s.clientIP(r), UserAgent: r.UserAgent()}
+	e := &model.LoginEvent{UserID: userID, Success: ok, Method: method, IP: s.loggedIP(r), UserAgent: r.UserAgent()}
 	if err := s.Store.RecordLogin(r.Context(), e); err != nil {
 		s.Log.Warn("login event not recorded", "err", err)
 	}
@@ -526,7 +526,10 @@ func (s *Server) handleProviders(w http.ResponseWriter, r *http.Request) {
 		// PasswordMinClasses the character classes they must use.
 		PasswordMinLength  int `json:"password_min_length"`
 		PasswordMinClasses int `json:"password_min_classes"`
-	}{Local: c.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}, PasswordMinLength: minPassword(c), PasswordMinClasses: c.Auth.PasswordMinClasses}
+		// PrivacyNoticeURL links the privacy notice ("" = none).
+		PrivacyNoticeURL string `json:"privacy_notice_url"`
+	}{Local: c.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}, PasswordMinLength: minPassword(c), PasswordMinClasses: c.Auth.PasswordMinClasses,
+		PrivacyNoticeURL: c.Privacy.NoticeURL}
 	for _, o := range c.Auth.OIDC {
 		if !o.On() {
 			continue
@@ -572,7 +575,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		hash = u.PasswordHash
 	}
 	if !auth.CheckPassword(hash, req.Password) || u == nil || u.Disabled {
-		s.Log.Warn("login failed", "email", store.NormalizeEmail(req.Email), "remote", s.clientIP(r))
+		s.Log.Warn("login failed", "email", store.NormalizeEmail(req.Email), "remote", s.loggedIP(r))
 		if u != nil {
 			s.recordLogin(r, u.ID, "local", false)
 		}
@@ -805,7 +808,7 @@ func (s *Server) getState(w http.ResponseWriter, r *http.Request, v any) error {
 }
 
 func (s *Server) loginError(w http.ResponseWriter, r *http.Request, provider string, err error) {
-	s.Log.Warn("external login failed", "provider", provider, "err", err, "remote", s.clientIP(r))
+	s.Log.Warn("external login failed", "provider", provider, "err", err, "remote", s.loggedIP(r))
 	http.Redirect(w, r, "/login?error="+url.QueryEscape("Sign-in failed"), http.StatusFound)
 }
 

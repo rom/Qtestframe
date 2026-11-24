@@ -225,6 +225,9 @@ async function submit() {
           </div>
         </template>
         </template>
+        <p v-if="providers.privacy_notice_url" class="small login-privacy">
+          <a :href="providers.privacy_notice_url" target="_blank" rel="noopener noreferrer"><i class="pi pi-shield" aria-hidden="true" /> {{ t('privacy.notice.link') }}<span class="sr-only"> {{ t('privacy.notice.newWindow') }}</span></a>
+        </p>
       </div>
     </main>
   </div>
@@ -238,6 +241,10 @@ async function submit() {
   gap: 4px;
   margin-bottom: 12px;
   font-size: 13px;
+}
+.login-privacy {
+  margin: 16px 0 0;
+  text-align: center;
 }
 .login-link {
   color: var(--p-primary-color);

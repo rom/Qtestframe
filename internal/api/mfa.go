@@ -309,7 +309,7 @@ func (s *Server) handleMFAVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ok {
-		s.Log.Warn("second factor failed", "email", u.Email, "remote", s.clientIP(r))
+		s.Log.Warn("second factor failed", "email", u.Email, "remote", s.loggedIP(r))
 		s.recordLogin(r, u.ID, "mfa", false)
 		writeError(w, http.StatusUnauthorized, "mfa_invalid", "the code is wrong or was already used")
 		return
@@ -337,7 +337,7 @@ func (s *Server) handleMFAVerify(w http.ResponseWriter, r *http.Request) {
 func (s *Server) rememberDevice(w http.ResponseWriter, r *http.Request, userID string, days int) {
 	tok := auth.RandomToken(32)
 	exp := s.Store.Now().AddDate(0, 0, days)
-	if err := s.Store.AddTrustedDevice(r.Context(), auth.HashToken(tok), userID, s.clientIP(r), r.UserAgent(), exp); err != nil {
+	if err := s.Store.AddTrustedDevice(r.Context(), auth.HashToken(tok), userID, s.loggedIP(r), r.UserAgent(), exp); err != nil {
 		s.Log.Warn("remembered device not stored", "err", err)
 		return
 	}

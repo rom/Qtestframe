@@ -55,6 +55,11 @@ type Config struct {
 	// the hosts they may reach (protection against server-side request
 	// forgery).
 	Outbound Outbound `yaml:"outbound"`
+	// Retention configures how long data is kept (the nightly retention
+	// job; see docs/admin-guide "Privacy and data retention").
+	Retention Retention `yaml:"retention"`
+	// Privacy configures IP address truncation and the privacy notice.
+	Privacy Privacy `yaml:"privacy"`
 
 	// Meta records where values came from (file keys, environment
 	// variables); filled by Load, not part of the YAML.
@@ -763,6 +768,32 @@ type Bootstrap struct {
 	AdminPasswordFile string `yaml:"admin_password_file"`
 }
 
+// Retention is how long data is kept, in days (0 = forever). The nightly
+// job (when Enabled) deletes older records, except what is under a legal
+// hold or electronically signed. The audit trail is never purged: it is a
+// hash chain (export it for archiving instead).
+type Retention struct {
+	Enabled bool `yaml:"enabled"`
+	// Hour is the hour of the day (UTC) the job runs.
+	Hour              int `yaml:"hour"`
+	RunsDays          int `yaml:"runs_days"`
+	RunsKeepLatest    int `yaml:"runs_keep_latest"`
+	LogsDays          int `yaml:"logs_days"`
+	NotificationsDays int `yaml:"notifications_days"`
+	SessionsDays      int `yaml:"sessions_days"`
+	ChatDays          int `yaml:"chat_days"`
+	ExploratoryDays   int `yaml:"exploratory_days"`
+}
+
+// Privacy holds data protection options.
+type Privacy struct {
+	// TruncateIP stores and logs client addresses shortened (IPv4 /24,
+	// IPv6 /48).
+	TruncateIP bool `yaml:"truncate_ip"`
+	// NoticeURL is a link to the privacy notice shown on the sign-in page.
+	NoticeURL string `yaml:"notice_url"`
+}
+
 // Default returns a configuration suitable for local development.
 func Default() Config {
 	return Config{
@@ -800,6 +831,7 @@ func Default() Config {
 			ReplayBuffer: 512, PresenceTTL: 45 * time.Second},
 		AI: AI{Provider: AIAnthropic, Timeout: 2 * time.Minute, MaxTokens: 8192, RateLimit: 30,
 			Features: AIFeatures{DraftTests: true, ImproveRequirement: true, SummarizeRun: true, SuggestMappings: true, SuggestCriteria: true}},
+		Retention: Retention{Hour: 2},
 		Secrets: Secrets{Provider: SecretsLocal, TPM: TPMKey{Device: "/dev/tpmrm0", PCRBank: "sha256"},
 			PKCS11: PKCS11Key{KeyLabel: "qtestframe-kek"}},
 	}

@@ -15,6 +15,7 @@ import Select from 'primevue/select'
 import UserAvatar from '@/components/UserAvatar.vue'
 import TempPasswordDialog from '@/components/TempPasswordDialog.vue'
 import { generatePassword } from '@/lib/signin'
+import { erasureConfirmed, type ErasureResult } from '@/lib/privacy'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { blankUserFilter, filterUsers, lastSuperAdmin, userProviders, type UserMemberships } from '@/lib/tenantAdmin'
@@ -128,6 +129,42 @@ async function setDisabled(u: User, disabled: boolean) {
   }
 }
 
+// ---------- data subject tools: export and erasure ----------
+async function exportData(u: User) {
+  try {
+    await api.download(`/users/${u.id}/export`, undefined, 'personal-data.zip')
+    notify.ok(t('privacy.users.exported'), u.email)
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+const eraseOf = ref<User | null>(null)
+const eraseTyped = ref('')
+const eraseBusy = ref(false)
+const eraseError = ref('')
+const erased = ref<ErasureResult | null>(null)
+function openErase(u: User) {
+  eraseOf.value = u
+  eraseTyped.value = ''
+  eraseError.value = ''
+  erased.value = null
+}
+async function erase() {
+  const u = eraseOf.value
+  if (!u || !erasureConfirmed(eraseTyped.value, u.email)) return
+  eraseBusy.value = true
+  eraseError.value = ''
+  try {
+    erased.value = await api.post<ErasureResult>(`/users/${u.id}/erase`, { confirm: eraseTyped.value.trim() })
+    announce.value = t('privacy.users.erased', { name: erased.value.pseudonym })
+    void load()
+  } catch (e) {
+    eraseError.value = errorMessage(e)
+  } finally {
+    eraseBusy.value = false
+  }
+}
+
 // ---------- MFA reset (lost authenticator) ----------
 function resetMfa(u: User) {
   notify.confirmDanger(
@@ -197,12 +234,15 @@ function resetPassword(u: User) {
             <Tag v-if="data.disabled" :value="t('admin.disabled')" severity="contrast" />
             <Tag v-if="data.must_change_password" :value="t('admin.mustChange')" severity="warn" />
             <Tag v-if="data.mfa_enabled" :value="t('mfa.tag')" severity="success" icon="pi pi-shield" />
+            <Tag v-if="data.erased" :value="t('privacy.users.erasedTag')" severity="secondary" icon="pi pi-eye-slash" />
           </div>
         </template>
       </Column>
       <Column field="created_at" :header="t('common.created')" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column style="width: 250px; white-space: nowrap">
+      <Column style="width: 320px; white-space: nowrap">
         <template #body="{ data }">
+          <Button icon="pi pi-download" text rounded severity="secondary" :aria-label="t('privacy.users.exportOf', { user: data.email })" v-tooltip="t('privacy.users.export')" @click="exportData(data)" />
+          <Button v-if="data.id !== auth.user?.id && !data.erased && !isLast(data)" icon="pi pi-eraser" text rounded severity="danger" :aria-label="t('privacy.users.eraseOf', { user: data.email })" v-tooltip="t('privacy.users.erase')" @click="openErase(data)" />
           <Button icon="pi pi-building" text rounded severity="secondary" :aria-label="t('admin.membershipsOf', { user: data.email })" v-tooltip="t('admin.memberships')" @click="openMemberships(data)" />
           <Button v-if="data.id !== auth.user?.id" icon="pi pi-sign-out" text rounded severity="secondary" :aria-label="t('admin.revokeSessions.of', { user: data.email })" v-tooltip="t('admin.revokeSessions.action')" @click="revokeSessions(data)" />
           <Button v-if="data.mfa_enabled && data.id !== auth.user?.id" icon="pi pi-shield" text rounded severity="secondary" :aria-label="t('mfa.reset.of', { user: data.email })" v-tooltip="t('mfa.reset.action')" @click="resetMfa(data)" />
@@ -249,5 +289,38 @@ function resetPassword(u: User) {
       </div>
     </template>
   </Dialog>
+  <Dialog :visible="!!eraseOf" :header="eraseOf ? t('privacy.users.eraseTitle', { user: eraseOf.email }) : ''" modal style="width: min(560px, 95vw)" @update:visible="(v: boolean) => !v && (eraseOf = null)">
+    <template v-if="eraseOf && !erased">
+      <form class="grid" style="gap: 12px" @submit.prevent="erase">
+        <Message severity="warn" :closable="false">{{ t('privacy.users.eraseWarning') }}</Message>
+        <ul class="small erase-list">
+          <li>{{ t('privacy.users.eraseDeletes') }}</li>
+          <li>{{ t('privacy.users.eraseKeeps') }}</li>
+          <li>{{ t('privacy.users.eraseRecords') }}</li>
+        </ul>
+        <Message v-if="eraseError" severity="error" :closable="false">{{ eraseError }}</Message>
+        <div v-field class="field">
+          <label>{{ t('privacy.users.eraseConfirm', { email: eraseOf.email }) }}</label>
+          <InputText v-model="eraseTyped" autocomplete="off" class="mono" />
+        </div>
+        <div class="row" style="justify-content: flex-end; gap: 8px">
+          <Button :label="t('common.cancel')" text severity="secondary" @click="eraseOf = null" />
+          <Button type="submit" :label="t('privacy.users.erase')" icon="pi pi-eraser" severity="danger" :loading="eraseBusy" :disabled="!erasureConfirmed(eraseTyped, eraseOf.email)" />
+        </div>
+      </form>
+    </template>
+    <template v-else-if="erased">
+      <p role="status">{{ t('privacy.users.erased', { name: erased.pseudonym }) }}</p>
+      <p class="small muted">{{ t('privacy.users.erasedDetails', { rewritten: erased.rewritten, signatures: erased.kept.electronic_signatures ?? 0, audit: erased.kept.audit_entries ?? 0 }) }}</p>
+      <div class="row" style="justify-content: flex-end"><Button :label="t('common.close')" @click="eraseOf = null" /></div>
+    </template>
+  </Dialog>
   <div class="sr-only" role="status" aria-live="polite">{{ announce }}</div>
 </template>
+
+<style scoped>
+.erase-list {
+  margin: 0;
+  padding-left: 18px;
+}
+</style>

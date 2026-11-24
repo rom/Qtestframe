@@ -342,6 +342,27 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `outbound.denied_hosts` | lista | — | — | Värdar som utgående anrop aldrig når, t.ex. `metadata.google.internal` eller `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Neka utgående anrop till loopback-, privata, länklokala och andra icke-publika adresser (kontrolleras på adressen som faktiskt ansluts), om inte värden finns i `allowed_hosts`. Slå på den när servern nås från internet och användarna inte ska nå ert interna nät genom den. |
 
+### `retention`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `retention.enabled` | bool | `false` | — | Kör den nattliga gallringen, som raderar poster som är äldre än sin lagringstid (se *Integritet och gallring*). Kontrollera förhandsvisningen under **Administration → Systeminställningar → Gallring och säkerhetskopior** innan du slår på den. |
+| `retention.hour` | heltal | `2` | — | Timme på dygnet (UTC, 0–23) då gallringen körs. |
+| `retention.runs_days` | heltal | `0` | — | Dagar att behålla testkörningar med resultat, stegresultat, kommentarer och bilagor (0 = för alltid). Pågående körningar, körningar i ett projekt eller en release med juridiskt bevarande och körningar med en elektronisk signatur behålls. |
+| `retention.runs_keep_latest` | heltal | `0` | — | Behåll alltid de körningar som innehåller något av de N senaste resultaten för varje test, hur gamla de än är (0 = inget undantag). |
+| `retention.logs_days` | heltal | `0` | — | Dagar att behålla loggar och uppladdade artefakter: inloggningsloggen, avslutade jobb i testkörningen, CI-statusposter, synkloggar mot ärendesystem och bevis från webbtester (skärmbilder, spår, videor) (0 = för alltid). |
+| `retention.notifications_days` | heltal | `0` | — | Dagar att behålla aviseringar i appen, lästa eller inte (0 = för alltid). |
+| `retention.sessions_days` | heltal | `0` | — | Dagar att behålla inloggningssessioner som inte använts så länge och API-tokens som gick ut för så länge sedan (0 = för alltid). |
+| `retention.chat_days` | heltal | `0` | — | Dagar att behålla historiken för chattmeddelanden (skickade eller misslyckade meddelanden med sin text) och den personliga historiken för inmatningsförslag (0 = för alltid). |
+| `retention.exploratory_days` | heltal | `0` | — | Dagar att behålla anteckningarna från avslutade eller genomgångna utforskande sessioner, räknat från sessionens senaste ändring (0 = för alltid). Sessionen och dess genomgång finns kvar. |
+
+### `privacy`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `privacy.truncate_ip` | bool | `false` | — | Lagra och logga klientadresser förkortade: IPv4 till /24, IPv6 till /48 (inloggningslogg, sessioner, betrodda enheter, begäranslogg). Begränsningar av antal försök använder fortfarande hela adressen i minnet. |
+| `privacy.notice_url` | text | — | — | Länk till er integritetspolicy, visas på inloggningssidan (tom = ingen). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler

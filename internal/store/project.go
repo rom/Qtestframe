@@ -266,6 +266,9 @@ func (s *Store) RequirementSourceUsage(ctx context.Context, tenantID, projectID 
 // DeleteProject deletes a project and everything in it.
 func (s *Store) DeleteProject(ctx context.Context, tenantID, id string) error {
 	return s.tx(ctx, func(c conn) error {
+		if err := legalHoldGuard(ctx, c, `SELECT COUNT(*) FROM projects WHERE id = ? AND legal_hold = ?`, id); err != nil {
+			return err
+		}
 		for kind, table := range map[string]string{model.KindRequirement: "requirements", model.KindTest: "test_cases"} {
 			rows, err := c.query(ctx, `SELECT id FROM `+table+` WHERE project_id = ? AND tenant_id = ?`, id, tenantID)
 			if err != nil {

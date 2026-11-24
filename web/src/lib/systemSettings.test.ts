@@ -81,6 +81,9 @@ const SERVER_KEYS = [
   'ai.enabled', 'ai.provider', 'ai.url', 'ai.model', 'ai.api_key', 'ai.timeout', 'ai.max_tokens', 'ai.temperature', 'ai.rate_limit',
   'ai.features.draft_tests', 'ai.features.improve_requirement', 'ai.features.summarize_run', 'ai.features.suggest_mappings', 'ai.features.suggest_criteria',
   'ai.price_input', 'ai.price_output',
+  'retention.enabled', 'retention.hour', 'retention.runs_days', 'retention.runs_keep_latest', 'retention.logs_days', 'retention.notifications_days',
+  'retention.sessions_days', 'retention.chat_days', 'retention.exploratory_days',
+  'privacy.truncate_ip', 'privacy.notice_url',
 ]
 
 describe('system settings texts', () => {

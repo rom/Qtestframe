@@ -35,6 +35,19 @@ import { EMAIL_MODES, emailMode, type EmailMode } from '@/lib/email'
 import { autocompleteMode, clearHistory, historyCount } from '@/lib/suggest'
 
 const auth = useAuthStore()
+
+// self-service export of the personal data (GET /auth/me/export)
+const downloadingData = ref(false)
+async function downloadMyData() {
+  downloadingData.value = true
+  try {
+    await api.download('/auth/me/export', undefined, 'personal-data.zip')
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    downloadingData.value = false
+  }
+}
 const prefsStore = usePrefsStore()
 const proj = useProjectStore()
 const notify = useNotify()
@@ -423,6 +436,9 @@ onMounted(() => {
       </div>
       <div class="section-title">{{ t('avatar.title') }}</div>
       <AvatarPicker kind="avatar" :value="auth.user?.avatar" :name="auth.user?.display_name || auth.user?.email || ''" upload-path="/auth/me/avatar" :save="saveAvatar" @uploaded="onAvatarUploaded" />
+      <div class="section-title">{{ t('privacy.myData.title') }}</div>
+      <p class="small muted" style="margin: 0 0 8px">{{ t('privacy.myData.text') }}</p>
+      <Button :label="t('privacy.myData.download')" icon="pi pi-download" severity="secondary" outlined size="small" :loading="downloadingData" @click="downloadMyData" />
     </section>
 
     <!-- memberships -->

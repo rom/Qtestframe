@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/model"
 )
 
 // Kind is the value type of a setting.
@@ -70,7 +71,7 @@ const (
 )
 
 // Sections of the administration view, in order.
-var Sections = []string{"general", "server", "security", "tokens", "oidc", "logging", "email", "outbound", "runner", "live", "similarity", "ai", "retention"}
+var Sections = []string{"general", "server", "security", "tokens", "oidc", "logging", "email", "outbound", "runner", "live", "similarity", "ai", "retention", "privacy"}
 
 // Def describes one setting.
 type Def struct {
@@ -305,7 +306,26 @@ var Registry = []*Def{
 	flag("ai.features.suggest_criteria", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Features.SuggestCriteria }),
 	checked(optional(str("ai.price_input", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceInput })), checkPrice),
 	checked(optional(str("ai.price_output", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceOutput })), checkPrice),
+
+	// retention: how long data is kept (days, 0 = forever) and the nightly
+	// job that deletes older records
+	flag("retention.enabled", "retention", Runtime, func(c *config.Config) *bool { return &c.Retention.Enabled }),
+	num("retention.hour", "retention", Runtime, 0, 23, func(c *config.Config) *int { return &c.Retention.Hour }),
+	num("retention.runs_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.RunsDays }),
+	num("retention.runs_keep_latest", "retention", Runtime, 0, 1000, func(c *config.Config) *int { return &c.Retention.RunsKeepLatest }),
+	num("retention.logs_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.LogsDays }),
+	num("retention.notifications_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.NotificationsDays }),
+	num("retention.sessions_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.SessionsDays }),
+	num("retention.chat_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.ChatDays }),
+	num("retention.exploratory_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.ExploratoryDays }),
+
+	// privacy: client address truncation and the privacy notice
+	flag("privacy.truncate_ip", "privacy", Runtime, func(c *config.Config) *bool { return &c.Privacy.TruncateIP }),
+	checked(optional(str("privacy.notice_url", "privacy", Runtime, func(c *config.Config) *string { return &c.Privacy.NoticeURL })), checkEndpoint),
 }
+
+// MaxRetentionDays is the longest retention period (100 years).
+const MaxRetentionDays = model.MaxRetentionDays
 
 // FileOnly are the keys of the configuration file that are not in the
 // Registry, with the reason (the inventory of internal/admindoc checks that

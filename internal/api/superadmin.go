@@ -161,10 +161,24 @@ func policyDiff(a, b model.TenantPolicy) string {
 	if a.Note != b.Note {
 		out = append(out, "note changed")
 	}
+	for _, k := range model.RetentionOverrideKeys {
+		x, xok := a.Retention[k]
+		y, yok := b.Retention[k]
+		if xok != yok || x != y {
+			out = append(out, fmt.Sprintf("retention %s: %s → %s", k, overrideText(x, xok), overrideText(y, yok)))
+		}
+	}
 	if len(out) == 0 {
 		return "no changes"
 	}
 	return strings.Join(out, "; ")
+}
+
+func overrideText(n int, ok bool) string {
+	if !ok {
+		return "system setting"
+	}
+	return itoa(n)
 }
 
 func limitText(n int) string {

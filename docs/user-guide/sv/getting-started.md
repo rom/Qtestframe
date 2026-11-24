@@ -109,6 +109,7 @@ Sökfältet i övre fältet söker överallt i den aktuella organisationen. Trä
 - **Visningsnamn**: namnet som andra ser i kommentarer, versionshistorik och händelseloggen.
 - **Profilbild**: välj en bild för ditt konto: ladda upp en bild (PNG, JPEG, GIF eller WebP, högst 1 MB), välj en av de inbyggda bilderna eller använd dina initialer.
 - **Inloggningsleverantör**, **Medlem sedan** och dina **Medlemskap**: organisationerna du tillhör och din roll i var och en.
+- **Dina uppgifter**: **Ladda ner mina uppgifter** ger dig en ZIP-fil med JSON-filer med de personuppgifter servern har om dig: profil, medlemskap och roller, kommentarer du skrivit och kommentarer som nämner dig, sessioner, API-tokens (utan sina hemligheter), inloggningslogg, aviseringar, elektroniska signaturer, inmatningshistorik och händelseloggens poster av eller om dig. Nedladdningen registreras i händelseloggen. Vill du att ditt konto raderas, be en superadministratör (se administratörshandboken, *Integritet och gallring*).
 
 ### Inställningar
 

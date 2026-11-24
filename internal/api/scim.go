@@ -190,7 +190,7 @@ func (s *Server) scimAuthed(fn scimHandler) http.Handler {
 		c, err := s.scimCaller(r)
 		if err != nil {
 			s.scimAuthLimiter.allow(ip)
-			s.Log.Warn("scim authentication failed", "remote", ip)
+			s.Log.Warn("scim authentication failed", "remote", s.loggedIP(r))
 			w.Header().Set("WWW-Authenticate", `Bearer realm="scim"`)
 			writeSCIMError(w, scimErr(http.StatusUnauthorized, "", "a valid SCIM bearer token is required"))
 			return

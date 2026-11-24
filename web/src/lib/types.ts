@@ -31,6 +31,8 @@ export interface User {
   mfa_enabled?: boolean
   /** when the local password was last set */
   password_changed_at?: string
+  /** the account was erased (anonymised); its name and address are a pseudonym */
+  erased?: boolean
 }
 
 /** Per-user settings (all optional; empty = default). */
@@ -236,6 +238,8 @@ export interface Providers {
   saml: AuthProvider[] | null
   password_min_length?: number
   password_min_classes?: number
+  /** link of the privacy notice shown on the sign-in page ("" = none) */
+  privacy_notice_url?: string
 }
 
 export interface APIToken {

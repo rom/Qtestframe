@@ -103,6 +103,9 @@ func (s *Store) UpdateTenant(ctx context.Context, id, name string) (*model.Tenan
 // DeleteTenant removes a tenant and all its data.
 func (s *Store) DeleteTenant(ctx context.Context, id string) error {
 	return s.tx(ctx, func(c conn) error {
+		if err := legalHoldGuard(ctx, c, `SELECT COUNT(*) FROM projects WHERE tenant_id = ? AND legal_hold = ?`, id); err != nil {
+			return err
+		}
 		// Tables carrying tenant_id without FK to tenants.
 		for _, t := range []string{"audit_log", "audit_heads", "audit_checkpoints", "audit_backfill", "sessions", "comments", "revisions"} {
 			if _, err := c.exec(ctx, `DELETE FROM `+t+` WHERE tenant_id = ?`, id); err != nil {
@@ -141,6 +144,7 @@ func scanUser(r interface{ Scan(...any) error }) (*model.User, error) {
 	}
 	u.CreatedAt = u.CreatedAt.UTC()
 	u.PasswordChangedAt = timePtr(changed)
+	u.Erased = strings.HasSuffix(u.Email, "@"+model.ErasedEmailDomain)
 	_ = json.Unmarshal([]byte(prefs), &u.Preferences) // unknown/old keys are ignored
 	return &u, nil
 }

@@ -415,6 +415,10 @@ func (s *Store) UpdateRun(ctx context.Context, tenantID string, run *model.TestR
 // DeleteRun removes a run and its executions.
 func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
 	return s.tx(ctx, func(c conn) error {
+		if err := legalHoldGuard(ctx, c, `SELECT COUNT(*) FROM test_runs r JOIN projects p ON p.id = r.project_id LEFT JOIN releases rel ON rel.id = r.release_id
+			WHERE r.id = ? AND (p.legal_hold = ? OR COALESCE(rel.legal_hold, ?) = ?)`, id, true, false, true); err != nil {
+			return err
+		}
 		rows, err := c.query(ctx, `SELECT id FROM test_executions WHERE run_id = ? AND tenant_id = ?`, id, tenantID)
 		if err != nil {
 			return err

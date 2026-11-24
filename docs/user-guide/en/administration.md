@@ -352,6 +352,7 @@ The admin sets on the same page the actions that need a signature, the meanings 
 - You cannot remove your own super admin flag or disable yourself, and the last enabled super administrator always stays one.
 - **Filter** by name or e-mail, status (enabled or disabled), sign-in method, multi-factor authentication or super administrators.
 - The buttons of a row show the user's **organisations** with their roles and open sessions, **sign the user out everywhere** (API tokens stay valid), reset the second factor or a local password, and **disable** or **enable** the account.
+- **Export personal data** (the download button) gives a ZIP of everything the server holds about the person, for a data subject access request. **Erase user** anonymises the account after you type its e-mail address: it gets a pseudonym (*Former user #n*), its personal data, sessions and tokens are deleted, its content stays under the pseudonym, and electronic signatures and audit entries stay as recorded. Erasure cannot be undone; see the [administrator guide](../../admin-guide/en/privacy.md#erasure-anonymisation).
 
 Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the [administrator guide](../../admin-guide/en/authentication.md#provisioning-of-single-sign-on-users)).
 

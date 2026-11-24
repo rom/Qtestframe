@@ -341,6 +341,10 @@ func (s *Server) RunJobs(ctx context.Context) {
 	if _, err := s.RunEnvironmentHealthChecks(ctx); err != nil {
 		s.Log.Warn("environment health check job", "err", err)
 	}
+	// the nightly retention purge (when enabled)
+	if _, err := s.RunRetention(ctx); err != nil {
+		s.Log.Warn("retention job", "err", err)
+	}
 	// scheduled cycle starts and recurring cycles (also without e-mail)
 	if _, err := s.RunCycleJobs(ctx); err != nil {
 		s.Log.Warn("test cycle job", "err", err)

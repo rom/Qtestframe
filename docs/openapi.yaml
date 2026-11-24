@@ -118,6 +118,8 @@ tags:
   description: Test environments, their components, health checks and bookings
 - name: Test data
   description: Shared test data sets, their links, usage and refresh requests
+- name: Privacy
+  description: Data retention (dry-run preview and purge), legal holds, the export and erasure of personal data
 paths:
   /api/v1/change-requests/{id}:
     parameters:
@@ -1571,7 +1573,7 @@ paths:
       summary: Providers
       operationId: getAuthProviders
       description: |-
-        public — `{"local":true,"oidc":[{"name","display_name","login_url"}],"saml":[{"name","display_name","login_url"}]}`
+        public — `{"local":true,"oidc":[{"name","display_name","login_url"}],"saml":[{"name","display_name","login_url"}],"password_min_length","password_min_classes","privacy_notice_url"}` (`privacy_notice_url`: the link shown on the sign-in page, "" = none; system setting `privacy.notice_url`)
 
         **Permission:** none (public).
       x-permission: none
@@ -19718,7 +19720,7 @@ paths:
       summary: List organisations with usage and policy
       operationId: getAdminTenants
       description: |-
-        `{items: [{id, slug, name, created_at, suspended_at?, policy: {max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers, email_domains, note}, usage: {members, projects, requirements, tests, runs, files, storage_bytes, last_activity}, ai_enabled, erecords_enabled, mfa_required}]}`. Super administrators only: the handler checks.
+        `{items: [{id, slug, name, created_at, suspended_at?, policy: {max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers, email_domains, note, retention}, usage: {members, projects, requirements, tests, runs, files, storage_bytes, last_activity}, ai_enabled, erecords_enabled, mfa_required}]}`. Super administrators only: the handler checks.
 
         **Permission:** signed in.
       x-permission: authenticated
@@ -19772,7 +19774,7 @@ paths:
       summary: Set the policy of an organisation
       operationId: putAdminTenantsByIdPolicy
       description: |-
-        Replaces the policy `{max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers: ["local", "oidc:<name>", "saml:<name>"], email_domains, note}` (0 = no limit; an e-mail domain belongs to one organisation, 409 otherwise) and returns the organisation (audited as `tenant.policy` with the changes). Super administrators only: the handler checks.
+        Replaces the policy `{max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers: ["local", "oidc:<name>", "saml:<name>"], email_domains, note, retention}` (0 = no limit; `retention` overrides the system retention for the organisation: `{"runs_days", "runs_keep_latest", "logs_days", "notifications_days", "sessions_days", "chat_days", "exploratory_days"}`, days with 0 = forever, missing keys use the system setting; an e-mail domain belongs to one organisation, 409 otherwise) and returns the organisation (audited as `tenant.policy` with the changes). Super administrators only: the handler checks.
 
         **Permission:** signed in.
       x-permission: authenticated
@@ -23685,6 +23687,266 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/admin/retention:
+    get:
+      tags:
+      - Privacy
+      summary: Preview the retention purge (dry run)
+      operationId: getAdminRetention
+      description: |-
+        What the retention purge would delete now: per organisation (and for the data of no organisation: sign-in sessions and the sign-in log) the effective policy (system settings `retention.*` with the organisation's override) and, per category (`runs`, `logs`, `notifications`, `sessions`, `chat`, `exploratory`), the number of records older than the period (`count`) and those kept by a legal hold or an electronic signature (`held`). Also whether the nightly job is on, its hour (UTC), the last and next run and the projects and releases under legal hold. The audit trail is never purged. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionView'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/retention/run:
+    post:
+      tags:
+      - Privacy
+      summary: Purge now
+      operationId: postAdminRetentionRun
+      description: |-
+        `{"confirm": "PURGE"}`: deletes what the preview counts, now (also while the nightly job is off). Each organisation with deletions gets a `retention.purge` audit entry; the system trail gets one too. Answers like `GET /admin/retention` with the counts of what was deleted. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: string
+                  enum: [PURGE]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/legal-hold:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Privacy
+      summary: Legal hold of a project and its releases
+      operationId: getProjectsByPidLegalHold
+      description: |-
+        `{project: hold, releases: [{id, name, version, hold}], can_edit}`; a hold is `{on, reason, by, at}`. Nothing of a held project or release is purged by the retention job, and it cannot be deleted.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHoldView'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Privacy
+      summary: Set or lift the legal hold of a project
+      operationId: putProjectsByPidLegalHold
+      description: |-
+        `{"on": true, "reason": "…"}` sets the hold (a reason is required), `{"on": false}` lifts it. Audited as `legal_hold.set` / `legal_hold.lift`. Organisation administrators (`tenant.manage`) and super administrators only, signed in (not with an API token): the handler checks. Answers like `GET`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalHold'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHoldView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/releases/{rid}/legal-hold:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: rid
+      in: path
+      required: true
+      description: release id
+      schema:
+        type: string
+    put:
+      tags:
+      - Privacy
+      summary: Set or lift the legal hold of a release
+      operationId: putProjectsByPidReleasesByRidLegalHold
+      description: |-
+        Like the project's hold: the runs of a held release (and their results and evidence) are not purged and cannot be deleted. Organisation and super administrators only: the handler checks. Answers like `GET /projects/{pid}/legal-hold`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalHold'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHoldView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/export:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Privacy
+      summary: Export the personal data of a user
+      operationId: getUsersByIdExport
+      description: |-
+        A ZIP of JSON files (`profile`, `memberships`, `project_roles`, `comments`, `mentions`, `sessions`, `api_tokens`, `sign_in_log`, `trusted_devices`, `notifications`, `electronic_signatures`, `input_history`, `audit_entries`, `index.json`, `README.txt`): the data subject access (GDPR art. 15 and 20). Secrets (password hash, second factor, token hashes) are never exported. Audited as `user.data_export`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: ZIP archive
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/erase:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Privacy
+      summary: Erase (anonymise) a user
+      operationId: postUsersByIdErase
+      description: |-
+        `{"confirm": "<the account's e-mail address>"}`. Replaces the name and address with a pseudonym (`Former user #<n>`, `former-user-<n>@erased.invalid`), deletes the personal settings, sessions, API tokens, second factor, remembered devices, notifications, sign-in log, input history, memberships and project roles, and re-attributes authored content to the pseudonym. Electronic signatures, sign-offs and audit entries are kept unchanged (regulatory records; the audit trail is a hash chain). The account is disabled and cannot sign in again. Not for your own account or the last super administrator. Audited as `user.erase` (with the pseudonym, not the address). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErasureResult'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/me/export:
+    get:
+      tags:
+      - Privacy
+      summary: Download your own data
+      operationId: getAuthMeExport
+      description: |-
+        The caller's personal data as a ZIP of JSON files (like `GET /users/{id}/export`). Signed in with a session, not with an API token. Audited as `user.data_export`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: ZIP archive
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -23870,6 +24132,135 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    LegalHold:
+      type: object
+      properties:
+        'on':
+          type: boolean
+        reason:
+          type: string
+        by:
+          type: string
+        at:
+          type: [string, 'null']
+          format: date-time
+    LegalHoldView:
+      type: object
+      properties:
+        project:
+          $ref: '#/components/schemas/LegalHold'
+        releases:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              version:
+                type: string
+              hold:
+                $ref: '#/components/schemas/LegalHold'
+        can_edit:
+          type: boolean
+    RetentionView:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        hour:
+          type: integer
+        last_run:
+          type: [string, 'null']
+          format: date-time
+        next_run:
+          type: [string, 'null']
+          format: date-time
+        reports:
+          type: array
+          items:
+            type: object
+            properties:
+              tenant_id:
+                type: string
+                description: '"" for the data of no organisation (sessions, sign-in log)'
+              tenant_name:
+                type: string
+              dry_run:
+                type: boolean
+              policy:
+                type: object
+                properties:
+                  days:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  runs_keep_latest:
+                    type: integer
+                  overridden:
+                    type: array
+                    items:
+                      type: string
+              counts:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    category:
+                      type: string
+                    days:
+                      type: integer
+                    count:
+                      type: integer
+                    held:
+                      type: integer
+              at:
+                type: string
+                format: date-time
+        holds:
+          type: array
+          items:
+            type: object
+            properties:
+              kind:
+                type: string
+                enum: [project, release]
+              id:
+                type: string
+              tenant_id:
+                type: string
+              tenant_name:
+                type: string
+              project_id:
+                type: string
+              project_key:
+                type: string
+              project_name:
+                type: string
+              name:
+                type: string
+              hold:
+                $ref: '#/components/schemas/LegalHold'
+    ErasureResult:
+      type: object
+      properties:
+        user_id:
+          type: string
+        pseudonym:
+          type: string
+        email:
+          type: string
+        deleted:
+          type: object
+          additionalProperties:
+            type: integer
+        rewritten:
+          type: integer
+        kept:
+          type: object
+          additionalProperties:
+            type: integer
     AIStatus:
       type: object
       description: Availability of the optional AI assistance.

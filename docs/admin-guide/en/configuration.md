@@ -342,6 +342,27 @@ Every key of the file, its type, its default and the environment variable that s
 | `outbound.denied_hosts` | list | — | — | Hosts outgoing calls never reach, e.g. `metadata.google.internal` or `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Refuse outgoing calls to loopback, private, link-local and other non-public addresses (checked on the address actually connected to), unless the host is in `allowed_hosts`. Turn it on when the server is reachable from the internet and its users should not reach your internal network through it. |
 
+### `retention`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `retention.enabled` | bool | `false` | — | Run the nightly retention job, which deletes records older than their retention period (see *Privacy and data retention*). Check the dry-run preview under **Administration → System settings → Retention and backups** before turning it on. |
+| `retention.hour` | integer | `2` | — | Hour of the day (UTC, 0–23) the retention job runs. |
+| `retention.runs_days` | integer | `0` | — | Days to keep test runs with their results, step results, comments and attachments (0 = forever). Runs in progress, of a project or release under legal hold or with an electronic signature are kept. |
+| `retention.runs_keep_latest` | integer | `0` | — | Always keep the runs holding one of the latest N results of each test, however old (0 = no exception). |
+| `retention.logs_days` | integer | `0` | — | Days to keep logs and uploaded artifacts: the sign-in log, finished test runner jobs, CI status posts, tracker sync logs and web test evidence (screenshots, traces, videos) (0 = forever). |
+| `retention.notifications_days` | integer | `0` | — | Days to keep in-app notifications, read or not (0 = forever). |
+| `retention.sessions_days` | integer | `0` | — | Days to keep sign-in sessions not used for that long and API tokens that expired that long ago (0 = forever). |
+| `retention.chat_days` | integer | `0` | — | Days to keep the chat message history (sent or failed messages with their text) and the personal input suggestion history (0 = forever). |
+| `retention.exploratory_days` | integer | `0` | — | Days to keep the notes of completed or debriefed exploratory sessions, counted from the session's last change (0 = forever). The session and its debrief stay. |
+
+### `privacy`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `privacy.truncate_ip` | bool | `false` | — | Store and log client addresses shortened: IPv4 to /24, IPv6 to /48 (sign-in log, sessions, remembered devices, request log). Rate limits still use the full address in memory. |
+| `privacy.notice_url` | string | — | — | Link to your privacy notice, shown on the sign-in page (empty = none). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables

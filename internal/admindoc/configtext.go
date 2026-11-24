@@ -629,6 +629,50 @@ var keyDocs = map[string]text{
 		"Optional price per million output tokens.",
 		"Valfritt pris per miljon utdata-token.",
 	},
+	"retention.enabled": {
+		"Run the nightly retention job, which deletes records older than their retention period (see *Privacy and data retention*). Check the dry-run preview under **Administration → System settings → Retention and backups** before turning it on.",
+		"Kör den nattliga gallringen, som raderar poster som är äldre än sin lagringstid (se *Integritet och gallring*). Kontrollera förhandsvisningen under **Administration → Systeminställningar → Gallring och säkerhetskopior** innan du slår på den.",
+	},
+	"retention.hour": {
+		"Hour of the day (UTC, 0–23) the retention job runs.",
+		"Timme på dygnet (UTC, 0–23) då gallringen körs.",
+	},
+	"retention.runs_days": {
+		"Days to keep test runs with their results, step results, comments and attachments (0 = forever). Runs in progress, of a project or release under legal hold or with an electronic signature are kept.",
+		"Dagar att behålla testkörningar med resultat, stegresultat, kommentarer och bilagor (0 = för alltid). Pågående körningar, körningar i ett projekt eller en release med juridiskt bevarande och körningar med en elektronisk signatur behålls.",
+	},
+	"retention.runs_keep_latest": {
+		"Always keep the runs holding one of the latest N results of each test, however old (0 = no exception).",
+		"Behåll alltid de körningar som innehåller något av de N senaste resultaten för varje test, hur gamla de än är (0 = inget undantag).",
+	},
+	"retention.logs_days": {
+		"Days to keep logs and uploaded artifacts: the sign-in log, finished test runner jobs, CI status posts, tracker sync logs and web test evidence (screenshots, traces, videos) (0 = forever).",
+		"Dagar att behålla loggar och uppladdade artefakter: inloggningsloggen, avslutade jobb i testkörningen, CI-statusposter, synkloggar mot ärendesystem och bevis från webbtester (skärmbilder, spår, videor) (0 = för alltid).",
+	},
+	"retention.notifications_days": {
+		"Days to keep in-app notifications, read or not (0 = forever).",
+		"Dagar att behålla aviseringar i appen, lästa eller inte (0 = för alltid).",
+	},
+	"retention.sessions_days": {
+		"Days to keep sign-in sessions not used for that long and API tokens that expired that long ago (0 = forever).",
+		"Dagar att behålla inloggningssessioner som inte använts så länge och API-tokens som gick ut för så länge sedan (0 = för alltid).",
+	},
+	"retention.chat_days": {
+		"Days to keep the chat message history (sent or failed messages with their text) and the personal input suggestion history (0 = forever).",
+		"Dagar att behålla historiken för chattmeddelanden (skickade eller misslyckade meddelanden med sin text) och den personliga historiken för inmatningsförslag (0 = för alltid).",
+	},
+	"retention.exploratory_days": {
+		"Days to keep the notes of completed or debriefed exploratory sessions, counted from the session's last change (0 = forever). The session and its debrief stay.",
+		"Dagar att behålla anteckningarna från avslutade eller genomgångna utforskande sessioner, räknat från sessionens senaste ändring (0 = för alltid). Sessionen och dess genomgång finns kvar.",
+	},
+	"privacy.truncate_ip": {
+		"Store and log client addresses shortened: IPv4 to /24, IPv6 to /48 (sign-in log, sessions, remembered devices, request log). Rate limits still use the full address in memory.",
+		"Lagra och logga klientadresser förkortade: IPv4 till /24, IPv6 till /48 (inloggningslogg, sessioner, betrodda enheter, begäranslogg). Begränsningar av antal försök använder fortfarande hela adressen i minnet.",
+	},
+	"privacy.notice_url": {
+		"Link to your privacy notice, shown on the sign-in page (empty = none).",
+		"Länk till er integritetspolicy, visas på inloggningssidan (tom = ingen).",
+	},
 	"system_settings.locked": {
 		"Settings that cannot be changed in **Administration → System settings**: keys (`logging.level`), prefixes ending in `.*` (`email.*`) or `*`. Their stored overrides are ignored.",
 		"Inställningar som inte kan ändras under **Administration → Systeminställningar**: nycklar (`logging.level`), prefix som slutar med `.*` (`email.*`) eller `*`. Deras sparade värden ignoreras.",
