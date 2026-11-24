@@ -235,6 +235,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 64 | `0064_solution_preamble.sql` |
 | 65 | `0065_backup_schedule.sql` |
 | 67 | `0067_passkeys.sql` |
+| 68 | `0068_privacy_retention.sql` |
 | 70 | `0070_gherkin.sql` |
 
 <!-- END GENERATED: migrations -->

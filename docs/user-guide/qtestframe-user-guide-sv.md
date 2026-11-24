@@ -181,6 +181,7 @@ Sökfältet i övre fältet söker överallt i den aktuella organisationen. Trä
 - **Visningsnamn**: namnet som andra ser i kommentarer, versionshistorik och händelseloggen.
 - **Profilbild**: välj en bild för ditt konto: ladda upp en bild (PNG, JPEG, GIF eller WebP, högst 1 MB), välj en av de inbyggda bilderna eller använd dina initialer.
 - **Inloggningsleverantör**, **Medlem sedan** och dina **Medlemskap**: organisationerna du tillhör och din roll i var och en.
+- **Dina uppgifter**: **Ladda ner mina uppgifter** ger dig en ZIP-fil med JSON-filer med de personuppgifter servern har om dig: profil, medlemskap och roller, kommentarer du skrivit och kommentarer som nämner dig, sessioner, API-tokens (utan sina hemligheter), inloggningslogg, aviseringar, elektroniska signaturer, inmatningshistorik och händelseloggens poster av eller om dig. Nedladdningen registreras i händelseloggen. Vill du att ditt konto raderas, be en superadministratör (se administratörshandboken, *Integritet och gallring*).
 
 ### Inställningar
 
@@ -4788,6 +4789,7 @@ Administratören anger på samma sida vilka åtgärder som kräver signatur, inn
 - Du kan inte ta bort din egen superadministratörsflagga eller inaktivera dig själv, och den sista aktiverade superadministratören förblir alltid en.
 - **Filtrera** på namn eller e-post, status (aktiverad eller inaktiverad), inloggningssätt, flerfaktorsautentisering eller superadministratörer.
 - Knapparna på en rad visar användarens **organisationer** med roller och öppna sessioner, **loggar ut användaren överallt** (API-tokens fortsätter att gälla), återställer den andra faktorn eller ett lokalt lösenord och **inaktiverar** eller **aktiverar** kontot.
+- **Exportera personuppgifter** (nedladdningsknappen) ger en ZIP-fil med allt servern har om personen, för en begäran om registerutdrag. **Radera användare** anonymiserar kontot när du har skrivit dess e-postadress: det får en pseudonym (*Former user #n*), personuppgifter, sessioner och tokens raderas, innehållet finns kvar under pseudonymen, och elektroniska signaturer och poster i händelseloggen finns kvar som de registrerades. Raderingen kan inte ångras; se [administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/privacy.md#radering-anonymisering).
 
 Användare som loggar in med enkel inloggning via OIDC eller SAML kan skapas automatiskt vid första inloggningen, med en roll som hämtas från grupperna hos identitetsleverantören; det konfigureras på servern (se [administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authentication.md#provisionering-av-anv%C3%A4ndare-med-single-sign-on)).
 

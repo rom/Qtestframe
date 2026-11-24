@@ -110,6 +110,7 @@ Open **User menu → Profile & password**.
 - **Display name**: the name others see in comments, history and the audit log.
 - **Avatar**: choose a picture for your account: upload an image (PNG, JPEG, GIF or WebP, at most 1 MB), pick one of the built-in pictures, or use your initials.
 - **Sign-in provider**, **Member since** and your **Memberships**: the organisations you belong to and your role in each.
+- **Your data**: **Download my data** gives you a ZIP of JSON files with the personal data the server holds about you: profile, memberships and roles, comments you wrote and comments that mention you, sessions, API tokens (without their secrets), sign-in log, notifications, electronic signatures, input history and the audit entries by or about you. The download is recorded in the audit log. To have your account erased, ask a super administrator (see the administrator guide, *Privacy and data retention*).
 
 ### Preferences
 

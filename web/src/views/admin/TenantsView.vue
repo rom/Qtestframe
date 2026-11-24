@@ -23,6 +23,7 @@ import { formatDate, formatDateTime } from '@/lib/format'
 import { formatFileSize } from '@/lib/files'
 import type { Providers } from '@/lib/types'
 import { atLimit, blankPolicy, deleteConfirmed, methodOptions, parseDomains, quotaText, storageAtLimit, type AdminTenant, type TenantPolicy } from '@/lib/tenantAdmin'
+import { overrideForm, overrideValue, RETENTION_OVERRIDE_KEYS, MAX_RETENTION_DAYS, type OverrideForm } from '@/lib/privacy'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
@@ -130,11 +131,13 @@ const domains = ref('')
 const policyError = ref('')
 const policyBusy = ref(false)
 const methods = ref<{ value: string; label: string }[]>([])
+const retention = ref<OverrideForm>(overrideForm(null))
 
 async function openDetail(x: AdminTenant) {
   detail.value = x
   policy.value = { ...blankPolicy(), ...x.policy, allowed_providers: [...(x.policy.allowed_providers ?? [])] }
   domains.value = (x.policy.email_domains ?? []).join('\n')
+  retention.value = overrideForm(x.policy.retention)
   policyError.value = ''
   try {
     const p = await api.get<Providers>('/auth/providers')
@@ -151,7 +154,7 @@ async function savePolicy() {
   policyBusy.value = true
   policyError.value = ''
   try {
-    const next = await api.put<AdminTenant>(`/admin/tenants/${detail.value.id}/policy`, { ...policy.value, email_domains: parseDomains(domains.value) })
+    const next = await api.put<AdminTenant>(`/admin/tenants/${detail.value.id}/policy`, { ...policy.value, email_domains: parseDomains(domains.value), retention: overrideValue(retention.value) })
     replace(next)
     detail.value = null
     notify.ok(t('admin.tenant.policySaved'))
@@ -312,6 +315,16 @@ async function remove() {
           <Textarea v-model="domains" rows="2" auto-resize class="mono" spellcheck="false" placeholder="example.com" aria-describedby="tp-domains-hint" />
           <small id="tp-domains-hint" class="muted">{{ t('admin.tenant.domainsHint') }}</small>
         </div>
+        <fieldset class="tp-retention">
+          <legend>{{ t('privacy.override.title') }}</legend>
+          <p class="small muted" style="margin: 0 0 8px">{{ t('privacy.override.intro') }}</p>
+          <div class="tp-retention-grid">
+            <div v-for="k in RETENTION_OVERRIDE_KEYS" :key="k" v-field class="field">
+              <label>{{ t(`privacy.override.key.${k}`) }}</label>
+              <InputNumber v-model="retention[k]" :min="0" :max="MAX_RETENTION_DAYS" :use-grouping="false" :placeholder="t('privacy.override.inherit')" fluid />
+            </div>
+          </div>
+        </fieldset>
         <div v-field class="field">
           <label>{{ t('admin.tenant.note') }}</label>
           <Textarea v-model="policy.note" rows="2" auto-resize maxlength="2000" />
@@ -345,6 +358,21 @@ async function remove() {
 </template>
 
 <style scoped>
+.tp-retention {
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 6px;
+  padding: 8px 12px 12px;
+  margin: 0;
+}
+.tp-retention legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+.tp-retention-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
 .sub {
   font-size: 1rem;
   margin: 12px 0 6px;

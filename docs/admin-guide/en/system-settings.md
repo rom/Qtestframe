@@ -42,7 +42,8 @@ Use environment variables or locks for what must not change from the web client 
 | Metrics and tracing | **at once** – the switches, the token, the allowlist and the trace export; the separate metrics address (`metrics.listen`) **after a restart**. The section also shows the state: where `/metrics` is served, how it is protected, and the spans exported, failed and dropped with the last export and the last error |
 | Script and web test runner | **after a restart** – the runner and its sandbox are set up before the process is locked down (Landlock execute paths, work directory); the value is stored at once and the page shows the value in use until then |
 | Scheduled backups | **at once** (switch, schedule, retention, passphrase, upload); the directory **after a restart**, because the server opens it for writing before the process is locked down – see [Scheduled backups](backup-and-migration.md#scheduled-backups) |
-| Retention and backups, Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them (the trash keeps deleted items for 30 days, which is fixed) |
+| Retention and backups, Privacy | **at once** – the retention periods are read by the next preview and the next purge (the nightly job at `retention.hour` UTC); see [Privacy and data retention](privacy.md). The trash keeps deleted items for 30 days, which is fixed |
+| Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them |
 
 Settings marked **Applies after restart** keep their value in use until the next start. A banner at the top of the page lists every saved change that waits for a restart, with a link to the setting.
 
@@ -185,6 +186,17 @@ The settings the page offers, generated from `internal/settings`:
 | AI assistance | `ai.features.suggest_criteria` | on/off | at once |
 | AI assistance | `ai.price_input` | text | at once |
 | AI assistance | `ai.price_output` | text | at once |
+| Retention and backups | `retention.enabled` | on/off | at once |
+| Retention and backups | `retention.hour` | 0–23 | at once |
+| Retention and backups | `retention.runs_days` | 0–36500 | at once |
+| Retention and backups | `retention.runs_keep_latest` | 0–1000 | at once |
+| Retention and backups | `retention.logs_days` | 0–36500 | at once |
+| Retention and backups | `retention.notifications_days` | 0–36500 | at once |
+| Retention and backups | `retention.sessions_days` | 0–36500 | at once |
+| Retention and backups | `retention.chat_days` | 0–36500 | at once |
+| Retention and backups | `retention.exploratory_days` | 0–36500 | at once |
+| Privacy | `privacy.truncate_ip` | on/off | at once |
+| Privacy | `privacy.notice_url` | text | at once |
 | Scheduled backups | `backup.enabled` | on/off | at once |
 | Scheduled backups | `backup.schedule` | text | at once |
 | Scheduled backups | `backup.directory` | text | after a restart |

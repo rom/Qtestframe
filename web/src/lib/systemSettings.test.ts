@@ -118,6 +118,9 @@ const SERVER_KEYS = [
   'ai.price_input', 'ai.price_output',
   'backup.enabled', 'backup.schedule', 'backup.directory', 'backup.keep_last', 'backup.keep_days', 'backup.passphrase',
   'backup.s3.enabled', 'backup.s3.endpoint', 'backup.s3.region', 'backup.s3.bucket', 'backup.s3.prefix', 'backup.s3.access_key_id', 'backup.s3.secret_access_key',
+  'retention.enabled', 'retention.hour', 'retention.runs_days', 'retention.runs_keep_latest', 'retention.logs_days', 'retention.notifications_days',
+  'retention.sessions_days', 'retention.chat_days', 'retention.exploratory_days',
+  'privacy.truncate_ip', 'privacy.notice_url',
 ]
 
 describe('system settings texts', () => {

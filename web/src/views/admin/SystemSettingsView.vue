@@ -23,6 +23,7 @@ import { useI18n } from 'vue-i18n'
 import HelpTip from '@/guide/HelpTip.vue'
 import SystemSettingField from '@/components/SystemSettingField.vue'
 import OidcProviderDialog from '@/components/OidcProviderDialog.vue'
+import RetentionPanel from '@/components/RetentionPanel.vue'
 import { api, errorMessage } from '@/lib/api'
 import { saveBlob } from '@/lib/download'
 import { useAuthStore } from '@/stores/auth'
@@ -543,17 +544,6 @@ function resetProviders() {
           </div>
         </template>
 
-        <!-- retention: fixed values and the backup page -->
-        <template v-else-if="current === 'retention'">
-          <ul class="info-list">
-            <li>{{ t('sysSettings.retention.trash', { days: data.trash_retention_days }) }}</li>
-            <li>{{ t('sysSettings.retention.sessions') }}</li>
-            <li>{{ t('sysSettings.retention.backups') }}</li>
-            <li>{{ t('sysSettings.retention.audit') }}</li>
-          </ul>
-          <RouterLink :to="{ name: 'backup' }" class="p-button p-button-outlined p-button-sm"><i class="pi pi-database" aria-hidden="true" />&nbsp;{{ t('sysSettings.retention.openBackup') }}</RouterLink>
-        </template>
-
         <!-- multi-factor authentication: its own page -->
         <template v-else-if="current === 'mfa'">
           <p>{{ t('sysSettings.mfa.text') }}</p>
@@ -573,6 +563,17 @@ function resetProviders() {
             <span class="small muted">{{ t('sysSettings.backupNote') }}</span>
             <RouterLink :to="{ name: 'backup' }" class="p-button p-button-outlined p-button-sm"><i class="pi pi-history" aria-hidden="true" />&nbsp;{{ t('sysSettings.retention.openBackup') }}</RouterLink>
           </div>
+          <!-- retention: fixed values, the backup page and the periods below -->
+          <template v-if="current === 'retention'">
+            <ul class="info-list">
+              <li>{{ t('sysSettings.retention.trash', { days: data.trash_retention_days }) }}</li>
+              <li>{{ t('sysSettings.retention.sessions') }}</li>
+              <li>{{ t('sysSettings.retention.backups') }}</li>
+              <li>{{ t('sysSettings.retention.audit') }}</li>
+            </ul>
+            <div><RouterLink :to="{ name: 'backup' }" class="p-button p-button-outlined p-button-sm"><i class="pi pi-database" aria-hidden="true" />&nbsp;{{ t('sysSettings.retention.openBackup') }}</RouterLink></div>
+            <Message severity="warn" :closable="false">{{ t('sysSettings.retention.previewFirst') }}</Message>
+          </template>
           <!-- encryption of stored secrets: read-only, set in the file -->
           <div v-if="current === 'server' && data.secrets" class="sys-secrets" role="group" aria-labelledby="h-sys-secrets">
             <h3 id="h-sys-secrets" class="plain-heading"><i class="pi pi-lock" aria-hidden="true" /> {{ t('sysSettings.secrets.title') }}</h3>
@@ -662,6 +663,7 @@ function resetProviders() {
             <Button type="submit" :label="t('sysSettings.save')" icon="pi pi-check" :loading="saving" :disabled="!dirty" />
           </div>
         </form>
+        <RetentionPanel v-if="current === 'retention'" />
       </section>
     </div>
     <div class="sr-only" role="status" aria-live="polite">{{ announce }}</div>

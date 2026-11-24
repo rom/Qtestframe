@@ -183,7 +183,8 @@ var sectionText = map[string]text{
 	"logging": {"Logging and syslog", "Loggning och syslog"}, "monitoring": {"Metrics and tracing", "Mätvärden och spårning"}, "email": {"E-mail (SMTP)", "E-post (SMTP)"},
 	"outbound": {"Outgoing connections", "Utgående anslutningar"}, "live": {"Live updates", "Liveuppdateringar"},
 	"runner": {"Script and web test runner", "Körning av skript och webbtester"}, "similarity": {"Similarity (duplicates)", "Likhet (dubbletter)"}, "ai": {"AI assistance", "AI-assistans"}, "retention": {"Retention and backups", "Gallring och säkerhetskopior"},
-	"backup": {"Scheduled backups", "Schemalagda säkerhetskopior"},
+	"backup":  {"Scheduled backups", "Schemalagda säkerhetskopior"},
+	"privacy": {"Privacy", "Integritet"},
 }
 
 var applyText = map[settings.Apply]text{

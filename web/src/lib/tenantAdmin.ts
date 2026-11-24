@@ -12,6 +12,8 @@ export interface TenantPolicy {
   allowed_providers: string[]
   email_domains: string[]
   note: string
+  /** overrides of the system retention (days, 0 = forever); missing keys use the system setting */
+  retention?: Record<string, number>
 }
 
 export interface TenantUsage {

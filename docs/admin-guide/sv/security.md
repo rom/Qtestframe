@@ -227,6 +227,8 @@ Händelseloggen i varje organisation är en **hashkedja** (kommandoradens system
 
 Kedjan i säkerhetskopior, återställningar och projektarkiv beskrivs i [Säkerhetskopiering, återställning och migrering](backup-and-migration.md#händelseloggen-i-säkerhetskopior).
 
+**Dataskydd.** Gallringen rensar aldrig granskningsloggen, och när en användare raderas lämnas posterna om personen oförändrade: se [Integritet och gallring](privacy.md) för skälen och för juridiskt bevarande.
+
 ## Läge för elektroniska poster (21 CFR Part 11 / EU GMP Annex 11)
 
 En organisationsinställning under **Administration → Elektroniska poster** (ändra: `tenant.manage`; läsa och rapport: `audit.read`; `GET`/`PUT /api/v1/erecords`), **av som standard**. När läget är på kräver servern:

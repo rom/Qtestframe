@@ -103,6 +103,16 @@ func NormalizeTenantPolicy(p *model.TenantPolicy) error {
 	if len(p.Note) > 2000 {
 		errs = append(errs, Invalidf("the note is too long (at most 2000 characters)"))
 	}
+	for k, v := range p.Retention {
+		if !slices.Contains(model.RetentionOverrideKeys, k) {
+			errs = append(errs, Invalidf("unknown retention key %q: use one of %s", k, strings.Join(model.RetentionOverrideKeys, ", ")))
+		} else if v < 0 || v > model.MaxRetentionDays {
+			errs = append(errs, Invalidf("retention %s must be 0 (forever) to %d", k, model.MaxRetentionDays))
+		}
+	}
+	if len(p.Retention) == 0 {
+		p.Retention = nil
+	}
 	p.AllowedProviders, p.EmailDomains = providers, domains
 	return errors.Join(errs...)
 }

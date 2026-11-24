@@ -355,6 +355,7 @@ Administratören anger på samma sida vilka åtgärder som kräver signatur, inn
 - Du kan inte ta bort din egen superadministratörsflagga eller inaktivera dig själv, och den sista aktiverade superadministratören förblir alltid en.
 - **Filtrera** på namn eller e-post, status (aktiverad eller inaktiverad), inloggningssätt, flerfaktorsautentisering eller superadministratörer.
 - Knapparna på en rad visar användarens **organisationer** med roller och öppna sessioner, **loggar ut användaren överallt** (API-tokens fortsätter att gälla), återställer den andra faktorn eller ett lokalt lösenord och **inaktiverar** eller **aktiverar** kontot.
+- **Exportera personuppgifter** (nedladdningsknappen) ger en ZIP-fil med allt servern har om personen, för en begäran om registerutdrag. **Radera användare** anonymiserar kontot när du har skrivit dess e-postadress: det får en pseudonym (*Former user #n*), personuppgifter, sessioner och tokens raderas, innehållet finns kvar under pseudonymen, och elektroniska signaturer och poster i händelseloggen finns kvar som de registrerades. Raderingen kan inte ångras; se [administratörshandboken](../../admin-guide/sv/privacy.md#radering-anonymisering).
 
 Användare som loggar in med enkel inloggning via OIDC eller SAML kan skapas automatiskt vid första inloggningen, med en roll som hämtas från grupperna hos identitetsleverantören; det konfigureras på servern (se [administratörshandboken](../../admin-guide/sv/authentication.md#provisionering-av-användare-med-single-sign-on)).
 

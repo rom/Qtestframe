@@ -180,14 +180,14 @@ export interface TestResult {
  * and link to the pages that manage them.
  */
 export const SECTION_GROUPS = {
-  server: ['general', 'server', 'logging', 'monitoring', 'retention', 'backup'],
+  server: ['general', 'server', 'logging', 'monitoring', 'retention', 'privacy', 'backup'],
   access: ['security', 'tokens', 'oidc', 'mfa', 'authorisation'],
   services: ['email', 'outbound', 'runner', 'live', 'similarity', 'ai'],
 } as const
 export const SECTIONS = [...SECTION_GROUPS.server, ...SECTION_GROUPS.access, ...SECTION_GROUPS.services] as const
 export type SectionId = (typeof SECTIONS)[number]
 /** Sections without settings in the registry (shown with their own content). */
-export const INFO_SECTIONS: readonly SectionId[] = ['mfa', 'authorisation', 'retention']
+export const INFO_SECTIONS: readonly SectionId[] = ['mfa', 'authorisation']
 
 /** Sections with a test button (POST /admin/settings/test/<kind>). */
 export const TESTABLE: Partial<Record<SectionId, 'syslog' | 'email' | 'embeddings' | 'ai' | 'outbound'>> = { logging: 'syslog', email: 'email', similarity: 'embeddings', ai: 'ai', outbound: 'outbound' }

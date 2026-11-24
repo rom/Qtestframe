@@ -137,6 +137,7 @@ var boolColumns = map[string]bool{
 	"req_sync_configs.enabled":      true,
 	"environments.status_by_health": true, "environments.requires_approval": true,
 	"webauthn_credentials.user_verified": true, "webauthn_credentials.backup_eligible": true, "webauthn_credentials.backed_up": true,
+	"projects.legal_hold": true, "releases.legal_hold": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

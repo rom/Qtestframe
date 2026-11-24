@@ -123,6 +123,11 @@ type TenantPolicy struct {
 	EmailDomains []string `json:"email_domains"`
 	// Note is a free text for the super administrators (contract, contact).
 	Note string `json:"note"`
+	// Retention overrides the system retention for the organisation: keys
+	// of RetentionOverrideKeys with days (0 = forever) or, for
+	// runs_keep_latest, a number of runs. Missing keys use the system
+	// setting.
+	Retention map[string]int `json:"retention,omitempty"`
 }
 
 // TenantUsage counts what an organisation holds.
@@ -200,6 +205,10 @@ type User struct {
 	// PasswordChangedAt is when the local password was last set (nil =
 	// before this was recorded).
 	PasswordChangedAt *time.Time `json:"password_changed_at,omitempty"`
+	// Erased: the account was erased (anonymised) for data protection; its
+	// name and address are a pseudonym (not stored: its address is in
+	// ErasedEmailDomain).
+	Erased bool `json:"erased,omitempty"`
 }
 
 // LoginEvent records a sign-in attempt.
