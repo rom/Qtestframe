@@ -81,8 +81,9 @@ Open the address your administrator gave you (for a local trial installation `ht
 
 1. Enter your **E-mail** and **Password** and select **Sign in**.
 2. If you belong to several organisations and want to start in a particular one, select **Sign in to a specific organisation…** and enter its short name (slug), for example `acme`. Without it you start in your default organisation (see [Preferences](#preferences)) or the one you used last.
-3. If your organisation uses single sign-on, the page shows a button per provider below **or continue with**. Select it and sign in at your identity provider; you return to Qtestframe automatically.
-4. If you use [multi-factor authentication](#multi-factor-authentication), the page then asks for the **Authentication code**: open your authenticator app, enter the 6-digit code it shows for Qtestframe and select **Verify**. Each code works once; if one is refused, wait for the next. Without your phone, select **Use a recovery code instead** and enter one of your recovery codes. If your organisation allows it, **Remember this device** skips the code on this browser for a number of days.
+3. With a [passkey](#passkeys) select **Sign in with a passkey** (or pick your passkey among the suggestions of the **E-mail** field) and confirm with your fingerprint, face, PIN or security key: you need no password and no code. If the browser cannot use passkeys, the page says so below the button; sign in with your password instead.
+4. If your organisation uses single sign-on, the page shows a button per provider below **or continue with**. Select it and sign in at your identity provider; you return to Qtestframe automatically.
+5. If you use [multi-factor authentication](#multi-factor-authentication), the page then asks for the second factor. With a passkey, select **Use a passkey** and confirm on your device. Otherwise enter the **Authentication code**: open your authenticator app, enter the 6-digit code it shows for Qtestframe and select **Verify**. Each code works once; if one is refused, wait for the next. Without your phone, select **Use a recovery code instead** and enter one of your recovery codes. If your organisation allows it, **Remember this device** skips the code on this browser for a number of days.
 
 The language buttons at the top of the sign-in page switch between English and Swedish before you sign in. After sign-in, the language in your preferences wins.
 
@@ -180,6 +181,7 @@ Open **User menu → Profile & password**.
 - **Display name**: the name others see in comments, history and the audit log.
 - **Avatar**: choose a picture for your account: upload an image (PNG, JPEG, GIF or WebP, at most 1 MB), pick one of the built-in pictures, or use your initials.
 - **Sign-in provider**, **Member since** and your **Memberships**: the organisations you belong to and your role in each.
+- **Your data**: **Download my data** gives you a ZIP of JSON files with the personal data the server holds about you: profile, memberships and roles, comments you wrote and comments that mention you, sessions, API tokens (without their secrets), sign-in log, notifications, electronic signatures, input history and the audit entries by or about you. The download is recorded in the audit log. To have your account erased, ask a super administrator (see the administrator guide, *Privacy and data retention*).
 
 ### Preferences
 
@@ -231,6 +233,22 @@ From then on, every sign-in with your password asks for a code. API tokens are n
 - **New phone or lost phone**: with a recovery code you can still sign in; turn MFA off and set it up again with the new phone. Without phone and recovery codes, ask an administrator to [reset your multi-factor authentication](#reset-multi-factor-authentication).
 
 If you sign in with single sign-on, your identity provider usually asks for the second factor; Qtestframe asks for its own code only if the server is configured to do so.
+
+### Passkeys
+
+A **passkey** signs you in with the screen lock of your device (fingerprint, face or PIN), a password manager that keeps it, or a security key, instead of a password. It cannot be phished or guessed, and it also counts as your second factor: with a passkey you do not need an authenticator app. Passkeys need a current browser (Chrome, Edge, Firefox or Safari) and a server with an https address; otherwise the profile tells you why they are not available.
+
+**Add a passkey**
+
+1. In your profile, under **Passkeys**, select **Add a passkey**.
+2. Give it a name you will recognise later (it suggests your device and browser, for example *Mac · Safari*) and select **Add a passkey**.
+3. Follow the browser: choose where to keep the passkey (this device, your phone, a password manager or a security key) and confirm with your fingerprint, face, PIN or security key.
+
+If you signed in more than 10 minutes ago, Qtestframe first asks you to **Confirm it is you**: enter your password, a code of your authenticator app, or confirm with an existing passkey.
+
+**Sign in with it**: on the sign-in page select **Sign in with a passkey**, or pick it among the suggestions of the **E-mail** field. If your account signs in through single sign-on, use your identity provider; there the passkey can be your second factor. When the administrator has turned off the passwordless sign-in, a passkey is your second factor after the password.
+
+**Later**: the list shows each passkey with its name, when it was added and when it was last used (*Synced* means it is backed up in a password manager or cloud account and works on your other devices too). **Rename** (the pencil) changes its name; **Delete** (the bin) removes it from your account – remove it from the device or password manager too. Deleting needs a recent sign-in like adding. If your organisation requires multi-factor authentication, you cannot delete your last second factor. If you lose a device, delete its passkey from another device, or ask an administrator to [revoke your passkeys](#revoke-passkeys).
 
 ## Next steps
 
@@ -966,6 +984,7 @@ The page works like the [requirements page](#the-requirements-page): folder tree
 |---|---|
 | **Title** | A short name (required). |
 | **Execution type** | **Manual** or **Automated**. |
+| **Format** | **Steps** (preconditions and steps) or **Gherkin** (a feature with scenarios, see [Gherkin tests](#gherkin-tests-bdd)). |
 | **Description** | What the test is about. |
 | **Preconditions** | What must be true before the test starts, for example *a customer account exists*. Shown to the tester in the runner. |
 | **Status** | Draft, Ready, Review or Deprecated. |
@@ -1048,6 +1067,62 @@ When the test is added to a run, every row becomes an **iteration** of the execu
 
 The test data is part of the test's version history and of the export (**Export → Test data**: one line per row and parameter).
 
+## Gherkin tests (BDD)
+
+A test can be written as a **Gherkin** feature instead of preconditions and steps, the way behaviour-driven development (BDD) and Cucumber describe behaviour: *Given* a context, *When* something happens, *Then* an outcome. Choose the format with **Steps** / **Gherkin** next to the execution type in the test editor.
+
+```gherkin
+@checkout @REQ-12
+Feature: Checkout
+  Background:
+    Given a customer with a saved card
+
+  @smoke
+  Scenario: Pay with the saved card
+    When the customer pays 25 EUR
+    Then the order is "paid"
+
+  Scenario Outline: Pay <amount>
+    When the customer pays <amount> EUR
+    Then the receipt shows <amount> EUR
+
+    Examples:
+      | amount |
+      | 5      |
+      | 10     |
+```
+
+A feature has a name and a description, an optional **Background** (steps run before every scenario), **Scenarios** and **Scenario Outlines** with **Examples** tables (one scenario per row; `<amount>` is replaced by the row's value), **Rules** that group scenarios, **tags** (`@smoke`) on features, rules, scenarios and examples, **doc strings** (text between `"""` or ```` ``` ```` lines) and **data tables** under a step. English and Swedish keywords both work in any test: *Feature/Egenskap*, *Background/Bakgrund*, *Scenario*, *Scenario Outline/Abstrakt scenario/Scenariomall*, *Examples/Exempel*, *Rule/Regel*, *Given/Givet*, *When/När*, *Then/Så*, *And/Och*, *But/Men*. A first line `# language: sv` marks a Swedish feature (it is detected from the keywords as well).
+
+**The editor** highlights keywords, tags, strings, numbers, outline placeholders, tables, doc strings and comments, and checks the text as you type: a line with an error is underlined and listed below the editor with its line number (select it to go to the line), and steps that no step of the [step library](#the-step-library) matches are marked as *undefined*. A test whose Gherkin has errors cannot be saved. Keyboard:
+
+| Keys | Does |
+|---|---|
+| **Ctrl+Space** | Suggests keywords at the start of a line and steps from the step library after a step keyword (suggestions also appear while you type). **↑**/**↓** choose, **Enter** or **Tab** inserts, **Esc** closes. An inserted step selects its first parameter, such as `{int}`, for you to type over. |
+| **Enter** | A new line with the same indentation, one level deeper after a header such as *Scenario:*. |
+| **Alt+Shift+F** | Aligns the columns of every table (also **Align tables**). Nothing else is changed. |
+| **Tab** | Leaves the editor (with no suggestion open), like any other field. Indent with spaces. |
+
+**Converting:** switching an existing test from **Steps** to **Gherkin** writes its preconditions as *Given* steps, each action as a *When* step, each expected result as a *Then* step, step data as a doc string and test data as a *Scenario Outline* with *Examples*. Switching back writes the *Background* and the first *Given* steps as preconditions, each *When* step as a step with the following *Then* steps as its expected result, and the first *Examples* table as test data. **Convert from the steps** and **Convert from the Gherkin** run the conversion again (they replace what is there). Conversions are best effort: rules, several *Examples* tables and called tests are simplified, and the editor says so.
+
+**Running a Gherkin test:** in a run, every scenario, and every *Examples* row of an outline, is an [iteration](runs.md#data-driven-tests-iterations) of the execution, named after the scenario (an outline's name with the row's values). Its steps are the *Background* steps followed by the scenario's steps, with doc strings and tables shown with the step, and the tester records a result per step as usual. The results map back to the lines of the feature: the editor shows the latest result of each step in the margin (green passed, red failed) and lists them under **Latest results per step**.
+
+The **Cucumber** stubs of [Generate test code](ci-cd.md#generate-test-code) for a Gherkin test are the feature itself, tagged with the test's key and `@qtestframe-stub`, so the scenarios your team wrote are the scenarios Cucumber runs. The query field `format` finds tests by format: `format:gherkin`.
+
+### The step library
+
+**Step library** (in the editor, and in the **Import** menu of the tests page) holds the reusable steps of the project. Each step is a **Cucumber expression** such as `the customer pays {int} EUR` or `I log in as {string}` (parameters `{int}`, `{float}`, `{word}`, `{string}` and `{}`; `cucumber(s)` for optional text; `in/on` for alternatives; a backslash escapes `{`, `(` and `/`) or, with the kind **Regular expression**, a pattern such as `^I pay (\d+) EUR$`. A step can have a keyword (*Given*, *When* or *Then*: suggested first after that keyword) and a description, which the suggestions show.
+
+The list shows how often each step is used and, under **Where used**, the tests and lines. **Undefined steps** lists the steps of the Gherkin tests that no definition matches, with a suggested expression (quoted text becomes `{string}`, numbers `{int}` or `{float}`); **Add to library** fills in the form with it. The same offer is under the editor for the undefined steps of the open test.
+
+**Rename in every test** changes a step's expression and rewrites every step that used it in all Gherkin tests of the project, keeping their parameters: renaming `the customer pays {int} EUR` to `the customer pays {int} euro(s)` turns *the customer pays 25 EUR* into *the customer pays 25 euros*. The new expression must have as many parameters as the old one. Each changed test gets a new version, so the change is in its history. Removing a step from the library leaves the tests as they are; their steps become undefined. Reading the library needs **Viewer**, changing it **Tester**.
+
+### Import and export feature files
+
+**Import → Import .feature files** on the tests page creates Gherkin tests from `.feature` files: choose **One test per scenario** (each with the feature's *Background*; an outline keeps its *Examples*) or **One test per feature file**. The preview lists the tests to be created and the files that have errors (with the line), which are skipped. Tags become the tests' tags, except tags that name a requirement of the project, which link the test to it instead: `@SHOP-REQ-12`, `@req:SHOP-REQ-12`, or `@REQ-12` without the project key.
+
+**Import → Export as .feature files** downloads a zip with a `.feature` file per test of the list (or of the selection): a Gherkin test as it is written, a test in the step format converted, each tagged with its key and the keys of the requirements it verifies.
+
 ## Categories
 
 Categories classify tests and requirements along **dimensions**. New projects get these defaults:
@@ -1063,7 +1138,7 @@ Categories classify tests and requirements along **dimensions**. New projects ge
 
 An item can have any number of category values, also several of the same dimension. Manage them in **Categories & settings**:
 
-![The Categories & settings page with requirement and test category dimensions and their colours](images/en-settings-categories.png)
+![The Categories & settings page with requirement and test category dimensions and their colours](../images/en-settings-categories.png)
 
 - **New dimension** creates a dimension with its first value; **Add value** adds values to it.
 - Select a colour swatch to recolour a value; it is shown in that colour everywhere.
@@ -1073,17 +1148,17 @@ An item can have any number of category values, also several of the same dimensi
 
 In queries, `category:Negative` matches the value name and `dimension:Polarity/Negative` the full form.
 
-The same page holds the project's **Name**, **Description**, the **Defect tracker URL template** (see [Defects](#defects)), the [Save and load](#save-and-load-projects) section (**Save project**, **Duplicate project**, **Load project**) and, for admins, **Delete project**. Editing categories needs **Manager** (or the write permission of their scope, Tester for test categories).
+The same page holds the project's **Name**, **Description**, the **Defect tracker URL template** (see [Defects](runs.md#defects)), the [Save and load](reports-and-export.md#save-and-load-projects) section (**Save project**, **Duplicate project**, **Load project**) and, for admins, **Delete project**. Editing categories needs **Manager** (or the write permission of their scope, Tester for test categories).
 
 ## Mark many tests ready at once
 
-Holders of `test.review` can mark many tests *Ready* in one step: tick the tests and choose **Mark ready…**, or choose **Bulk review** above the list with nothing ticked. As for requirements (see [Approve many requirements at once](#approve-many-requirements-at-once)), you choose the tests (selected, shown in the list, or all), the statuses they may come from (by default *Review*; add *Draft* to include drafts) and an optional comment, and a preview shows what changes.
+Holders of `test.review` can mark many tests *Ready* in one step: tick the tests and choose **Mark ready…**, or choose **Bulk review** above the list with nothing ticked. As for requirements (see [Approve many requirements at once](requirements.md#approve-many-requirements-at-once)), you choose the tests (selected, shown in the list, or all), the statuses they may come from (by default *Review*; add *Draft* to include drafts) and an optional comment, and a preview shows what changes.
 
 Besides the checks for requirements (the latest review asked for changes, open review requests, suspect links), a test is skipped when it cannot be run as written: a **manual test without steps** or an **automated test without a script**. Choose the check under **Include anyway, despite** to mark them ready anyway.
 
 ## Spreadsheet view
 
-Choose **Spreadsheet** to edit tests like in a spreadsheet; it works as for [requirements](#spreadsheet-view) (keyboard, copy and paste from Excel, fill down, new rows, saving, conflicts, undo and **Export view**). The columns are **Key**, **Title**, **Description**, **Priority**, **Status**, **Execution**, **Preconditions**, **Expected result**, **Estimate (min)**, **Categories**, **Tags**, **Folder** and the read-only **Steps** (the number of steps), **Last result**, **Requirements**, **Created by** and **Version**. Steps, scripts and test data are edited in the editor (double-click the key or press **Ctrl+Enter**). Setting a test to *Ready* is a review decision and needs `test.review`, in the sheet as in the editor.
+Choose **Spreadsheet** to edit tests like in a spreadsheet; it works as for [requirements](requirements.md#spreadsheet-view) (keyboard, copy and paste from Excel, fill down, new rows, saving, conflicts, undo and **Export view**). The columns are **Key**, **Title**, **Description**, **Priority**, **Status**, **Execution**, **Preconditions**, **Expected result**, **Estimate (min)**, **Categories**, **Tags**, **Folder** and the read-only **Steps** (the number of steps), **Last result**, **Requirements**, **Created by** and **Version**. Steps, scripts and test data are edited in the editor (double-click the key or press **Ctrl+Enter**). Setting a test to *Ready* is a review decision and needs `test.review`, in the sheet as in the editor.
 
 ## Copy a test
 
@@ -1101,7 +1176,7 @@ A test can **depend on** other tests: they are its prerequisites and must have p
 
 In the test editor, the section **Depends on** lists the prerequisites with their latest result. Select **Add prerequisite** to pick tests of the same project, and **×** to remove one *(Tester)*. **Required by** lists the tests that wait for this one. A test cannot depend on itself, and dependencies may not form a cycle.
 
-When the test is executed, each prerequisite counts as passed when its execution in the same run has passed; when the prerequisite is not part of the run, its latest result counts. Until then the runner shows why the test cannot start, unless the [test execution settings](#test-execution-settings) allow it. The **Relations** column of the test list shows *depends on* and *required by*, the [dependency graph](#dependency-graphs) draws them, and the filter `depends_on:SHOP-TC-1` (or `depends:`) finds the tests that depend on SHOP-TC-1.
+When the test is executed, each prerequisite counts as passed when its execution in the same run has passed; when the prerequisite is not part of the run, its latest result counts. Until then the runner shows why the test cannot start, unless the [test execution settings](administration.md#test-execution-settings) allow it. The **Relations** column of the test list shows *depends on* and *required by*, the [dependency graph](traceability-and-coverage.md#dependency-graphs) draws them, and the filter `depends_on:SHOP-TC-1` (or `depends:`) finds the tests that depend on SHOP-TC-1.
 
 ## Test flow
 
@@ -1121,9 +1196,9 @@ When the test is executed, each prerequisite counts as passed when its execution
 
 The **Executions** tab lists every execution of the test in all runs, newest first, with the run, its environment and build, the result, who executed it, when, the duration and any defects. Use it to see whether a test is flaky or when it started to fail.
 
-![The executions tab of a test with results across runs](images/en-tests-executions.png)
+![The executions tab of a test with results across runs](../images/en-tests-executions.png)
 
-In runs with [configurations](#configurations-in-a-run) the configuration of each execution is shown below the run, and a data-driven execution links to its iterations in the runner.
+In runs with [configurations](runs.md#configurations-in-a-run) the configuration of each execution is shown below the run, and a data-driven execution links to its iterations in the runner.
 
 The table column **Last result** shows the most recent result (in any configuration). In queries, `last_result:failed` finds tests whose latest result failed, and `defect:SHOP-*` tests with such a defect.
 
@@ -3704,7 +3779,7 @@ Keywords and field names are case-insensitive. Values with spaces need quotes: `
 
 ### Tests
 
-`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `open_discussions` (`open-discussion`: unresolved threads, `has:open-discussion`), `mention` (@handles in the texts and steps, and the people mentioned in its discussion; `mentions:me` for yourself), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from), `variant` (`variants`: the variants it applies to), `applicability` (`all` or `selected`).
+`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps, and the Gherkin of a Gherkin test), `format` (`steps` or `gherkin`: `format:gherkin`), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `open_discussions` (`open-discussion`: unresolved threads, `has:open-discussion`), `mention` (@handles in the texts and steps, and the people mentioned in its discussion; `mentions:me` for yourself), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from), `variant` (`variants`: the variants it applies to), `applicability` (`all` or `selected`).
 
 ### Owners and assignees
 
@@ -4124,7 +4199,7 @@ Qtestframe works together with requirements and ALM tools such as IBM DOORS and 
 - **ReqIF files** move whole specifications between tools: requirements, test cases, folders, relations, trace links and attachments. You export a file here and import it there, or the other way round, as often as you like.
 - **OSLC** connects the tools live: another tool finds Qtestframe's requirements and test cases, links its own items to them, and can create and change them without a file.
 
-This page explains both. For the Excel round-trip and the other export formats see [Reports and export](#exchanging-data-with-other-tools); your administrator connects the tools as described in the administrator guide (*Connecting other tools*).
+This page explains both, and how to [import tests from other test management tools](#import-tests-from-other-tools) such as TestRail, Xray, Zephyr, qTest and Azure Test Plans. For the Excel round-trip and the other export formats see [Reports and export](#exchanging-data-with-other-tools); your administrator connects the tools as described in the administrator guide (*Connecting other tools*).
 
 ## ReqIF export
 
@@ -4186,6 +4261,36 @@ The selection and creation windows use your Qtestframe session in the browser. I
 
 Each tool connects with an [API token](#api-tokens) of a person or a service account; the tool can do what the token's role allows and sees only the projects that person may see.
 
+## Import tests from other tools
+
+Moving from another test management tool? Import its test cases into a project: on **Tests**, open **Import and exchange** and choose **Tests from TestRail, Xray, Zephyr, qTest or Azure …** (permission *test.write*).
+
+1. **Choose the tool** the file comes from and the **export file**. The dialog explains how to export from the chosen tool.
+2. **Check the preview.** Nothing is saved yet. Each test is marked *New*, *Update* (imported before, changed in the file), *Unchanged* or *Conflict* (imported before, changed in the file *and* in Qtestframe since), or *Error* (it cannot be imported, for example without a title). Warnings name what is left out, and the references that match no requirement.
+3. **Adjust the mapping.** The priorities and statuses of the other tool are mapped to Qtestframe's (for example *Highest*, *Urgent* and *1* → *Critical*; *Approved* → *Ready*; *Obsolete* and *Closed* → *Deprecated*); unknown values become *Medium* and *Draft*. Fields Qtestframe has no place for are offered for the project's [custom fields](#custom-fields) of tests: a field named like a custom field is preselected. Every change shows a new preview.
+4. **Choose the placement** (a test folder to import into, whether to create folders for the sections, suites, modules or area paths), whether to **link the tests to requirements** and whether to **import past results**, and **Save**. The import is one transaction: all or nothing.
+
+| Tool | Export | What is imported |
+|---|---|---|
+| **TestRail** | Test suite → *Export* → CSV (all fields; steps separated or in one cell) or XML. The CSV export of a test run adds its results. | Sections (and suites, when the file has several) → folders; separated steps or the text template's steps and expected result; preconditions; priority; type; estimate; *References* → requirement links; other fields (*Automation Type*, your own fields) → custom fields; with a run export, the results as runs. |
+| **Xray (Jira)** | Test Repository or issue search → CSV; or JSON from the Xray REST export | *Manual* tests with their steps (action, data, expected result); *Cucumber* tests with the Gherkin scenario (kept in the description and turned into steps: *Given*/*When* → actions, *Then* → expected results); *Generic* tests as automated tests with their definition; preconditions; the repository folder (else the first test set) → folder; test sets and labels → tags; linked requirements by issue key; in JSON, the test runs as runs. |
+| **Zephyr Scale / Squad** | Zephyr Scale: *Tests* → *Export* → CSV or XML; Zephyr Squad: the test issues with their steps as CSV | Folder; step-by-step, plain text and BDD scripts; objective, precondition, status, priority, labels, owner, estimated time; *Coverage (Issues)* → requirement links; custom fields. |
+| **qTest** | *Test Design* → *Export* → *Test Cases* (Excel, or saved as CSV) | Modules → folders; steps with expected results; description, precondition, priority, status, type, assignee; linked requirements; other columns → custom fields. |
+| **Azure Test Plans** | Test suite → *Export test cases to CSV*, or a work item query of test cases with the *Steps* column | Area path → folders (without the project's root area); the steps (rows of their own, or Azure DevOps' steps XML in one cell, shared steps as one step naming them); state, priority, tags, assigned to; work items in a *Tests* column → requirement links. Other work item types are left out. |
+
+**Importing again updates.** Each test remembers the tool and its ID there, so you can import a newer export whenever the other tool changes during a migration: changed tests are updated, unchanged ones left alone and nothing is duplicated. A test you edited in Qtestframe since is a *Conflict* and only overwritten when you tick *Also update … tests changed in Qtestframe*. Past results are imported once: each run of the other tool becomes one completed run named after it (*TestRail: Release 2.4 regression*), with the result, who executed it, when and the comment (permission *run.write*). Tests without an ID in the file are created again by each import.
+
+**Requirement links.** A reference in the file (an issue key such as *SHOP-101*, a work item ID or a TestRail reference) links the test to the requirement whose key it is, whose key was recorded when it was [imported from Jira or Azure DevOps](#jira-and-azure-devops) or [ReqIF](#reqif-import), or whose *Source* says *ID: SHOP-101*. Import the requirements first; references that match nothing are listed in the preview, and importing the tests again once the requirements are there adds the missing links. Links are only added, never removed.
+
+The same import runs on the command line with an [API token](#api-tokens), for example in a migration script:
+
+```
+qtestframe import-tests --from testrail suite.csv --project SHOP --dry-run
+qtestframe import-tests --from xray tests.json --project SHOP --folder "Legacy/Xray"
+```
+
+`--dry-run` only prints the preview; `--overwrite`, `--no-history`, `--no-links` and `--no-folders` match the options of the dialog (see the administrator guide, *Command line reference*).
+
 ## Which one to use?
 
 | You want to … | Use |
@@ -4195,6 +4300,7 @@ Each tool connects with an [API token](#api-tokens) of a person or a service acc
 | Copy a project with its tests to another Qtestframe | ReqIF with test cases (or [Save and load projects](#save-and-load-projects)) |
 | Freeze what was handed over | ReqIF export of a baseline |
 | Link items of an ALM tool to requirements and tests while you work | OSLC |
+| Move test cases and their results from TestRail, Xray, Zephyr, qTest or Azure Test Plans | [Import tests from other tools](#import-tests-from-other-tools) |
 
 # Documents
 
@@ -4411,6 +4517,10 @@ Admins can only reset passwords of people who belong to their organisation alone
 The **MFA** column shows who uses multi-factor authentication: **On**, *Off*, or **Missing** when the [MFA policy](#multi-factor-authentication-1) requires it for the member but they have not set it up yet.
 
 *(Admin)* When someone has lost both their phone and their recovery codes, select **Reset MFA** (the shield) in their row and confirm. Their authenticator app, recovery codes and remembered devices are removed, they are signed out everywhere and told by a notification and an e-mail. They then sign in with their password alone, or, if MFA is required for them, set up a new authenticator app at the next sign-in. Make sure the request really comes from that person before you reset. As for passwords, admins can only reset people who belong to their organisation alone; super admins can reset anyone, also under [Users](#users). Every reset is recorded in the [audit log](#audit-log).
+
+### Revoke passkeys
+
+The **Passkeys** column shows how many [passkeys](#passkeys) each member has. *(Admin)* When someone has lost a device with a passkey, or a passkey may be in the wrong hands, select **Revoke passkeys** (the crossed circle) in their row and confirm: all their passkeys are deleted and they are signed out everywhere. They then sign in with their password (and can add new passkeys). The same limits as for resetting MFA apply; super admins can also do it under [Users](#users). It is recorded in the [audit log](#audit-log).
 
 ## Multi-factor authentication
 
@@ -4651,6 +4761,7 @@ The admin sets on the same page the actions that need a signature, the meanings 
 - You cannot remove your own super admin flag or disable yourself, and the last enabled super administrator always stays one.
 - **Filter** by name or e-mail, status (enabled or disabled), sign-in method, multi-factor authentication or super administrators.
 - The buttons of a row show the user's **organisations** with their roles and open sessions, **sign the user out everywhere** (API tokens stay valid), reset the second factor or a local password, and **disable** or **enable** the account.
+- **Export personal data** (the download button) gives a ZIP of everything the server holds about the person, for a data subject access request. **Erase user** anonymises the account after you type its e-mail address: it gets a pseudonym (*Former user #n*), its personal data, sessions and tokens are deleted, its content stays under the pseudonym, and electronic signatures and audit entries stay as recorded. Erasure cannot be undone; see the [administrator guide](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/en/privacy.md#erasure-anonymisation).
 
 Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the [administrator guide](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/en/authentication.md#provisioning-of-single-sign-on-users)).
 
@@ -4714,6 +4825,10 @@ Once you change the providers here, this list replaces the providers of the conf
 ### Logging and syslog
 
 Choose the **Log level** and **Log format** of the server log, and whether the log (including the audit trail) is also sent to a central **syslog** server: network (`udp`, `tcp`, `tls` or a local socket), address, message format, facility and tag. **Send test message** sends one message with the values in the form, before you save them; the result is shown and read out next to the button. Changes apply at once. Certificates for syslog over TLS are set in the configuration file.
+
+### Metrics and tracing
+
+Both are off by default. **Prometheus metrics** turns on the address `/metrics` for a monitoring system: requests, response times, the database connections, background jobs, sign-ins and the number of projects, requirements, tests and runs. Protect it with a **Bearer token** (write-only, like the other secrets on this page) or a list of **Allowed addresses**; with neither, only the server itself may read it. A **Separate metrics address** serves it on a port of its own after the next restart. **OpenTelemetry tracing** sends a trace of every request, with its database queries and outgoing calls, to a **Collector URL**; the **Sample ratio** decides how many requests are traced. The **Status** box shows where the metrics are served and how they are protected, and how many spans reached the collector, with its last error. See [Logging and monitoring](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/en/logging-and-monitoring.md#prometheus-metrics) in the administrator guide for the metrics and an example dashboard.
 
 ### E-mail server
 
@@ -5314,7 +5429,7 @@ For requirement wording RFC 2119 and RFC 8174 (and SIS usage in Swedish); for do
 
 ### Does Qtestframe support passkeys or security keys?
 
-Not for signing in to Qtestframe: it uses passwords or single sign-on, with TOTP as the second factor. With single sign-on, your identity provider can require passkeys or security keys. The catalogue has requirements and tests that cite WebAuthn for your own products. See [WebAuthn and FIDO2](#webauthn-and-fido2).
+Yes. Add a passkey in your profile (see [Passkeys](#passkeys)): it signs you in without a password, and it is a second factor after your password, next to an authenticator app. Accounts of single sign-on sign in at the identity provider, which can also require passkeys or security keys. The catalogue also has requirements and tests that cite WebAuthn for your own products. See [WebAuthn and FIDO2](#webauthn-and-fido2).
 
 ### Where does the MITRE ATT&CK data come from?
 
@@ -6756,7 +6871,7 @@ An automated test that drives a real browser through a web application.
 
 The W3C Web Authentication API and the FIDO2 standards: sign-in with a security key or a passkey, based on a key pair bound to the website, which resists phishing.
 
-**In Qtestframe:** not a sign-in method of Qtestframe itself (it uses passwords, single sign-on and TOTP), but the catalogue has requirements and tests for passkeys and security keys that cite WebAuthn.
+**In Qtestframe:** you can sign in with a passkey instead of a password, or use one as your second factor (see [Passkeys](#passkeys)). The catalogue also has requirements and tests for passkeys and security keys that cite WebAuthn.
 
 **See also:** [Multi-factor authentication](#multi-factor-authentication-2), [TOTP](#totp), [Catalogue](#catalogue-1)
 

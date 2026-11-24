@@ -1,0 +1,8 @@
+Key,Name,Status,Precondition,Objective,Folder,Priority,Component,Labels,Owner,Estimated Time,Coverage (Issues),Test Script (Step-by-Step) - Step,Test Script (Step-by-Step) - Test Data,Test Script (Step-by-Step) - Expected Result,Test Script (Plain Text),Test Script (BDD),Browser
+SHOP-T10,Change the delivery address,Approved,The customer is signed in.,The customer can change where the order goes.,/Accounts/Addresses,High,Accounts,addresses,ada@example.com,600000,SHOP-140,Open My addresses,,The saved addresses are listed,,,Firefox
+,,,,,,,,,,,,Edit the first address,Street: Storgatan 1,The new address is saved,,,
+SHOP-T11,Newsletter sign-up,Draft,,,/Marketing,Normal,Marketing,newsletter,,,"SHOP-150, SHOP-151",,,,"1. Enter an e-mail address
+2. Press Subscribe",,
+SHOP-T12,Return an order,Deprecated,,,/Orders,Low,Orders,,,,,,,,,"Given a delivered order
+When the customer returns it
+Then a refund is issued",

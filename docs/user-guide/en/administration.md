@@ -113,6 +113,10 @@ The **MFA** column shows who uses multi-factor authentication: **On**, *Off*, or
 
 *(Admin)* When someone has lost both their phone and their recovery codes, select **Reset MFA** (the shield) in their row and confirm. Their authenticator app, recovery codes and remembered devices are removed, they are signed out everywhere and told by a notification and an e-mail. They then sign in with their password alone, or, if MFA is required for them, set up a new authenticator app at the next sign-in. Make sure the request really comes from that person before you reset. As for passwords, admins can only reset people who belong to their organisation alone; super admins can reset anyone, also under [Users](#users). Every reset is recorded in the [audit log](#audit-log).
 
+### Revoke passkeys
+
+The **Passkeys** column shows how many [passkeys](getting-started.md#passkeys) each member has. *(Admin)* When someone has lost a device with a passkey, or a passkey may be in the wrong hands, select **Revoke passkeys** (the crossed circle) in their row and confirm: all their passkeys are deleted and they are signed out everywhere. They then sign in with their password (and can add new passkeys). The same limits as for resetting MFA apply; super admins can also do it under [Users](#users). It is recorded in the [audit log](#audit-log).
+
 ## Multi-factor authentication
 
 **Administration → Multi-factor authentication** decides who must use a second factor (an authenticator app, see [your profile](getting-started.md#multi-factor-authentication)) when signing in with a password. The page shows how many members already use it.
@@ -352,6 +356,7 @@ The admin sets on the same page the actions that need a signature, the meanings 
 - You cannot remove your own super admin flag or disable yourself, and the last enabled super administrator always stays one.
 - **Filter** by name or e-mail, status (enabled or disabled), sign-in method, multi-factor authentication or super administrators.
 - The buttons of a row show the user's **organisations** with their roles and open sessions, **sign the user out everywhere** (API tokens stay valid), reset the second factor or a local password, and **disable** or **enable** the account.
+- **Export personal data** (the download button) gives a ZIP of everything the server holds about the person, for a data subject access request. **Erase user** anonymises the account after you type its e-mail address: it gets a pseudonym (*Former user #n*), its personal data, sessions and tokens are deleted, its content stays under the pseudonym, and electronic signatures and audit entries stay as recorded. Erasure cannot be undone; see the [administrator guide](../../admin-guide/en/privacy.md#erasure-anonymisation).
 
 Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the [administrator guide](../../admin-guide/en/authentication.md#provisioning-of-single-sign-on-users)).
 
@@ -415,6 +420,10 @@ Once you change the providers here, this list replaces the providers of the conf
 ### Logging and syslog
 
 Choose the **Log level** and **Log format** of the server log, and whether the log (including the audit trail) is also sent to a central **syslog** server: network (`udp`, `tcp`, `tls` or a local socket), address, message format, facility and tag. **Send test message** sends one message with the values in the form, before you save them; the result is shown and read out next to the button. Changes apply at once. Certificates for syslog over TLS are set in the configuration file.
+
+### Metrics and tracing
+
+Both are off by default. **Prometheus metrics** turns on the address `/metrics` for a monitoring system: requests, response times, the database connections, background jobs, sign-ins and the number of projects, requirements, tests and runs. Protect it with a **Bearer token** (write-only, like the other secrets on this page) or a list of **Allowed addresses**; with neither, only the server itself may read it. A **Separate metrics address** serves it on a port of its own after the next restart. **OpenTelemetry tracing** sends a trace of every request, with its database queries and outgoing calls, to a **Collector URL**; the **Sample ratio** decides how many requests are traced. The **Status** box shows where the metrics are served and how they are protected, and how many spans reached the collector, with its last error. See [Logging and monitoring](../../admin-guide/en/logging-and-monitoring.md#prometheus-metrics) in the administrator guide for the metrics and an example dashboard.
 
 ### E-mail server
 

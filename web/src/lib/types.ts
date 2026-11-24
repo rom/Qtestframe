@@ -29,8 +29,12 @@ export interface User {
   must_change_password?: boolean
   /** has a confirmed second factor (user lists, /auth/me) */
   mfa_enabled?: boolean
+  /** number of registered passkeys (user lists) */
+  passkeys?: number
   /** when the local password was last set */
   password_changed_at?: string
+  /** the account was erased (anonymised); its name and address are a pseudonym */
+  erased?: boolean
 }
 
 /** Per-user settings (all optional; empty = default). */
@@ -89,6 +93,8 @@ export interface Membership {
   scim?: boolean
   /** has a confirmed second factor (members lists) */
   mfa_enabled?: boolean
+  /** number of registered passkeys (members lists) */
+  passkeys?: number
   /** the MFA policy requires a second factor for this member's role here */
   mfa_required?: boolean
   /** open e-mail invitation (members list of the tenant) */
@@ -236,6 +242,10 @@ export interface Providers {
   saml: AuthProvider[] | null
   password_min_length?: number
   password_min_classes?: number
+  /** the passwordless sign-in with a passkey is offered */
+  passkeys?: boolean
+  /** link of the privacy notice shown on the sign-in page ("" = none) */
+  privacy_notice_url?: string
 }
 
 export interface APIToken {
@@ -493,6 +503,9 @@ export interface TestCase {
   position: number
   category_ids: string[] | null
   steps: TestStep[] | null
+  /** "steps" (preconditions and steps) or "gherkin": the test is the feature in gherkin */
+  format?: 'steps' | 'gherkin'
+  gherkin?: string
   version?: number
   created_by: string
   created_at: string

@@ -224,6 +224,9 @@ func (s *Server) install(next *config.Config, initial bool) {
 		s.sys.mailMu.Unlock()
 	}
 	s.installOIDC(next)
+	if s.obs != nil {
+		s.obs.tracer.Configure(tracingConfig(next, s.Log.Warn))
+	}
 	s.limiter.setLimits(next.Auth.LoginMaxAttempts, next.Auth.LoginLockout)
 	if reflect.DeepEqual(*next, s.Cfg) {
 		s.sys.live.Store(nil)
@@ -374,6 +377,8 @@ type systemSettingsView struct {
 	// Secrets describes the encryption of stored secrets (read-only: it is
 	// configured in the file, section secrets).
 	Secrets *secretsView `json:"secrets,omitempty"`
+	// Monitoring is the state of metrics and tracing (section monitoring).
+	Monitoring *monitoringView `json:"monitoring"`
 }
 
 // secretsView is the key provider protecting the stored secrets.
@@ -485,6 +490,7 @@ func (s *Server) settingsView(ctx context.Context) (*systemSettingsView, error) 
 		}
 		v.Settings = append(v.Settings, x)
 	}
+	v.Monitoring = s.monitoringView()
 	if v.Secrets, err = s.secretsView(ctx); err != nil {
 		return nil, err
 	}

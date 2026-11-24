@@ -1,0 +1,5 @@
+ID,Case ID,Title,Section,Section Hierarchy,Run,Run ID,Status,Assigned To,Tested By,Tested On,Comment,Priority,Type,References
+T5001,C101,Sign in with a valid password,Sign in,Accounts > Sign in,Release 2.4 regression,R12,Passed,Ada Tester,Ada Tester,2026-09-14 10:21,,High,Functional,SHOP-101
+T5002,C102,Sign in with a wrong password,Sign in,Accounts > Sign in,Release 2.4 regression,R12,Failed,Ada Tester,Ada Tester,2026-09-14 10:40,Lock-out after six attempts instead of five,Critical,Security,SHOP-101
+T5003,C103,Add an item to the cart,Cart,Checkout > Cart,Release 2.4 regression,R12,Untested,,,,,Medium,Regression,SHOP-200
+T6001,C101,Sign in with a valid password,Sign in,Accounts > Sign in,Release 2.5 smoke,R13,Blocked,Ada Tester,Ada Tester,2026-10-02 09:05,Test environment down,High,Functional,SHOP-101

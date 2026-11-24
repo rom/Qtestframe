@@ -161,6 +161,26 @@ var keyDocs = map[string]text{
 		"Refuse new API tokens without an expiry date.",
 		"Neka nya API-tokens utan utgångsdatum.",
 	},
+	"auth.passkeys.enabled": {
+		"Users can register passkeys and use them. When off, registered passkeys are kept but cannot be used, also not as a second factor.",
+		"Användare kan registrera lösennycklar (passkeys) och använda dem. När det är av sparas registrerade lösennycklar men kan inte användas, inte heller som andra faktor.",
+	},
+	"auth.passkeys.passwordless": {
+		"Users of local accounts can sign in with a passkey alone (\"Sign in with a passkey\"; the authenticator must verify the user with a PIN or biometrics). When off, passkeys are only a second factor. Accounts of an identity provider always sign in there.",
+		"Användare med lokala konton kan logga in med bara en lösennyckel (\"Logga in med lösennyckel\"; autentiseraren måste verifiera användaren med PIN eller biometri). När det är av är lösennycklar bara en andra faktor. Konton från en identitetsleverantör loggar alltid in där.",
+	},
+	"auth.passkeys.require_for_admins": {
+		"Super administrators and organisation administrators must have a passkey or an authenticator app: without one their next sign-in must set one up first.",
+		"Superadministratörer och organisationsadministratörer måste ha en lösennyckel eller en autentiseringsapp: utan någon måste nästa inloggning först konfigurera en.",
+	},
+	"auth.passkeys.rp_id": {
+		"The WebAuthn relying party ID: the domain passkeys belong to, e.g. `example.com` (empty = the host of `server.base_url`). Changing it later makes the registered passkeys unusable.",
+		"WebAuthn-id för den förlitande parten: domänen som lösennycklarna hör till, t.ex. `example.com` (tomt = värden i `server.base_url`). Om det ändras senare blir registrerade lösennycklar oanvändbara.",
+	},
+	"auth.passkeys.origins": {
+		"Origins the browser may use passkeys from, e.g. `https://qtf.example.com` (empty = the origin of `server.base_url`). Each must use https (http only for localhost) and lie within `rp_id`.",
+		"Ursprung som webbläsaren får använda lösennycklar från, t.ex. `https://qtf.example.com` (tomt = ursprunget i `server.base_url`). Varje ursprung måste använda https (http bara för localhost) och ligga inom `rp_id`.",
+	},
 	"auth.oidc": {
 		"OpenID Connect providers, each shown as a button on the sign-in page. Can be replaced in **Administration → System settings**.",
 		"OpenID Connect-leverantörer, var och en som en knapp på inloggningssidan. Kan ersättas under **Administration → Systeminställningar**.",
@@ -629,6 +649,138 @@ var keyDocs = map[string]text{
 		"Optional price per million output tokens.",
 		"Valfritt pris per miljon utdata-token.",
 	},
+	"metrics.enabled": {
+		"Serve Prometheus metrics on `/metrics` (requests, latency, database pool, Go runtime, background jobs, sign-ins, live connections and the number of projects, requirements, tests and runs). Off by default.",
+		"Visa Prometheus-mätvärden på `/metrics` (förfrågningar, svarstider, databaspoolen, Go-körtiden, bakgrundsjobb, inloggningar, liveanslutningar och antalet projekt, krav, tester och körningar). Av som standard.",
+	},
+	"metrics.listen": {
+		"A separate `host:port` for `/metrics` (e.g. `127.0.0.1:9090`), opened at start-up; the main listener then answers `/metrics` with 404. Empty: the main listener serves it.",
+		"En separat `värd:port` för `/metrics` (t.ex. `127.0.0.1:9090`) som öppnas vid start; huvudlyssnaren svarar då 404 på `/metrics`. Tom: huvudlyssnaren visar den.",
+	},
+	"metrics.token_file": {
+		"File with the bearer token a scraper must send (`Authorization: Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). The token can also be stored, encrypted, in the system settings; it is never shown again. `QTF_METRICS_TOKEN` wins over both.",
+		"Fil med den bearer-token som en insamlare måste skicka (`Authorization: Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Token kan också sparas, krypterad, i systeminställningarna; den visas aldrig igen. `QTF_METRICS_TOKEN` vinner över båda.",
+	},
+	"metrics.allowed_ips": {
+		"Addresses or CIDR ranges that may scrape `/metrics` (the client address, from `X-Forwarded-For` only behind `trusted_proxies`). With a token too, both must match; with neither, only the loopback address may scrape.",
+		"Adresser eller CIDR-intervall som får hämta `/metrics` (klientens adress, från `X-Forwarded-For` bara bakom `trusted_proxies`). Med en token också måste båda stämma; utan någon av dem får bara loopback-adressen hämta.",
+	},
+	"tracing.enabled": {
+		"Export OpenTelemetry traces of HTTP requests, database queries and outgoing calls to `endpoint`. Off by default.",
+		"Exportera OpenTelemetry-spår av HTTP-förfrågningar, databasfrågor och utgående anrop till `endpoint`. Av som standard.",
+	},
+	"tracing.endpoint": {
+		"OTLP/HTTP address of the collector, e.g. `http://otel-collector:4318`; `/v1/traces` is added to an address without a path. Spans are sent as JSON in batches (every 5 seconds or 512 spans).",
+		"OTLP/HTTP-adress till insamlaren, t.ex. `http://otel-collector:4318`; `/v1/traces` läggs till en adress utan sökväg. Spann skickas som JSON i omgångar (var 5:e sekund eller 512 spann).",
+	},
+	"tracing.headers_file": {
+		"File with headers sent with every export, `key=value` pairs separated by commas (e.g. `Authorization=Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). Can also be stored, encrypted, in the system settings. `QTF_TRACING_HEADERS` wins over both.",
+		"Fil med rubriker som skickas med varje export, `nyckel=värde`-par åtskilda med komma (t.ex. `Authorization=Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Kan också sparas, krypterade, i systeminställningarna. `QTF_TRACING_HEADERS` vinner över båda.",
+	},
+	"tracing.sample_ratio": {
+		"Share of new traces that are recorded, 0–1 (`0.1` = one in ten). A request with a `traceparent` header follows the decision of its caller.",
+		"Andel nya spår som spelas in, 0–1 (`0.1` = vart tionde). En förfrågan med en `traceparent`-rubrik följer anroparens beslut.",
+	},
+	"tracing.service_name": {
+		"`service.name` of the exported spans.",
+		"`service.name` för de exporterade spannen.",
+	},
+	"backup.enabled": {
+		"Take scheduled backups: the server writes the archive of `qtestframe backup` into `directory` on the `schedule`. With several servers on one database one of them takes each backup (a lock row in the database).",
+		"Ta schemalagda säkerhetskopior: servern skriver arkivet från `qtestframe backup` till `directory` enligt `schedule`. Med flera servrar mot samma databas tar en av dem varje säkerhetskopia (en låsrad i databasen).",
+	},
+	"backup.schedule": {
+		"When backups run, in UTC: `daily HH:MM`, `weekly DAY HH:MM` (`mon`–`sun`) or `every DURATION` (`15m` to `720h`, e.g. `every 6h`). A slot missed while no server ran is taken once at the next start.",
+		"När säkerhetskopiorna tas, i UTC: `daily HH:MM`, `weekly DAG HH:MM` (`mon`–`sun`) eller `every TIDSLÄNGD` (`15m` till `720h`, t.ex. `every 6h`). En tidpunkt som missades medan ingen server körde tas en gång vid nästa start.",
+	},
+	"backup.directory": {
+		"Absolute path of the directory the backup files are written to (created with mode 0700, writable under Landlock). Required for scheduled backups and *Run backup now*. Files are named `qtestframe-backup-YYYYMMDD-HHMMSS.zip` (`.zip.enc` when encrypted).",
+		"Absolut sökväg till katalogen som säkerhetskopiorna skrivs till (skapas med läget 0700, skrivbar under Landlock). Krävs för schemalagda säkerhetskopior och *Säkerhetskopiera nu*. Filerna heter `qtestframe-backup-ÅÅÅÅMMDD-TTMMSS.zip` (`.zip.enc` när de är krypterade).",
+	},
+	"backup.keep_last": {
+		"Keep the newest N backup files in `directory` and delete older ones (`0` = no limit). Only files named like scheduled backups are deleted.",
+		"Behåll de N nyaste säkerhetskopiorna i `directory` och ta bort äldre (`0` = ingen gräns). Bara filer som heter som schemalagda säkerhetskopior tas bort.",
+	},
+	"backup.keep_days": {
+		"Delete backup files older than N days (`0` = never). With `keep_last` a file goes when either rule says so; the newest file is always kept.",
+		"Ta bort säkerhetskopior som är äldre än N dagar (`0` = aldrig). Tillsammans med `keep_last` tas en fil bort när någon av reglerna säger det; den nyaste filen behålls alltid.",
+	},
+	"backup.passphrase_file": {
+		"File holding the passphrase that encrypts scheduled backups (AES-256-GCM with a key derived by scrypt). A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The passphrase can also be set in the system settings; without one, backups are not encrypted.",
+		"Fil med lösenfrasen som krypterar schemalagda säkerhetskopior (AES-256-GCM med en nyckel som härleds med scrypt). En relativ sökväg slås upp i `$CREDENTIALS_DIRECTORY`. Lösenfrasen kan också anges i systeminställningarna; utan den krypteras säkerhetskopiorna inte.",
+	},
+	"backup.s3.enabled": {
+		"Upload every scheduled backup to S3-compatible object storage (Amazon S3, MinIO, Ceph, Garage …) after writing it. A failed upload fails the run; the local file is kept.",
+		"Ladda upp varje schemalagd säkerhetskopia till S3-kompatibel objektlagring (Amazon S3, MinIO, Ceph, Garage …) när den har skrivits. En misslyckad uppladdning gör att körningen misslyckas; den lokala filen behålls.",
+	},
+	"backup.s3.endpoint": {
+		"Base URL of the storage, e.g. `https://s3.eu-north-1.amazonaws.com` or `https://minio.example.com:9000` (path-style requests: `ENDPOINT/BUCKET/KEY`). The upload follows the `outbound` settings.",
+		"Bas-URL till lagringen, t.ex. `https://s3.eu-north-1.amazonaws.com` eller `https://minio.example.com:9000` (sökvägsadressering: `ENDPOINT/BUCKET/NYCKEL`). Uppladdningen följer inställningarna under `outbound`.",
+	},
+	"backup.s3.region": {
+		"Region of the signature (AWS Signature Version 4); `us-east-1` for most S3-compatible servers.",
+		"Region för signaturen (AWS Signature Version 4); `us-east-1` för de flesta S3-kompatibla servrar.",
+	},
+	"backup.s3.bucket": {
+		"Bucket the backups are uploaded to. Delete old objects with a lifecycle rule of the bucket: the retention rules apply to the local directory only.",
+		"Bucket som säkerhetskopiorna laddas upp till. Ta bort gamla objekt med en livscykelregel för bucketen: gallringsreglerna gäller bara den lokala katalogen.",
+	},
+	"backup.s3.prefix": {
+		"Prefix of the object keys, e.g. `qtestframe/` (empty = the top of the bucket).",
+		"Prefix för objektnycklarna, t.ex. `qtestframe/` (tomt = högst upp i bucketen).",
+	},
+	"backup.s3.access_key_id": {
+		"Access key ID of the credentials allowed to `PutObject` in the bucket.",
+		"Åtkomstnyckel-ID för de inloggningsuppgifter som får göra `PutObject` i bucketen.",
+	},
+	"backup.s3.secret_access_key_file": {
+		"File holding the secret access key. A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The key can also be set in the system settings (write-only).",
+		"Fil med den hemliga åtkomstnyckeln. En relativ sökväg slås upp i `$CREDENTIALS_DIRECTORY`. Nyckeln kan också anges i systeminställningarna (kan bara skrivas).",
+	},
+	"retention.enabled": {
+		"Run the nightly retention job, which deletes records older than their retention period (see *Privacy and data retention*). Check the dry-run preview under **Administration → System settings → Retention and backups** before turning it on.",
+		"Kör den nattliga gallringen, som raderar poster som är äldre än sin lagringstid (se *Integritet och gallring*). Kontrollera förhandsvisningen under **Administration → Systeminställningar → Gallring och säkerhetskopior** innan du slår på den.",
+	},
+	"retention.hour": {
+		"Hour of the day (UTC, 0–23) the retention job runs.",
+		"Timme på dygnet (UTC, 0–23) då gallringen körs.",
+	},
+	"retention.runs_days": {
+		"Days to keep test runs with their results, step results, comments and attachments (0 = forever). Runs in progress, of a project or release under legal hold or with an electronic signature are kept.",
+		"Dagar att behålla testkörningar med resultat, stegresultat, kommentarer och bilagor (0 = för alltid). Pågående körningar, körningar i ett projekt eller en release med juridiskt bevarande och körningar med en elektronisk signatur behålls.",
+	},
+	"retention.runs_keep_latest": {
+		"Always keep the runs holding one of the latest N results of each test, however old (0 = no exception).",
+		"Behåll alltid de körningar som innehåller något av de N senaste resultaten för varje test, hur gamla de än är (0 = inget undantag).",
+	},
+	"retention.logs_days": {
+		"Days to keep logs and uploaded artifacts: the sign-in log, finished test runner jobs, CI status posts, tracker sync logs and web test evidence (screenshots, traces, videos) (0 = forever).",
+		"Dagar att behålla loggar och uppladdade artefakter: inloggningsloggen, avslutade jobb i testkörningen, CI-statusposter, synkloggar mot ärendesystem och bevis från webbtester (skärmbilder, spår, videor) (0 = för alltid).",
+	},
+	"retention.notifications_days": {
+		"Days to keep in-app notifications, read or not (0 = forever).",
+		"Dagar att behålla aviseringar i appen, lästa eller inte (0 = för alltid).",
+	},
+	"retention.sessions_days": {
+		"Days to keep sign-in sessions not used for that long and API tokens that expired that long ago (0 = forever).",
+		"Dagar att behålla inloggningssessioner som inte använts så länge och API-tokens som gick ut för så länge sedan (0 = för alltid).",
+	},
+	"retention.chat_days": {
+		"Days to keep the chat message history (sent or failed messages with their text) and the personal input suggestion history (0 = forever).",
+		"Dagar att behålla historiken för chattmeddelanden (skickade eller misslyckade meddelanden med sin text) och den personliga historiken för inmatningsförslag (0 = för alltid).",
+	},
+	"retention.exploratory_days": {
+		"Days to keep the notes of completed or debriefed exploratory sessions, counted from the session's last change (0 = forever). The session and its debrief stay.",
+		"Dagar att behålla anteckningarna från avslutade eller genomgångna utforskande sessioner, räknat från sessionens senaste ändring (0 = för alltid). Sessionen och dess genomgång finns kvar.",
+	},
+	"privacy.truncate_ip": {
+		"Store and log client addresses shortened: IPv4 to /24, IPv6 to /48 (sign-in log, sessions, remembered devices, request log). Rate limits still use the full address in memory.",
+		"Lagra och logga klientadresser förkortade: IPv4 till /24, IPv6 till /48 (inloggningslogg, sessioner, betrodda enheter, begäranslogg). Begränsningar av antal försök använder fortfarande hela adressen i minnet.",
+	},
+	"privacy.notice_url": {
+		"Link to your privacy notice, shown on the sign-in page (empty = none).",
+		"Länk till er integritetspolicy, visas på inloggningssidan (tom = ingen).",
+	},
 	"system_settings.locked": {
 		"Settings that cannot be changed in **Administration → System settings**: keys (`logging.level`), prefixes ending in `.*` (`email.*`) or `*`. Their stored overrides are ignored.",
 		"Inställningar som inte kan ändras under **Administration → Systeminställningar**: nycklar (`logging.level`), prefix som slutar med `.*` (`email.*`) eller `*`. Deras sparade värden ignoreras.",
@@ -720,6 +872,11 @@ var envDocs = map[string]text{
 	"QTF_EMAIL_USERNAME":            {"`email.username`", "`email.username`"},
 	"QTF_EMAIL_FROM":                {"`email.from`", "`email.from`"},
 	"QTF_EMAIL_PORT":                {"`email.port` (ignored when not a number)", "`email.port` (ignoreras om det inte är ett tal)"},
+	"QTF_METRICS_ENABLED":           {"`metrics.enabled` (`true` or `1`)", "`metrics.enabled` (`true` eller `1`)"},
+	"QTF_METRICS_TOKEN":             {"the bearer token of `/metrics`; wins over `metrics.token_file` and a token stored in the web client", "bearer-token för `/metrics`; vinner över `metrics.token_file` och en token sparad i webbklienten"},
+	"QTF_TRACING_ENABLED":           {"`tracing.enabled` (`true` or `1`)", "`tracing.enabled` (`true` eller `1`)"},
+	"QTF_TRACING_ENDPOINT":          {"`tracing.endpoint`", "`tracing.endpoint`"},
+	"QTF_TRACING_HEADERS":           {"the headers of the trace export; win over `tracing.headers_file` and headers stored in the web client", "rubrikerna för spårexporten; vinner över `tracing.headers_file` och rubriker sparade i webbklienten"},
 	"QTF_EMAIL_PASSWORD":            {"the SMTP password; wins over `email.password_file` and a password stored in the web client", "SMTP-lösenordet; vinner över `email.password_file` och ett lösenord sparat i webbklienten"},
 	"QTF_RUNNER_ENABLED":            {"`runner.enabled` (`1` or `true` = on)", "`runner.enabled` (`1` eller `true` = på)"},
 	"QTF_LIVE_ENABLED":              {"`live.enabled` (`1` or `true` = on, anything else = off)", "`live.enabled` (`1` eller `true` = på, allt annat = av)"},
@@ -747,5 +904,6 @@ var extraEnv = []struct {
 	{"QTF_OIDC_<NAME>_CLIENT_SECRET", text{"client secret of the OIDC provider `<name>` (upper case); wins over `client_secret_file` and a secret stored in the web client", "klienthemligheten för OIDC-leverantören `<namn>` (versaler); vinner över `client_secret_file` och en hemlighet sparad i webbklienten"}},
 	{"CREDENTIALS_DIRECTORY", text{"set by systemd (`LoadCredential=`): relative `*_file` paths are resolved in it, and it is readable after the lock-down", "sätts av systemd (`LoadCredential=`): relativa `*_file`-sökvägar slås upp där, och den är läsbar efter låsningen"}},
 	{"STATE_DIRECTORY", text{"set by systemd (`StateDirectory=`): default place of the key file when the database is not SQLite", "sätts av systemd (`StateDirectory=`): standardplats för nyckelfilen när databasen inte är SQLite"}},
+	{"QTF_BACKUP_PASSPHRASE", text{"the passphrase of `qtestframe backup --encrypt`, `backup verify` and `restore` when `--passphrase-file` is not given (the server reads `backup.passphrase` instead)", "lösenfrasen för `qtestframe backup --encrypt`, `backup verify` och `restore` när `--passphrase-file` inte anges (servern läser `backup.passphrase` i stället)"}},
 	{"QTF_URL, QTF_TOKEN, QTF_CONFIGURATION", text{"defaults of `--url`, `--token` and `--configuration` of `qtestframe report`", "standardvärden för `--url`, `--token` och `--configuration` i `qtestframe report`"}},
 }

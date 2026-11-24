@@ -109,7 +109,7 @@ tags:
 - name: Catalogue
   description: Built-in catalogue of standard requirements and tests, and copying them into a project
 - name: Operations
-  description: Health, readiness and this description
+  description: Health, readiness, metrics and this description
 - name: Exploratory testing
   description: Session-based exploratory testing (charters, timer, notes, debriefs, metrics)
 - name: AI assistance
@@ -118,6 +118,10 @@ tags:
   description: Test environments, their components, health checks and bookings
 - name: Test data
   description: Shared test data sets, their links, usage and refresh requests
+- name: BDD
+  description: Gherkin tests, the step library of a project, .feature import and export
+- name: Privacy
+  description: Data retention (dry-run preview and purge), legal holds, the export and erasure of personal data
 paths:
   /api/v1/change-requests/{id}:
     parameters:
@@ -791,7 +795,7 @@ paths:
       security: []
       responses:
         '200':
-          description: The database is reachable (503 `unavailable` otherwise)
+          description: The database is reachable and every migration is applied (503 `unavailable` otherwise)
           content:
             application/json:
               schema:
@@ -799,6 +803,50 @@ paths:
                 properties:
                   status:
                     type: string
+                  checks:
+                    type: object
+                    description: The result of each check (`database`, `migrations`)
+                    additionalProperties:
+                      type: string
+        default:
+          $ref: '#/components/responses/Error'
+  /metrics:
+    get:
+      tags:
+      - Operations
+      summary: Prometheus metrics
+      operationId: getMetrics
+      description: |-
+        **Permission:** none (public); the endpoint has its own protection.
+
+        Metrics of the server in the Prometheus text format (version 0.0.4): requests, latency, database pool, Go runtime, background jobs, sign-ins, live connections and the number of projects, requirements, tests and runs. Off by default (`metrics.enabled`); answers 404 when off, or when it is served on a separate listener (`metrics.listen`). When `metrics.token` is set the request needs `Authorization: Bearer <token>`; when `metrics.allowed_ips` is set the client address must be in it; with neither, only the loopback address may read it.
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: The metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: The bearer token is missing or wrong
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: The client address may not read the metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Metrics are off, or served on another listener
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/openapi.json:
@@ -1571,7 +1619,7 @@ paths:
       summary: Providers
       operationId: getAuthProviders
       description: |-
-        public — `{"local":true,"oidc":[{"name","display_name","login_url"}],"saml":[{"name","display_name","login_url"}]}`
+        public — `{"local":true,"oidc":[{"name","display_name","login_url"}],"saml":[{"name","display_name","login_url"}],"password_min_length","password_min_classes","passkeys":true,"privacy_notice_url"}`; `passkeys`: the passwordless sign-in with a passkey is offered; `privacy_notice_url`: the link shown on the sign-in page, "" = none (system setting `privacy.notice_url`).
 
         **Permission:** none (public).
       x-permission: none
@@ -11571,7 +11619,7 @@ paths:
       summary: Restore
       operationId: postAdminRestore
       description: |-
-        multipart `backup` (ZIP) + field `confirm=RESTORE`; the schema version must match; replaces **all** data in one transaction and signs everyone out → `{"restored": {table: rows}}`
+        multipart `backup` (ZIP, or an encrypted backup) + field `confirm=RESTORE` + optional `passphrase` for an encrypted backup (default: the passphrase of the scheduled backups); the schema version must match; replaces **all** data in one transaction and signs everyone out → `{"restored": {table: rows}}`
 
         **Permission:** any authenticated user; the handler checks: super admin.
       x-permission: authenticated
@@ -11593,6 +11641,133 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/backups:
+    get:
+      tags:
+      - Administration
+      summary: Scheduled backups and their history
+      operationId: getAdminBackups
+      description: |-
+        The settings of the scheduled backups (section `backup` of the system settings, without secrets: `encrypted` says whether a passphrase is set) with the next scheduled backup, and the latest runs, newest first → `{"settings": {enabled, schedule, schedule_error?, directory, keep_last, keep_days, encrypted, s3_enabled, s3_target?, next_run_at?}, "running": bool, "runs": [BackupRun]}`; BackupRun = `{id, kind: schedule|manual, status: running|succeeded|failed, started_by, started_at, finished_at?, file_name, size, sha256, encrypted, remote_key, rows, schema_version, error, pruned_at?, verified_at?, verify_error}`. Query `limit` (default 100).
+
+        **Permission:** any authenticated user; the handler checks: super admin.
+      x-permission: authenticated
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/backups/run:
+    post:
+      tags:
+      - Administration
+      summary: Run backup now
+      operationId: postAdminBackupsRun
+      description: |-
+        Starts a backup into `backup.directory` with the settings of the scheduled backups (encryption, upload, retention) in the background → 202 with the BackupRun (status `running`). 400 when no directory is set, 409 while a backup runs (on any server: the backup lock). Audited as `admin.backup.run`; the outcome as `admin.backup.completed` or `admin.backup.failed`.
+
+        **Permission:** any authenticated user; the handler checks: super admin.
+      x-permission: authenticated
+      responses:
+        '202':
+          description: Started
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/backups/{id}/download:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      tags:
+      - Administration
+      summary: Download a backup file
+      operationId: getAdminBackupsByIdDownload
+      description: |-
+        The file of a backup run from the backup directory (`application/zip`, or `application/octet-stream` when encrypted). 404 when the run has no file or it is missing, 410 when the retention rules deleted it. Audited as `admin.backup.download`.
+
+        **Permission:** any authenticated user; the handler checks: super admin.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: The backup file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/backups/{id}/verify:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Administration
+      summary: Verify a backup file
+      operationId: postAdminBackupsByIdVerify
+      description: |-
+        Opens the file of a backup run and checks it: its SHA-256 against the one recorded when it was written, the decryption (with `backup.passphrase`), the ZIP structure and checksums, the manifest and the row counts → `{ok, error?, sha256, sha256_ok, encrypted, manifest?}`. The outcome is recorded with the run (`verified_at`, `verify_error`) and audited as `admin.backup.verify`.
+
+        **Permission:** any authenticated user; the handler checks: super admin.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Error'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/roles:
@@ -19718,7 +19893,7 @@ paths:
       summary: List organisations with usage and policy
       operationId: getAdminTenants
       description: |-
-        `{items: [{id, slug, name, created_at, suspended_at?, policy: {max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers, email_domains, note}, usage: {members, projects, requirements, tests, runs, files, storage_bytes, last_activity}, ai_enabled, erecords_enabled, mfa_required}]}`. Super administrators only: the handler checks.
+        `{items: [{id, slug, name, created_at, suspended_at?, policy: {max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers, email_domains, note, retention}, usage: {members, projects, requirements, tests, runs, files, storage_bytes, last_activity}, ai_enabled, erecords_enabled, mfa_required}]}`. Super administrators only: the handler checks.
 
         **Permission:** signed in.
       x-permission: authenticated
@@ -19772,7 +19947,7 @@ paths:
       summary: Set the policy of an organisation
       operationId: putAdminTenantsByIdPolicy
       description: |-
-        Replaces the policy `{max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers: ["local", "oidc:<name>", "saml:<name>"], email_domains, note}` (0 = no limit; an e-mail domain belongs to one organisation, 409 otherwise) and returns the organisation (audited as `tenant.policy` with the changes). Super administrators only: the handler checks.
+        Replaces the policy `{max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers: ["local", "oidc:<name>", "saml:<name>"], email_domains, note, retention}` (0 = no limit; `retention` overrides the system retention for the organisation: `{"runs_days", "runs_keep_latest", "logs_days", "notifications_days", "sessions_days", "chat_days", "exploratory_days"}`, days with 0 = forever, missing keys use the system setting; an e-mail domain belongs to one organisation, 409 otherwise) and returns the organisation (audited as `tenant.policy` with the changes). Super administrators only: the handler checks.
 
         **Permission:** signed in.
       x-permission: authenticated
@@ -20108,7 +20283,7 @@ paths:
       summary: Pending second factor
       operationId: getAuthMfaChallenge
       description: |-
-        Describes the sign-in that waits for its second factor (the `qtf_mfa` cookie set by `POST /auth/login` or an OIDC callback): `{"mfa_required": true, "methods": ["totp","recovery_code"], "remember_days", "expires_at"}`. 401 `mfa_expired` when none is pending.
+        Describes the sign-in that waits for its second factor (the `qtf_mfa` cookie set by `POST /auth/login` or an OIDC callback): `{"mfa_required": true, "methods", "remember_days", "expires_at"}`; `methods` lists `totp` and `recovery_code` (authenticator app) and `passkey` (`POST /auth/mfa/passkey`). 401 `mfa_expired` when none is pending.
 
         **Permission:** none (public).
       x-permission: none
@@ -20156,7 +20331,7 @@ paths:
       summary: Own MFA status
       operationId: getAuthMfa
       description: |-
-        `{"enabled", "enabled_at", "pending", "recovery_codes_left", "recovery_codes_total", "trusted_devices", "required", "enrolment_deadline", "enrolment_required", "remember_days"}`. The TOTP secret is never returned.
+        `{"enabled", "enabled_at", "pending", "recovery_codes_left", "recovery_codes_total", "trusted_devices", "required", "enrolment_deadline", "enrolment_required", "remember_days", "passkeys"}` (`passkeys`: the number of passkeys, which are a second factor too). The TOTP secret is never returned.
 
         **Permission:** signed in.
       x-permission: authenticated
@@ -20437,6 +20612,349 @@ paths:
       operationId: postUsersByIdMfaReset
       description: |-
         Super administrators only; as `POST /members/{uid}/mfa/reset` for any user (audited as `user.reset_mfa`).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/login/options:
+    post:
+      tags:
+      - Auth
+      summary: "Passkey sign-in options"
+      operationId: postAuthPasskeysLoginOptions
+      description: |-
+        Starts a passwordless sign-in with a passkey (discoverable credential, also for the passkey suggestions of the e-mail field): `{"publicKey": {"challenge", "rpId", "timeout", "userVerification": "required", "allowCredentials": []}}` for `navigator.credentials.get()`. The challenge is single-use, valid 5 minutes, stored on the server and bound to the short-lived `qtf_passkey` cookie set with the answer. 403 `passkeys_disabled` when passkeys, the passwordless sign-in or local sign-in are off; 503 `passkeys_unavailable` without a usable relying party (an https `server.base_url`); 429 after 60 requests in 5 minutes per address.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/login:
+    post:
+      tags:
+      - Auth
+      summary: "Sign in with a passkey"
+      operationId: postAuthPasskeysLogin
+      description: |-
+        `{"credential", "tenant"?}`: the `PublicKeyCredential` JSON of the assertion (base64url fields `id`, `rawId`, `response.clientDataJSON`, `response.authenticatorData`, `response.signature`, `response.userHandle`) with the `qtf_passkey` cookie of the options. The server checks the client data type, challenge and origin, the RP ID hash, the UP and UV flags, the signature and the signature counter (a counter that did not increase is let in, logged and audited as `passkey.counter_regressed`). Only local accounts can sign in this way (403 `passkey_sso` otherwise). The answer is `/auth/me` and the session cookie; no second factor is asked for (the passkey verified the user). Errors: 400 `passkey_expired` (unknown, used or expired challenge), `passkey_unknown`, `passkey_invalid`; 429 after 10 attempts in 5 minutes per address. The sign-in is audited as `login` with the method `passkey`.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/passkey/options:
+    post:
+      tags:
+      - Auth
+      summary: "Passkey second-factor options"
+      operationId: postAuthMfaPasskeyOptions
+      description: |-
+        For the sign-in waiting for its second factor (`qtf_mfa` cookie) when `methods` contains `passkey`: request options with the user's passkeys in `allowCredentials` and `userVerification: "preferred"`. 401 `mfa_expired` when no sign-in is pending; 409 when the user has no passkey.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/passkey:
+    post:
+      tags:
+      - Auth
+      summary: "Give a passkey as second factor"
+      operationId: postAuthMfaPasskey
+      description: |-
+        `{"credential", "remember"?}` completes the pending sign-in with a passkey assertion, like `POST /auth/mfa/verify` (the same rate limits and the limit of 5 failed attempts per pending sign-in). The answer is `/auth/me`; audited as `login` with `mfa=passkey`.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys:
+    get:
+      tags:
+      - Auth
+      summary: "Own passkeys"
+      operationId: getAuthPasskeys
+      description: |-
+        `{"items": [{"id", "name", "credential_id", "alg", "aaguid", "transports", "attestation", "user_verified", "backup_eligible", "backed_up", "created_at", "last_used_at"}], "enabled", "available", "reason"?, "passwordless", "rp_id", "recent_auth_until", "reauth_minutes"}`. Public keys are never returned. `recent_auth_until`: until then passkeys can be added and deleted without confirming one's identity again (`POST /auth/reauth`).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/register/options:
+    post:
+      tags:
+      - Auth
+      summary: "Passkey registration options"
+      operationId: postAuthPasskeysRegisterOptions
+      description: |-
+        Creation options for `navigator.credentials.create()`: `{"publicKey": {"rp", "user", "challenge", "pubKeyCredParams" (ES256, EdDSA, RS256), "timeout", "excludeCredentials", "authenticatorSelection" (`residentKey` required while the passwordless sign-in is on), "attestation": "none"}}`. Browser sessions only, with a recent sign-in or re-authentication (403 `reauth_required`); 409 with 25 passkeys.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/register:
+    post:
+      tags:
+      - Auth
+      summary: "Register a passkey"
+      operationId: postAuthPasskeysRegister
+      description: |-
+        `{"name"?, "credential"}`: the `PublicKeyCredential` JSON of the registration (`response.clientDataJSON`, `response.attestationObject`, `response.transports`). Accepted attestation formats: `none` and `packed` (self attestation or x5c, not checked against trust anchors); algorithms ES256, EdDSA and RS256. 201 with the passkey; 400 `passkey_expired` / `passkey_invalid`; 409 when the passkey is already registered. Lifts a pending MFA enrolment requirement (a passkey is a second factor). Audited as `passkey.register`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Auth
+      summary: "Rename a passkey"
+      operationId: patchAuthPasskey
+      description: |-
+        `{"name"}` (1–100 characters, one line) — the passkey. Audited as `passkey.rename`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Auth
+      summary: "Delete a passkey"
+      operationId: deleteAuthPasskey
+      description: |-
+        Needs a sign-in or re-authentication less than 10 minutes ago (403 `reauth_required`: confirm with `POST /auth/reauth`). The last second factor of an account that a policy requires MFA of cannot be deleted (403 `mfa_required`). 204; audited as `passkey.delete`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/reauth/options:
+    post:
+      tags:
+      - Auth
+      summary: "Passkey re-authentication options"
+      operationId: postAuthReauthOptions
+      description: |-
+        Request options to confirm one's identity with a passkey (`allowCredentials`: the caller's passkeys), bound to the session. 409 without passkeys.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/reauth:
+    post:
+      tags:
+      - Auth
+      summary: "Confirm identity"
+      operationId: postAuthReauth
+      description: |-
+        Confirms the user's identity in this browser session for sensitive changes (adding and deleting passkeys): `{"password"}` (local accounts), `{"code"}` (authenticator app or recovery code) or `{"credential"}` (a passkey assertion for `POST /auth/reauth/options`). `{"reauth_until"}`; 403 `reauth_failed`; 429 after 10 attempts in 15 minutes. Audited as `user.reauth`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/members/{uid}/passkeys/revoke:
+    parameters:
+    - name: uid
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Members
+      summary: "Revoke a member's passkeys"
+      operationId: postMembersByUidPasskeysRevoke
+      description: |-
+        Deletes all passkeys of the member and signs them out — `{"revoked": n}` (409 when they have none). As for MFA resets, a tenant administrator cannot revoke those of super administrators or users of other tenants. Audited as `member.revoke_passkeys`.
+
+        **Permission:** `member.manage`.
+      x-permission: member.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/passkeys/revoke:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: "Revoke a user's passkeys"
+      operationId: postUsersByIdPasskeysRevoke
+      description: |-
+        Super administrators only; as `POST /members/{uid}/passkeys/revoke` for any user (audited as `user.revoke_passkeys`).
 
         **Permission:** signed in.
       x-permission: authenticated
@@ -22090,6 +22608,83 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/import/preview:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Preview a test import from another tool
+      operationId: postProjectsByPidTestsImportPreview
+      description: |-
+        Parses the test case export of another test management tool and shows what an import would do; nothing is stored (`qtestframe import-tests --dry-run`, the *Import from a test tool* dialog of the tests list). Form fields: `file`, `source` (`testrail` CSV/XML, `xray` CSV/JSON, `zephyr` CSV/XML, `qtest` XLSX/CSV, `azure` CSV), `format` (csv, xml, json, xlsx; default from the file name), `folder_id` (the test folder to import into), `priorities`, `statuses` (JSON objects source value → priority or test status, overriding the guesses) and `fields` (JSON object source field → custom field key of tests, `""` to leave it out). → `{source, source_name, format, file, target_folder, total, summary: {new, update, unchanged, conflict, error}, rows: [{index, location, external_id, title, folder, type, priority, status, steps, action, id?, key?, links, unresolved, executions, warnings, errors}], priorities: [{value, count, target, guessed}], statuses, fields: [{name, count, sample, target, guessed}], custom_fields: [{key, label, type}], priority_options, status_options, history: {runs, executions, known}, unresolved_links, previous, warnings, errors}`. A row is `update` when the test was imported before (same source and external ID) and the file changed it, `unchanged` when the file did not, `conflict` when it was also changed in Qtestframe since.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestImportUpload'
+      responses:
+        '200':
+          description: What the import would do; nothing is stored
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/import/apply:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Import tests from another tool
+      operationId: postProjectsByPidTestsImportApply
+      description: |-
+        Imports the file of the preview in one transaction (after the impact gate, `?dry_run=impact`): new tests are created, tests imported before are updated (conflicts only with `overwrite_conflicts=true`), folders are created for sections, suites, modules or area paths (`create_folders`, default true), tests are linked to the requirements whose key, imported external ID or `ID:` in the source matches a reference (`link_requirements`, default true; links are only added) and past results become completed runs, one per run of the source (`history`, default true; needs `run.write`). Further fields: those of the preview, `create` (default true: create new tests), `exclude` (JSON array of row indexes). Importing again neither duplicates tests nor results. → `{created, updated, unchanged, skipped, folders_created, links_added, runs_created, results_imported, unresolved_links, items: [{index, id, key, title, action}], skipped_rows: [{index, location, title, reason}], warnings}`. Audited as `test.import`.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestImportUpload'
+      responses:
+        '200':
+          description: Imported
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/tests/stubs:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -23685,6 +24280,650 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/gherkin/check:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - BDD
+      summary: Check Gherkin
+      operationId: postProjectsByPidGherkinCheck
+      description: |-
+        Parses a feature `{source}` (English or Swedish keywords: Feature/Egenskap, Background/Bakgrund, Scenario, Scenario Outline/Abstrakt scenario/Scenariomall, Examples/Exempel, Rule/Regel, Given/Givet, When/När, Then/Så, And/Och, But/Men) and matches its steps against the project's step library; what the Gherkin editor shows as you type. Always 200: `{valid, errors: [{line, column, message}], language, feature, steps: [{line, keyword, text, defined, definition, suggestion}], scenarios: [{name, line, steps}], undefined}` (`scenarios`: one per scenario and Examples row, only when valid)
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/gherkin/convert:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - BDD
+      summary: Convert a test between steps and Gherkin
+      operationId: postProjectsByPidGherkinConvert
+      description: |-
+        Best-effort conversion; nothing is saved. `{to: "gherkin", language: "en" or "sv", title, description, preconditions, steps, parameters, data_rows, tags}` returns `{gherkin, warnings}`: preconditions become Given steps, actions When steps, expected results Then steps, step data doc strings, data rows a Scenario Outline with Examples. `{to: "steps", gherkin}` returns `{preconditions, steps, parameters, data_rows, warnings}`: the Background and leading Given steps become preconditions, each When a step with the following Then steps as its expected result, the first Examples table the test data; several scenarios are written one after the other. 400 when the Gherkin does not parse
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/step-definitions:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - BDD
+      summary: The step library
+      operationId: getProjectsByPidStepDefinitions
+      description: |-
+        `{items: [step definitions with usage_count], uses: {definition id: [{test_id, test_key, test_title, line, keyword, text}]}, undefined: [{text, keyword, suggestion, uses}], unparsed: {test id: error}}`: the reusable steps of the project's Gherkin tests, where each is used, and the steps no definition matches (with a suggested Cucumber expression)
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - BDD
+      summary: Add a step to the library
+      operationId: postProjectsByPidStepDefinitions
+      description: |-
+        `{pattern, kind, keyword, description}`: `pattern` is a Cucumber expression (`{int}`, `{float}`, `{word}`, `{string}`, `{}`, optional `(text)`, `a/b` alternatives, backslash escapes) or, with `kind: "regex"`, a regular expression; `keyword` (`given`, `when`, `then` or empty) only orders autocompletion. 409 when the project already has the pattern. Audited as `step.create`
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/step-definitions/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - BDD
+      summary: Change a library step
+      operationId: patchStepDefinitionsById
+      description: |-
+        Changes `pattern`, `kind`, `keyword` or `description` of a step; the tests are not changed (see rename). Audited as `step.update`
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - BDD
+      summary: Remove a library step
+      operationId: deleteStepDefinitionsById
+      description: |-
+        Removes the step from the library; the tests keep their steps, which become undefined. Audited as `step.delete`
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/step-definitions/{id}/rename:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - BDD
+      summary: Rename a step in every test
+      operationId: postStepDefinitionsByIdRename
+      description: |-
+        `{pattern}`: a Cucumber expression with as many parameters as the current pattern. Every step of the project's Gherkin tests that matched the old pattern is rewritten to the new one, keeping its parameters (a test with errors is left alone); each changed test gets a new version. Returns `{item, tests: [{id, key, steps, version}], steps}`. Audited as `step.rename` and `test.update`
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/features/import:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - BDD
+      summary: Import .feature files
+      operationId: postProjectsByPidTestsFeaturesImport
+      description: |-
+        `{files: [{name, content}], mode: "scenario" or "feature", folder_id, dry_run}`: Gherkin tests, one per scenario (with the Background; an outline keeps its Examples) or one per feature file. Tags become tags; tags naming a requirement of the project (`@SHOP-REQ-12`, `@req:SHOP-REQ-12`, or `@REQ-12` without the project key) become trace links instead. Files with errors are skipped and listed. Returns `{tests: [{id, key, title, file, tags, requirements}], links, errors: [{file, line, message}], dry_run}`; 201 (200 for a dry run). At most 200 files and 2000 tests
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/features:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - BDD
+      summary: Export tests as .feature files
+      operationId: getProjectsByPidTestsFeatures
+      description: |-
+        A zip with a `.feature` file per test of `q` (or `query`) and `ids`: a Gherkin test as written, a test in the step format converted (in `language`, en or sv), each tagged with its key and the keys of the requirements it verifies. At most 2000 tests
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: ids
+        in: query
+        schema:
+          type: string
+      - name: language
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/features/export:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - BDD
+      summary: Export tests as .feature files (POST)
+      operationId: postProjectsByPidTestsFeaturesExport
+      description: |-
+        The same as GET with a body `{query, ids: [...], language}`
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/gherkin-results:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - BDD
+      summary: Latest result of each Gherkin step
+      operationId: getTestsByIdGherkinResults
+      description: |-
+        `{execution_id, steps: [{line, status, results}]}`: the step results of the latest execution of a Gherkin test that has any result, by the line of the step (a run snapshots a step with the id `gherkin:<line>`); a step run in several scenarios (Background, Examples rows) combines their results, failed first
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/retention:
+    get:
+      tags:
+      - Privacy
+      summary: Preview the retention purge (dry run)
+      operationId: getAdminRetention
+      description: |-
+        What the retention purge would delete now: per organisation (and for the data of no organisation: sign-in sessions and the sign-in log) the effective policy (system settings `retention.*` with the organisation's override) and, per category (`runs`, `logs`, `notifications`, `sessions`, `chat`, `exploratory`), the number of records older than the period (`count`) and those kept by a legal hold or an electronic signature (`held`). Also whether the nightly job is on, its hour (UTC), the last and next run and the projects and releases under legal hold. The audit trail is never purged. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionView'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/retention/run:
+    post:
+      tags:
+      - Privacy
+      summary: Purge now
+      operationId: postAdminRetentionRun
+      description: |-
+        `{"confirm": "PURGE"}`: deletes what the preview counts, now (also while the nightly job is off). Each organisation with deletions gets a `retention.purge` audit entry; the system trail gets one too. Answers like `GET /admin/retention` with the counts of what was deleted. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: string
+                  enum: [PURGE]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/legal-hold:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Privacy
+      summary: Legal hold of a project and its releases
+      operationId: getProjectsByPidLegalHold
+      description: |-
+        `{project: hold, releases: [{id, name, version, hold}], can_edit}`; a hold is `{on, reason, by, at}`. Nothing of a held project or release is purged by the retention job, and it cannot be deleted.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHoldView'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Privacy
+      summary: Set or lift the legal hold of a project
+      operationId: putProjectsByPidLegalHold
+      description: |-
+        `{"on": true, "reason": "…"}` sets the hold (a reason is required), `{"on": false}` lifts it. Audited as `legal_hold.set` / `legal_hold.lift`. Organisation administrators (`tenant.manage`) and super administrators only, signed in (not with an API token): the handler checks. Answers like `GET`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalHold'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHoldView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/releases/{rid}/legal-hold:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: rid
+      in: path
+      required: true
+      description: release id
+      schema:
+        type: string
+    put:
+      tags:
+      - Privacy
+      summary: Set or lift the legal hold of a release
+      operationId: putProjectsByPidReleasesByRidLegalHold
+      description: |-
+        Like the project's hold: the runs of a held release (and their results and evidence) are not purged and cannot be deleted. Organisation and super administrators only: the handler checks. Answers like `GET /projects/{pid}/legal-hold`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalHold'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHoldView'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/export:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Privacy
+      summary: Export the personal data of a user
+      operationId: getUsersByIdExport
+      description: |-
+        A ZIP of JSON files (`profile`, `memberships`, `project_roles`, `comments`, `mentions`, `sessions`, `api_tokens`, `sign_in_log`, `trusted_devices`, `notifications`, `electronic_signatures`, `input_history`, `audit_entries`, `index.json`, `README.txt`): the data subject access (GDPR art. 15 and 20). Secrets (password hash, second factor, token hashes) are never exported. Audited as `user.data_export`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: ZIP archive
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/erase:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Privacy
+      summary: Erase (anonymise) a user
+      operationId: postUsersByIdErase
+      description: |-
+        `{"confirm": "<the account's e-mail address>"}`. Replaces the name and address with a pseudonym (`Former user #<n>`, `former-user-<n>@erased.invalid`), deletes the personal settings, sessions, API tokens, second factor, remembered devices, notifications, sign-in log, input history, memberships and project roles, and re-attributes authored content to the pseudonym. Electronic signatures, sign-offs and audit entries are kept unchanged (regulatory records; the audit trail is a hash chain). The account is disabled and cannot sign in again. Not for your own account or the last super administrator. Audited as `user.erase` (with the pseudonym, not the address). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErasureResult'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/me/export:
+    get:
+      tags:
+      - Privacy
+      summary: Download your own data
+      operationId: getAuthMeExport
+      description: |-
+        The caller's personal data as a ZIP of JSON files (like `GET /users/{id}/export`). Signed in with a session, not with an API token. Audited as `user.data_export`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: ZIP archive
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -23870,6 +25109,135 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    LegalHold:
+      type: object
+      properties:
+        'on':
+          type: boolean
+        reason:
+          type: string
+        by:
+          type: string
+        at:
+          type: [string, 'null']
+          format: date-time
+    LegalHoldView:
+      type: object
+      properties:
+        project:
+          $ref: '#/components/schemas/LegalHold'
+        releases:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              version:
+                type: string
+              hold:
+                $ref: '#/components/schemas/LegalHold'
+        can_edit:
+          type: boolean
+    RetentionView:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        hour:
+          type: integer
+        last_run:
+          type: [string, 'null']
+          format: date-time
+        next_run:
+          type: [string, 'null']
+          format: date-time
+        reports:
+          type: array
+          items:
+            type: object
+            properties:
+              tenant_id:
+                type: string
+                description: '"" for the data of no organisation (sessions, sign-in log)'
+              tenant_name:
+                type: string
+              dry_run:
+                type: boolean
+              policy:
+                type: object
+                properties:
+                  days:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  runs_keep_latest:
+                    type: integer
+                  overridden:
+                    type: array
+                    items:
+                      type: string
+              counts:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    category:
+                      type: string
+                    days:
+                      type: integer
+                    count:
+                      type: integer
+                    held:
+                      type: integer
+              at:
+                type: string
+                format: date-time
+        holds:
+          type: array
+          items:
+            type: object
+            properties:
+              kind:
+                type: string
+                enum: [project, release]
+              id:
+                type: string
+              tenant_id:
+                type: string
+              tenant_name:
+                type: string
+              project_id:
+                type: string
+              project_key:
+                type: string
+              project_name:
+                type: string
+              name:
+                type: string
+              hold:
+                $ref: '#/components/schemas/LegalHold'
+    ErasureResult:
+      type: object
+      properties:
+        user_id:
+          type: string
+        pseudonym:
+          type: string
+        email:
+          type: string
+        deleted:
+          type: object
+          additionalProperties:
+            type: integer
+        rewritten:
+          type: integer
+        kept:
+          type: object
+          additionalProperties:
+            type: integer
     AIStatus:
       type: object
       description: Availability of the optional AI assistance.
@@ -25052,6 +26420,46 @@ components:
         exclude:
           type: string
           description: JSON array of candidate indexes
+    TestImportUpload:
+      type: object
+      required:
+      - file
+      - source
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The export of the other tool (CSV, XML, JSON or XLSX), at most 20 MB
+        source:
+          type: string
+          enum: [testrail, xray, zephyr, qtest, azure]
+        format:
+          type: string
+          enum: [csv, xml, json, xlsx]
+        folder_id:
+          type: string
+        priorities:
+          type: string
+          description: JSON object source priority → critical, high, medium or low
+        statuses:
+          type: string
+          description: JSON object source status → draft, ready, review or deprecated
+        fields:
+          type: string
+          description: JSON object source field → custom field key ("" leaves it out)
+        create_folders:
+          type: boolean
+        link_requirements:
+          type: boolean
+        history:
+          type: boolean
+        overwrite_conflicts:
+          type: boolean
+        create:
+          type: boolean
+        exclude:
+          type: string
+          description: JSON array of row indexes
     Tenant:
       type: object
       properties:
@@ -25687,6 +27095,15 @@ components:
           - javascript
         script:
           type: string
+        format:
+          type: string
+          enum:
+          - steps
+          - gherkin
+          description: '"steps" (preconditions and steps, the default) or "gherkin": the test is the feature in gherkin.'
+        gherkin:
+          type: string
+          description: The Gherkin feature of a test in the gherkin format (English or Swedish keywords).
         expected_result:
           type: string
         priority:

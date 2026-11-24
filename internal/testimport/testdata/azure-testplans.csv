@@ -1,0 +1,6 @@
+ID,Work Item Type,Title,Test Step,Step Action,Step Expected,Area Path,Assigned To,State,Priority,Tags,Tests
+4711,Test Case,Cancel an order before shipping,,,,Shop\Orders\Cancel,Ada Tester <ada@example.com>,Ready,1,orders; smoke,4100
+,,,1,Open the order history,The orders are listed,,,,,,
+,,,2,Cancel the newest order,The order shows Cancelled,,,,,,
+4712,Test Case,Track a shipment,,,,Shop\Orders\Tracking,,Design,3,orders,"4101, 4999"
+,,,1,Open a shipped order,The tracking link is shown,,,,,,

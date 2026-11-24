@@ -15,6 +15,7 @@ import {
   parseScopes,
   pendingRestart,
   PROVIDER_NAME,
+  ratioPercent,
   searchSettings,
   SECTION_GROUPS,
   SECTIONS,
@@ -23,8 +24,40 @@ import {
   settingsDiff,
   sourceSeverity,
   testValues,
+  tracingFailing,
+  type MonitoringInfo,
   type SettingView,
 } from './systemSettings'
+
+describe('monitoring', () => {
+  const base: MonitoringInfo = {
+    metrics_enabled: true,
+    metrics_listen: '',
+    metrics_protection: ['loopback'],
+    tracing_enabled: true,
+    tracing_endpoint: 'http://otel:4318/v1/traces',
+    sample_ratio: 1,
+    spans: { exported: 0, dropped: 0, failed: 0, queue_length: 0, queue_maximum: 4096 },
+  }
+  it('shows the sample ratio as a percentage', () => {
+    expect(ratioPercent(1)).toBe('100')
+    expect(ratioPercent(0.1)).toBe('10')
+    expect(ratioPercent(0.005)).toBe('0.5')
+    expect(ratioPercent(2)).toBe('100')
+    expect(ratioPercent(-1)).toBe('0')
+  })
+  it('flags an export whose last error is newer than its last success', () => {
+    expect(tracingFailing(base)).toBe(false)
+    expect(tracingFailing({ ...base, spans: { ...base.spans, last_error: 'x', last_error_at: '2026-11-24T10:00:00Z' } })).toBe(true)
+    expect(tracingFailing({ ...base, spans: { ...base.spans, last_error: 'x', last_error_at: '2026-11-24T10:00:00Z', last_export: '2026-11-24T10:01:00Z' } })).toBe(false)
+    expect(tracingFailing({ ...base, spans: { ...base.spans, last_error: 'x', last_error_at: '2026-11-24T10:02:00Z', last_export: '2026-11-24T10:01:00Z' } })).toBe(true)
+    expect(tracingFailing({ ...base, tracing_enabled: false, spans: { ...base.spans, last_error_at: '2026-11-24T10:00:00Z' } })).toBe(false)
+  })
+  it('is a section of the server group with texts for every protection', () => {
+    expect(SECTION_GROUPS.server).toContain('monitoring')
+    for (const p of ['token', 'allowlist', 'loopback'] as const) expect(en.sysSettings.monitoring.protectionKinds[p]).toBeTruthy()
+  })
+})
 
 describe('stored secrets', () => {
   it('lists the provider details in order and marks the key source as a message', () => {
@@ -70,7 +103,9 @@ const SERVER_KEYS = [
   'hardening.no_new_privs', 'hardening.landlock', 'hardening.seccomp', 'hardening.drop_capabilities', 'hardening.read_only_paths', 'hardening.read_write_paths', 'secrets.provider',
   'auth.local', 'auth.session_ttl', 'auth.session_idle_timeout', 'auth.password_min_length', 'auth.password_min_classes', 'auth.password_history', 'auth.password_max_age_days',
   'auth.login_max_attempts', 'auth.login_lockout', 'auth.cookie_secure', 'auth.token_max_days', 'auth.token_require_expiry',
+  'auth.passkeys.enabled', 'auth.passkeys.passwordless', 'auth.passkeys.require_for_admins', 'auth.passkeys.rp_id', 'auth.passkeys.origins',
   'logging.level', 'logging.format', 'logging.syslog.enabled', 'logging.syslog.network', 'logging.syslog.address', 'logging.syslog.format', 'logging.syslog.facility', 'logging.syslog.tag', 'logging.syslog.ca_file', 'logging.syslog.cert_file', 'logging.syslog.key_file',
+  'metrics.enabled', 'metrics.listen', 'metrics.token', 'metrics.allowed_ips', 'tracing.enabled', 'tracing.endpoint', 'tracing.headers', 'tracing.sample_ratio', 'tracing.service_name',
   'email.enabled', 'email.host', 'email.port', 'email.tls', 'email.username', 'email.password', 'email.from', 'email.from_name', 'email.reply_to', 'email.timeout', 'email.digest_hour',
   'outbound.proxy', 'outbound.no_proxy', 'outbound.allowed_hosts', 'outbound.denied_hosts', 'outbound.block_private',
   'runner.enabled', 'runner.timeout', 'runner.max_output_bytes', 'runner.deny_network', 'runner.sandbox', 'runner.work_dir', 'runner.interpreters', 'runner.web.enabled', 'runner.web.browser', 'runner.web.channel', 'runner.web.browser_channels', 'runner.web.headless',
@@ -81,6 +116,11 @@ const SERVER_KEYS = [
   'ai.enabled', 'ai.provider', 'ai.url', 'ai.model', 'ai.api_key', 'ai.timeout', 'ai.max_tokens', 'ai.temperature', 'ai.rate_limit',
   'ai.features.draft_tests', 'ai.features.improve_requirement', 'ai.features.summarize_run', 'ai.features.suggest_mappings', 'ai.features.suggest_criteria',
   'ai.price_input', 'ai.price_output',
+  'backup.enabled', 'backup.schedule', 'backup.directory', 'backup.keep_last', 'backup.keep_days', 'backup.passphrase',
+  'backup.s3.enabled', 'backup.s3.endpoint', 'backup.s3.region', 'backup.s3.bucket', 'backup.s3.prefix', 'backup.s3.access_key_id', 'backup.s3.secret_access_key',
+  'retention.enabled', 'retention.hour', 'retention.runs_days', 'retention.runs_keep_latest', 'retention.logs_days', 'retention.notifications_days',
+  'retention.sessions_days', 'retention.chat_days', 'retention.exploratory_days',
+  'privacy.truncate_ip', 'privacy.notice_url',
 ]
 
 describe('system settings texts', () => {

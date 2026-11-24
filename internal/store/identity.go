@@ -103,6 +103,9 @@ func (s *Store) UpdateTenant(ctx context.Context, id, name string) (*model.Tenan
 // DeleteTenant removes a tenant and all its data.
 func (s *Store) DeleteTenant(ctx context.Context, id string) error {
 	return s.tx(ctx, func(c conn) error {
+		if err := legalHoldGuard(ctx, c, `SELECT COUNT(*) FROM projects WHERE tenant_id = ? AND legal_hold = ?`, id); err != nil {
+			return err
+		}
 		// Tables carrying tenant_id without FK to tenants.
 		for _, t := range []string{"audit_log", "audit_heads", "audit_checkpoints", "audit_backfill", "sessions", "comments", "revisions"} {
 			if _, err := c.exec(ctx, `DELETE FROM `+t+` WHERE tenant_id = ?`, id); err != nil {
@@ -141,6 +144,7 @@ func scanUser(r interface{ Scan(...any) error }) (*model.User, error) {
 	}
 	u.CreatedAt = u.CreatedAt.UTC()
 	u.PasswordChangedAt = timePtr(changed)
+	u.Erased = strings.HasSuffix(u.Email, "@"+model.ErasedEmailDomain)
 	_ = json.Unmarshal([]byte(prefs), &u.Preferences) // unknown/old keys are ignored
 	return &u, nil
 }
@@ -372,7 +376,8 @@ func (s *Store) CountTenantAdmins(ctx context.Context, tenantID string) (int, er
 
 func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]model.Membership, error) {
 	rows, err := s.c(ctx).query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.roles, m.created_at,
-		CASE WHEN su.user_id IS NULL THEN 0 ELSE 1 END, CASE WHEN mf.enabled_at IS NULL THEN 0 ELSE 1 END
+		CASE WHEN su.user_id IS NULL THEN 0 ELSE 1 END, CASE WHEN mf.enabled_at IS NULL THEN 0 ELSE 1 END,
+		(SELECT COUNT(*) FROM webauthn_credentials wc WHERE wc.user_id = m.user_id)
 		FROM memberships m JOIN tenants t ON t.id = m.tenant_id JOIN users u ON u.id = m.user_id
 		LEFT JOIN scim_users su ON su.tenant_id = m.tenant_id AND su.user_id = m.user_id
 		LEFT JOIN user_mfa mf ON mf.user_id = m.user_id `+where, arg)
@@ -385,7 +390,7 @@ func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]m
 		var m model.Membership
 		var scim, mfa int
 		var roles string
-		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &roles, &m.CreatedAt, &scim, &mfa); err != nil {
+		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &roles, &m.CreatedAt, &scim, &mfa, &m.Passkeys); err != nil {
 			return nil, err
 		}
 		m.Roles = decodeRoles(roles, m.Role)
@@ -409,10 +414,10 @@ func (s *Store) CreateSession(ctx context.Context, sess *model.Session) error {
 // GetSession returns a non-expired session.
 func (s *Store) GetSession(ctx context.Context, id string) (*model.Session, error) {
 	var sess model.Session
-	var seen sql.NullTime
-	err := s.c(ctx).row(ctx, `SELECT id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen, mfa_enrol_required FROM sessions WHERE id = ?`, id).
-		Scan(&sess.ID, &sess.UserID, &sess.TenantID, &sess.CSRF, &sess.CreatedAt, &sess.ExpiresAt, &sess.IP, &sess.UserAgent, &seen, &sess.MFAEnrolRequired)
-	sess.LastSeen = timePtr(seen)
+	var seen, reauth sql.NullTime
+	err := s.c(ctx).row(ctx, `SELECT id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen, mfa_enrol_required, reauth_at FROM sessions WHERE id = ?`, id).
+		Scan(&sess.ID, &sess.UserID, &sess.TenantID, &sess.CSRF, &sess.CreatedAt, &sess.ExpiresAt, &sess.IP, &sess.UserAgent, &seen, &sess.MFAEnrolRequired, &reauth)
+	sess.LastSeen, sess.ReauthAt = timePtr(seen), timePtr(reauth)
 	if err != nil {
 		return nil, mapErr(err, "session")
 	}

@@ -5,7 +5,8 @@ Qtestframe känner till de här sätten att visa vem någon är:
 | Metod | För | Konfigureras i |
 |---|---|---|
 | Lokalt lösenord | personer | `auth.local`, lösenordsregler |
-| Andra faktor (TOTP-autentiseringsapp, återställningskoder) | personer med lokalt lösenord, valfritt efter OIDC | MFA-policyn i webbklienten; `local_mfa` per OIDC-leverantör |
+| Andra faktor (TOTP-autentiseringsapp, återställningskoder, lösennycklar) | personer med lokalt lösenord, valfritt efter OIDC | MFA-policyn i webbklienten; `local_mfa` per OIDC-leverantör |
+| Lösennyckel (WebAuthn), utan lösenord | personer med lokalt konto | `auth.passkeys` (filen eller systeminställningarna) |
 | OpenID Connect | personer | `auth.oidc` (filen eller systeminställningarna) |
 | SAML 2.0 | personer | `auth.saml` (bara filen) |
 | Inbjudan via e-post | en persons första inloggning | kräver e-post |
@@ -40,7 +41,37 @@ Gissning begränsas på tre sätt: varje kod räknas mot inloggningsgränsen ova
 
 **Borttappad telefon och återställningskoder:** en organisationsadministratör använder **Återställ tvåstegsverifiering** under **Medlemmar** (för medlemmar som bara tillhör den organisationen), en superadministratör under **Användare**. Det tar bort autentiseringsappen, återställningskoderna och ihågkomna enheter, loggar ut användaren och meddelar hen med avisering och e-post. Kontrollera begäran via en annan kanal först.
 
-TOTP-hemligheterna lagras krypterade (se [Säkerhet](security.md#kryptering-av-lagrade-hemligheter)). API-nycklar och SCIM-token påverkas inte av MFA; skydda dem som lösenord. WebAuthn och passkeys finns inte.
+TOTP-hemligheterna lagras krypterade (se [Säkerhet](security.md#kryptering-av-lagrade-hemligheter)). API-nycklar och SCIM-token påverkas inte av MFA; skydda dem som lösenord. [Lösennycklar](#lösennycklar) är också en andra faktor.
+
+## Lösennycklar
+
+En **lösennyckel** (passkey) är en WebAuthn-autentiseringsuppgift: ett nyckelpar som användarens enhet håller (en plattformsautentiserare med fingeravtryck, ansikte eller PIN, en lösenordshanterare som synkar den, eller en säkerhetsnyckel). Qtestframe sparar bara den publika nyckeln. Lösennycklar används på tre sätt:
+
+- **Inloggning utan lösenord** – **Logga in med lösennyckel** på inloggningssidan, och förslag på lösennycklar i e-postfältet där webbläsaren stöder det (villkorlig medling, conditional mediation). Den använder *upptäckbara* autentiseringsuppgifter och kräver **användarverifiering** (UV-flaggan: PIN eller biometri), så den räknas som flerfaktor i sig: ingen TOTP-kod efterfrågas. Bara **lokala konton** kan logga in så; konton från en identitetsleverantör loggar in där (Qtestframe låter inte en lösennyckel kringgå leverantören).
+- **Andra faktor** – efter lösenordet (och efter OIDC med `local_mfa`) kan en användare med lösennycklar bekräfta med en sådan i stället för en TOTP-kod. Användarverifiering föredras men krävs inte (användarnärvaro krävs). En lösennyckel räknas som andra faktor för alla MFA-policyer, så en användare kan ha lösennycklar, en autentiseringsapp eller båda.
+- **Ny bekräftelse av identiteten** – att lägga till och ta bort lösennycklar kräver en inloggning för mindre än 10 minuter sedan; annars bekräftar användaren sin identitet igen med lösenordet, en TOTP- eller återställningskod eller en lösennyckel (`POST /api/v1/auth/reauth`).
+
+Användarna hanterar sina lösennycklar i sin profil (flera per konto, högst 25, var och en med namn, datum då den lades till och senaste användning; byt namn och ta bort). Att ta bort den sista andra faktorn för ett konto som en policy kräver MFA för nekas.
+
+**Inställningar** (Systeminställningar → Inloggning och lösenord, eller konfigurationsfilen):
+
+| Inställning | Standard | Betydelse |
+|---|---|---|
+| `auth.passkeys.enabled` | på | Användare kan registrera och använda lösennycklar. Av behåller registrerade lösennycklar men de kan inte användas, inte heller som andra faktor. |
+| `auth.passkeys.passwordless` | på | Inloggning utan lösenord erbjuds (kräver också `auth.local`). Av: lösennycklar är bara en andra faktor. |
+| `auth.passkeys.require_for_admins` | av | Superadministratörer och organisationsadministratörer måste ha en lösennyckel eller en autentiseringsapp, utan övergångsperiod: deras nästa inloggning måste först konfigurera en. |
+| `auth.passkeys.rp_id` | värden i `server.base_url` | WebAuthn-id för den förlitande parten (RP-id), domänen som lösennycklarna gäller för (`example.com` låter `qtf.example.com` och andra underdomäner använda dem). |
+| `auth.passkeys.origins` | ursprunget i `server.base_url` | Webbursprungen som får använda lösennycklarna. Vart och ett måste vara `https` (`http` bara för `localhost`) och ligga inom RP-id:t. |
+
+Lösennycklar kräver en **https**-adress i `server.base_url` (eller de två inställningarna ovan): webbläsare erbjuder WebAuthn bara i ett säkert sammanhang, och RP-id:t binder varje lösennyckel till domänen. Utan en sådan ser användarna att lösennycklar inte är konfigurerade. **Välj RP-id innan användarna registrerar lösennycklar**: om det ändras, eller om servern flyttas till en annan domän, blir alla registrerade lösennycklar oanvändbara (användarna loggar då in med lösenordet och registrerar nya).
+
+**Vad servern kontrollerar.** Utmaningarna är 32 slumpmässiga byte, sparas på servern, gäller i 5 minuter och tas bort när de besvaras (engångsbruk). De är bundna till webbläsarsessionen, till den påbörjade inloggningen med andra faktor eller, för inloggning utan lösenord, till en kortlivad `qtf_passkey`-kaka i webbläsaren som bad om den. För varje ceremoni kontrollerar servern klientdatans typ, utmaning och ursprung (inga ramar från andra ursprung), SHA-256 av RP-id:t i autentiseringsdatan, flaggan för användarnärvaro och, där det krävs, flaggan för användarverifiering, samt signaturen. Registreringar accepterar intygsformaten `none` (det Qtestframe ber om) och `packed` (självintyg, eller ett x5c-certifikat vars signatur kontrolleras men som inte kedjas till ett betrott rotcertifikat: Qtestframe avgör inte efter autentiserarmodell), med algoritmerna ES256, EdDSA (Ed25519) och RS256 (minst 2048 bitar). **Signaturräknaren** måste öka för autentiserare som har en: om den inte gör det släpps inloggningen igenom, men en varning loggas och händelsen `passkey.counter_regressed` registreras i händelseloggen, eftersom det kan betyda en klonad autentiserare. Synkade lösennycklar har ingen räknare. Implementationen använder bara Gos standardbibliotek (en liten, begränsad CBOR-avkodare för intygsobjekten); den lägger inte till något WebAuthn-beroende.
+
+**Gränser.** Inloggning utan lösenord räknas mot inloggningsgränsen för klientadressen; dess alternativ begränsas till 60 per 5 minuter och adress. En lösennyckel som andra faktor räknas som en kod (10 försök per 15 minuter och konto, 5 per påbörjad inloggning).
+
+**Administratörer** ser antalet lösennycklar per användare under **Medlemmar** (kolumnen *Lösennycklar*) och **Användare**, och kan **Återkalla lösennycklar** (en borttappad eller komprometterad enhet): alla användarens lösennycklar tas bort och användaren loggas ut överallt. Precis som för MFA-återställningar kan organisationsadministratörer göra detta för medlemmar som bara tillhör deras organisation.
+
+**Händelselogg:** `passkey.register`, `passkey.rename`, `passkey.delete`, `user.reauth`, `member.revoke_passkeys`, `user.revoke_passkeys`, `passkey.counter_regressed`, och inloggningarna som `login` med metoden `passkey` (utan lösenord) eller `mfa=passkey` (andra faktor), med lösennyckelns namn. Misslyckade inloggningar med lösennyckel registreras i inloggningshistoriken med metoden *passkey*.
 
 ## OpenID Connect
 

@@ -227,6 +227,8 @@ The audit log of each organisation is a **hash chain** (the system entries of th
 
 The chain in backups, restores and project archives is described in [Backup, restore and migration](backup-and-migration.md#the-audit-trail-in-backups).
 
+**Data protection.** The retention job never purges the audit trail, and erasing a user leaves the entries about them unchanged: see [Privacy and data retention](privacy.md) for the reasons and for legal holds.
+
 ## Electronic-records mode (21 CFR Part 11 / EU GMP Annex 11)
 
 An organisation setting under **Administration → Electronic records** (change: `tenant.manage`; read and report: `audit.read`; `GET`/`PUT /api/v1/erecords`), **off by default**. When it is on, the server enforces:

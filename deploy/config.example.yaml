@@ -335,3 +335,27 @@ secrets:
     pin_file: ""             # relative = $CREDENTIALS_DIRECTORY/<name>
     key_label: qtestframe-kek
     generate_key: false
+
+# Scheduled backups taken by the server itself (also in Administration →
+# System settings → Scheduled backups; history under Administration →
+# Backup). Schedules are UTC: "daily 02:00", "weekly sun 03:30", "every 6h".
+# With several servers on one database, one of them takes each backup.
+# The directory is opened for writing at start-up (Landlock): a change
+# applies after a restart. See docs/admin-guide, "Scheduled backups".
+backup:
+  enabled: false
+  schedule: daily 02:00
+  directory: ""              # e.g. /var/backups/qtestframe
+  keep_last: 7               # newest files kept (0 = no limit)
+  keep_days: 0               # delete files older than this (0 = never)
+  # encrypts the files (AES-256-GCM, key from scrypt); keep a copy of the
+  # passphrase elsewhere: without it no encrypted backup can be restored
+  passphrase_file: ""        # relative = $CREDENTIALS_DIRECTORY/<name>
+  s3:                        # optional upload (S3-compatible, SigV4)
+    enabled: false
+    endpoint: ""             # e.g. https://s3.eu-north-1.amazonaws.com
+    region: us-east-1
+    bucket: ""
+    prefix: ""
+    access_key_id: ""
+    secret_access_key_file: ""

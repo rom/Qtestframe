@@ -80,21 +80,32 @@ Adds the demo projects to an organisation (default `bootstrap.tenant_slug`, crea
 
 ### `qtestframe backup`
 
-Writes a logical backup of all data (every organisation) to a ZIP file, through a temporary file that is renamed when complete. Audited as `admin.backup`.
+Writes a logical backup of all data (every organisation) to a ZIP file, through a temporary file that is renamed when complete, and prints its SHA-256. `--encrypt` encrypts it with a passphrase (AES-256-GCM, key derived with scrypt) read from `--passphrase-file`, `QTF_BACKUP_PASSPHRASE` or one line of standard input. Audited as `admin.backup`.
 
 | Flag | Value | Meaning |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--encrypt` | — | encrypt the backup with a passphrase (AES-256-GCM, key derived with scrypt) |
 | `--out` | `string` | backup file to write (ZIP) |
+| `--passphrase-file` | `string` | file holding the passphrase of --encrypt (default $QTF_BACKUP_PASSPHRASE, else standard input) |
+
+### `qtestframe backup verify`
+
+Checks a backup file without a database: decrypts an encrypted one (passphrase as for `backup --encrypt`), checks the ZIP structure and the checksum of every entry, the manifest, that every row is a JSON object and that the row counts match the manifest. Prints the SHA-256, the manifest and `intact`; exit `1` for a damaged file or a wrong passphrase. Flags come before the file.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 
 ### `qtestframe restore`
 
-Replaces **all** data with a backup, in one transaction, and signs everyone out. Needs `--yes`. Audited as `admin.restore`.
+Replaces **all** data with a backup, in one transaction, and signs everyone out. An encrypted backup is decrypted into a temporary file first (passphrase as for `backup --encrypt`). Needs `--yes`. Audited as `admin.restore`.
 
 | Flag | Value | Meaning |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
-| `--in` | `string` | backup file to restore (ZIP) |
+| `--in` | `string` | backup file to restore (ZIP, or encrypted) |
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 | `--yes` | — | confirm that ALL existing data is replaced |
 
 ### `qtestframe secrets`
@@ -303,6 +314,24 @@ Builds a prompt for an AI assistant on a server, through the REST API with an AP
 | `--token` | `string` | API token (default $QTF_TOKEN) |
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 | `--variant` | `string` | only the requirements that apply to this variant (id or name) |
+
+### `qtestframe import-tests`
+
+Imports the test cases of another test management tool into a project on a server, through the REST API with an API token: `--from` `testrail` (CSV or XML export), `xray` (CSV or JSON), `zephyr` (Zephyr Scale/Squad CSV or Zephyr Scale XML), `qtest` (XLSX or CSV) or `azure` (Azure Test Plans CSV). It prints what would be created, updated, left unchanged or is in conflict, with warnings such as requirement references that match no requirement, and then imports; `--dry-run` stops after the preview. Each test remembers its source and external ID, so importing the file again updates the tests instead of duplicating them; `--overwrite` also updates tests changed in Qtestframe since. Past results in the file become completed runs (`--no-history` leaves them out); `--folder`, `--no-folders` and `--no-links` control placement and requirement links (see the user guide page Interoperability).
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--dry-run` | — | only show what would be created and updated |
+| `--folder` | `string` | test folder to import into (path or id; default: top level) |
+| `--format` | `string` | file format: csv, xml, json or xlsx (default: from the file name) |
+| `--from` | `string` | the tool the file comes from: testrail, xray, zephyr, qtest, azure |
+| `--no-folders` | — | do not create folders for the sections, suites, modules or area paths |
+| `--no-history` | — | do not import past results as runs |
+| `--no-links` | — | do not link the tests to the requirements they reference |
+| `--overwrite` | — | also update tests changed in Qtestframe since the last import (conflicts) |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 
 ### `qtestframe version`
 

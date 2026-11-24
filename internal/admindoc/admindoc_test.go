@@ -49,7 +49,7 @@ func TestEveryKeyDescribed(t *testing.T) {
 		if _, ok := envDocs[env]; !ok {
 			t.Errorf("%s: no description", env)
 		}
-		if !keys[key] && key != "email.password" && key != "secrets.local.key" && key != "secrets.pkcs11.pin" {
+		if !keys[key] && key != "email.password" && key != "secrets.local.key" && key != "secrets.pkcs11.pin" && key != "metrics.token" && key != "tracing.headers" {
 			t.Errorf("%s sets %s, which is not a configuration key", env, key)
 		}
 	}

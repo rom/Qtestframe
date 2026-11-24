@@ -46,6 +46,7 @@ export const TIPS = {
   'test.expected': { page: 'tests', anchor: { en: 'manual-tests-steps', sv: 'manuella-testfall-steg' } },
   'test.calls': { page: 'tests', anchor: { en: 'shared-steps', sv: 'delade-steg' } },
   'test.data': { page: 'tests', anchor: { en: 'data-driven-tests', sv: 'datadrivna-testfall' } },
+  'test.gherkin': { page: 'tests', anchor: { en: 'gherkin-tests-bdd', sv: 'gherkin-testfall-bdd' } },
   'run.configurations': { page: 'runs', anchor: { en: 'configurations-in-a-run', sv: 'konfigurationer-i-en-körning' } },
   'runner.iterations': { page: 'runs', anchor: { en: 'data-driven-tests-iterations', sv: 'datadrivna-testfall-iterationer' } },
   'run.environment': CREATE_RUN,

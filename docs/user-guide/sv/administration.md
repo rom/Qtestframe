@@ -112,6 +112,10 @@ Kolumnen **MFA** visar vem som använder tvåstegsverifiering: **På**, *Av*, el
 
 *(Administratör)* När någon har tappat bort både telefonen och återställningskoderna väljer du **Återställ MFA** (skölden) på hens rad och bekräftar. Autentiseringsappen, återställningskoderna och ihågkomna enheter tas bort, personen loggas ut överallt och får en notis och ett e-postmeddelande. Därefter loggar hen in med bara lösenordet, eller, om MFA krävs för hen, konfigurerar en ny autentiseringsapp vid nästa inloggning. Försäkra dig om att begäran verkligen kommer från personen innan du återställer. Precis som för lösenord kan administratörer bara återställa personer som enbart tillhör deras organisation; superadministratörer kan återställa vem som helst, även under [Användare](#användare). Varje återställning registreras i [händelseloggen](#händelselogg).
 
+### Återkalla lösennycklar
+
+Kolumnen **Lösennycklar** visar hur många [lösennycklar](getting-started.md#lösennycklar) varje medlem har. *(Administratör)* När någon har tappat bort en enhet med en lösennyckel, eller en lösennyckel kan ha hamnat i fel händer, väljer du **Återkalla lösennycklar** (den överkryssade cirkeln) på hens rad och bekräftar: alla hens lösennycklar tas bort och hen loggas ut överallt. Därefter loggar hen in med sitt lösenord (och kan lägga till nya lösennycklar). Samma begränsningar som för att återställa MFA gäller; superadministratörer kan också göra det under [Användare](#användare). Det registreras i [händelseloggen](#händelselogg).
+
 ## Tvåstegsverifiering
 
 **Administration → Tvåstegsverifiering** bestämmer vem som måste använda en andra faktor (en autentiseringsapp, se [din profil](getting-started.md#tvåstegsverifiering)) vid inloggning med lösenord. Sidan visar hur många medlemmar som redan använder den.
@@ -351,6 +355,7 @@ Administratören anger på samma sida vilka åtgärder som kräver signatur, inn
 - Du kan inte ta bort din egen superadministratörsflagga eller inaktivera dig själv, och den sista aktiverade superadministratören förblir alltid en.
 - **Filtrera** på namn eller e-post, status (aktiverad eller inaktiverad), inloggningssätt, flerfaktorsautentisering eller superadministratörer.
 - Knapparna på en rad visar användarens **organisationer** med roller och öppna sessioner, **loggar ut användaren överallt** (API-tokens fortsätter att gälla), återställer den andra faktorn eller ett lokalt lösenord och **inaktiverar** eller **aktiverar** kontot.
+- **Exportera personuppgifter** (nedladdningsknappen) ger en ZIP-fil med allt servern har om personen, för en begäran om registerutdrag. **Radera användare** anonymiserar kontot när du har skrivit dess e-postadress: det får en pseudonym (*Former user #n*), personuppgifter, sessioner och tokens raderas, innehållet finns kvar under pseudonymen, och elektroniska signaturer och poster i händelseloggen finns kvar som de registrerades. Raderingen kan inte ångras; se [administratörshandboken](../../admin-guide/sv/privacy.md#radering-anonymisering).
 
 Användare som loggar in med enkel inloggning via OIDC eller SAML kan skapas automatiskt vid första inloggningen, med en roll som hämtas från grupperna hos identitetsleverantören; det konfigureras på servern (se [administratörshandboken](../../admin-guide/sv/authentication.md#provisionering-av-användare-med-single-sign-on)).
 
@@ -412,6 +417,10 @@ När du ändrat leverantörerna här ersätter den här listan leverantörerna i
 ### Loggning och syslog
 
 Välj **Loggnivå** och **Loggformat** för serverloggen, och om loggen (även händelseloggen) också ska skickas till en central **syslog**-server: nätverk (`udp`, `tcp`, `tls` eller en lokal socket), adress, meddelandeformat, facility och tagg. **Skicka testmeddelande** skickar ett meddelande med värdena i formuläret, innan du sparar dem; resultatet visas och läses upp vid knappen. Ändringar gäller direkt. Certifikat för syslog över TLS anges i konfigurationsfilen.
+
+### Mätvärden och spårning
+
+Båda är av som standard. **Prometheus-mätvärden** slår på adressen `/metrics` för ett övervakningssystem: förfrågningar, svarstider, databasanslutningarna, bakgrundsjobb, inloggningar och antalet projekt, krav, tester och körningar. Skydda den med en **Bearer-token** (kan bara skrivas, som de andra hemligheterna på sidan) eller en lista med **Tillåtna adresser**; utan någon av dem får bara servern själv läsa den. En **Separat adress för mätvärden** visar den på en egen port efter nästa omstart. **OpenTelemetry-spårning** skickar ett spår av varje förfrågan, med dess databasfrågor och utgående anrop, till **Insamlarens adress**; **Urvalsandel** avgör hur många förfrågningar som spåras. Rutan **Status** visar var mätvärdena visas och hur de skyddas, och hur många spann som nått insamlaren, med dess senaste fel. Se [Loggning och övervakning](../../admin-guide/sv/logging-and-monitoring.md#prometheus-mätvärden) i administratörshandboken för mätvärdena och en exempelpanel.
 
 ### E-postserver
 

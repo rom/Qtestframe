@@ -26,6 +26,8 @@ export interface MfaStatus {
   enrolment_deadline: string | null
   enrolment_required: boolean
   remember_days: number
+  /** number of passkeys (a second factor too) */
+  passkeys?: number
 }
 
 /** POST /auth/login or GET /auth/mfa/challenge when a second factor is needed. */

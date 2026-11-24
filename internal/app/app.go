@@ -5,7 +5,9 @@ package app
 import (
 	"bufio"
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -24,6 +26,7 @@ import (
 
 	"github.com/rom/qtestframe/internal/api"
 	"github.com/rom/qtestframe/internal/auth"
+	"github.com/rom/qtestframe/internal/backup"
 	"github.com/rom/qtestframe/internal/config"
 	"github.com/rom/qtestframe/internal/db"
 	"github.com/rom/qtestframe/internal/hardening"
@@ -60,10 +63,16 @@ Usage:
   qtestframe member add  [--config FILE] --tenant SLUG --email E --role ROLE[,ROLE...]
                          (admin|manager|test_lead|tester|sme|reviewer|viewer or a custom role)
   qtestframe seed-demo   [--config FILE] [--tenant SLUG]
-  qtestframe backup      [--config FILE] --out FILE.zip
-                                                  write a logical backup of all data
-  qtestframe restore     [--config FILE] --in FILE.zip --yes
-                                                  replace ALL data with a backup
+  qtestframe backup      [--config FILE] --out FILE.zip [--encrypt [--passphrase-file F]]
+                                                  write a logical backup of all data (encrypted
+                                                  with a passphrase: AES-256-GCM, key from scrypt)
+  qtestframe backup verify [--passphrase-file F] FILE
+                                                  check the integrity and manifest of a backup file
+  qtestframe restore     [--config FILE] --in FILE.zip [--passphrase-file F] --yes
+                                                  replace ALL data with a backup (decrypts an
+                                                  encrypted one)
+                         the passphrase is read from --passphrase-file, QTF_BACKUP_PASSPHRASE or
+                         standard input
   qtestframe secrets status|migrate|rotate [--prune]|rewrap [--from-config OLD]|decrypt --yes|generate-key [--config FILE]
                                                   encryption of stored secrets (docs/security.md)
   qtestframe audit verify [--config FILE] [--tenant SLUG] [--file EXPORT.json] [--json]
@@ -102,7 +111,12 @@ Usage:
                                                   build a prompt for an AI assistant (with the project's
                                                   solution preamble) and print it, or write one .md file
                                                   per part; nothing is sent to an AI service
-                         report, gate, select, stubs and prompt read QTF_URL, QTF_TOKEN and QTF_PROJECT, and the
+  qtestframe import-tests --from testrail|xray|zephyr|qtest|azure FILE --project KEY [--dry-run]
+                         [--format csv|xml|json|xlsx] [--folder PATH] [--overwrite] [--no-history]
+                         [--no-links] [--no-folders]
+                                                  import the test cases (and past results) of another
+                                                  test management tool; importing again updates them
+                         report, gate, select, stubs, prompt and import-tests read QTF_URL, QTF_TOKEN and QTF_PROJECT, and the
                          GitLab CI / GitHub Actions variables; tokens for posting: QTF_GITLAB_TOKEN,
                          QTF_GITHUB_TOKEN
   qtestframe version
@@ -157,6 +171,8 @@ func Run(args []string, env Env) int {
 		err = cmdStubs(args[1:], env)
 	case "prompt":
 		err = cmdPrompt(args[1:], env)
+	case "import-tests":
+		err = cmdImportTests(args[1:], env)
 	case "sandbox-exec":
 		var c *runner.SandboxConfig
 		if c, err = runner.ParseSandboxArgs(args[1:], env.Stderr); err == nil {
@@ -461,17 +477,60 @@ func cmdSeedDemo(args []string, env Env) error {
 	return SeedDemoEnvironments(env.Ctx, st, t.ID, p)
 }
 
+// passphraseEnv holds the passphrase of encrypted backups for the
+// command line (when --passphrase-file is not given).
+const passphraseEnv = "QTF_BACKUP_PASSPHRASE"
+
+// backupPassphrase reads the passphrase of an encrypted backup from file,
+// else QTF_BACKUP_PASSPHRASE, else one line of standard input.
+func backupPassphrase(file string, env Env) (string, error) {
+	var pass string
+	switch {
+	case file != "":
+		b, err := os.ReadFile(file)
+		if err != nil {
+			return "", err
+		}
+		pass = string(b)
+	case os.Getenv(passphraseEnv) != "":
+		pass = os.Getenv(passphraseEnv)
+	default:
+		fmt.Fprintln(env.Stderr, "passphrase (one line on standard input):")
+		line, err := readPassword(env)
+		if err != nil {
+			return "", err
+		}
+		pass = line
+	}
+	if pass = strings.TrimSpace(pass); pass == "" {
+		return "", errors.New("the passphrase is empty (--passphrase-file, " + passphraseEnv + " or standard input)")
+	}
+	return pass, nil
+}
+
 // cmdBackup writes a logical, database-agnostic backup (see
-// store.Backup). The file is written to a temporary name and renamed
-// once complete.
+// store.Backup), encrypted with --encrypt. The file is written to a
+// temporary name and renamed once complete.
 func cmdBackup(args []string, env Env) error {
+	if len(args) > 0 && args[0] == "verify" {
+		return cmdBackupVerify(args[1:], env)
+	}
 	fs, cfgPath := newFlags("backup", env)
 	out := fs.String("out", "", "backup file to write (ZIP)")
+	encrypt := fs.Bool("encrypt", false, "encrypt the backup with a passphrase (AES-256-GCM, key derived with scrypt)")
+	passFile := fs.String("passphrase-file", "", "file holding the passphrase of --encrypt (default $"+passphraseEnv+", else standard input)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if *out == "" {
 		return errors.New("--out is required")
+	}
+	pass := ""
+	if *encrypt {
+		var err error
+		if pass, err = backupPassphrase(*passFile, env); err != nil {
+			return err
+		}
 	}
 	// the backup keeps the stored secrets encrypted (and the wrapped keys)
 	_, st, err := openDB(env.Ctx, *cfgPath)
@@ -484,7 +543,20 @@ func cmdBackup(args []string, env Env) error {
 		return err
 	}
 	defer os.Remove(tmp.Name()) // no-op after the rename
-	m, err := st.Backup(env.Ctx, tmp, Version)
+	h := sha256.New()
+	var w io.Writer = io.MultiWriter(tmp, h)
+	var ew io.WriteCloser
+	if pass != "" {
+		if ew, err = backup.Encrypt(w, pass); err != nil {
+			tmp.Close()
+			return err
+		}
+		w = ew
+	}
+	m, err := st.Backup(env.Ctx, w, Version)
+	if err == nil && ew != nil {
+		err = ew.Close()
+	}
 	if err == nil {
 		err = tmp.Sync()
 	}
@@ -497,16 +569,75 @@ func cmdBackup(args []string, env Env) error {
 	if err := os.Rename(tmp.Name(), *out); err != nil {
 		return err
 	}
-	details := fmt.Sprintf("%d rows in %d tables, schema %d (command line)", m.Rows(), len(m.Tables), m.SchemaVersion)
+	sum := hex.EncodeToString(h.Sum(nil))
+	enc := ""
+	if pass != "" {
+		enc = ", encrypted"
+	}
+	details := fmt.Sprintf("%d rows in %d tables, schema %d%s, sha256 %s (command line)", m.Rows(), len(m.Tables), m.SchemaVersion, enc, sum)
 	_ = st.Audit(env.Ctx, model.AuditEntry{UserEmail: "cli", Action: "admin.backup", EntityType: "system", Details: details})
-	fmt.Fprintf(env.Stdout, "backup written to %s: %d rows in %d tables (schema version %d)\n", *out, m.Rows(), len(m.Tables), m.SchemaVersion)
+	fmt.Fprintf(env.Stdout, "backup written to %s: %d rows in %d tables (schema version %d%s)\nsha256 %s\n", *out, m.Rows(), len(m.Tables), m.SchemaVersion, enc, sum)
 	return nil
+}
+
+// cmdBackupVerify checks a backup file without a database: it decrypts an
+// encrypted one and checks the archive and its manifest (store.VerifyBackup).
+func cmdBackupVerify(args []string, env Env) error {
+	fs := flag.NewFlagSet("backup verify", flag.ContinueOnError)
+	fs.SetOutput(env.Stderr)
+	passFile := fs.String("passphrase-file", "", "file holding the passphrase of an encrypted backup (default $"+passphraseEnv+", else standard input)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		return errors.New("usage: qtestframe backup verify [--passphrase-file F] FILE")
+	}
+	path := fs.Arg(0)
+	sum, size, err := backup.FileSHA256(path)
+	if err != nil {
+		return err
+	}
+	a, err := openArchive(path, *passFile, env)
+	if err != nil {
+		return &exitError{code: 1, err: fmt.Errorf("%s: %w", path, err)}
+	}
+	defer a.Close()
+	m, err := store.VerifyBackup(a, a.Size)
+	if err != nil {
+		return &exitError{code: 1, err: fmt.Errorf("%s: %w", path, err)}
+	}
+	enc := "not encrypted"
+	if a.Encrypted {
+		enc = "encrypted"
+	}
+	fmt.Fprintf(env.Stdout, "%s: intact (%s, %d bytes, sha256 %s)\n", path, enc, size, sum)
+	fmt.Fprintf(env.Stdout, "  created %s by qtestframe %s on %s, schema version %d, format %d\n", m.CreatedAt.UTC().Format(time.RFC3339), m.AppVersion, m.Driver, m.SchemaVersion, m.FormatVersion)
+	fmt.Fprintf(env.Stdout, "  %d rows in %d tables\n", m.Rows(), len(m.Tables))
+	return nil
+}
+
+// openArchive opens a backup file, decrypting an encrypted one (the
+// passphrase from passFile, QTF_BACKUP_PASSPHRASE or standard input) into a
+// temporary file next to it or in the system's temporary directory.
+func openArchive(path, passFile string, env Env) (*backup.Archive, error) {
+	enc, err := backup.Sniff(path)
+	if err != nil {
+		return nil, err
+	}
+	pass := ""
+	if enc {
+		if pass, err = backupPassphrase(passFile, env); err != nil {
+			return nil, err
+		}
+	}
+	return backup.Open(path, pass, backup.TempDirFor(path))
 }
 
 // cmdRestore replaces all data with a backup (see store.Restore).
 func cmdRestore(args []string, env Env) error {
 	fs, cfgPath := newFlags("restore", env)
-	in := fs.String("in", "", "backup file to restore (ZIP)")
+	in := fs.String("in", "", "backup file to restore (ZIP, or encrypted)")
+	passFile := fs.String("passphrase-file", "", "file holding the passphrase of an encrypted backup (default $"+passphraseEnv+", else standard input)")
 	yes := fs.Bool("yes", false, "confirm that ALL existing data is replaced")
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -517,21 +648,17 @@ func cmdRestore(args []string, env Env) error {
 	if !*yes {
 		return errors.New("restore replaces ALL data and signs everyone out; pass --yes to confirm")
 	}
-	f, err := os.Open(*in)
+	a, err := openArchive(*in, *passFile, env)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	fi, err := f.Stat()
-	if err != nil {
-		return err
-	}
+	defer a.Close()
 	_, st, err := openStore(env.Ctx, *cfgPath, env.Stderr)
 	if err != nil {
 		return err
 	}
 	defer st.DB.Close()
-	counts, err := st.Restore(env.Ctx, f, fi.Size())
+	counts, err := st.Restore(env.Ctx, a, a.Size)
 	if err != nil {
 		return err
 	}
@@ -614,6 +741,10 @@ func hardeningOptions(cfg config.Config) hardening.Options {
 			// directory is needed for the -wal/-shm files
 			o.ReadWritePaths = append(o.ReadWritePaths, filepath.Dir(abs))
 		}
+	}
+	// scheduled backups are written by the server
+	if d := cfg.Backup.Directory; d != "" {
+		o.ReadWritePaths = append(o.ReadWritePaths, d)
 	}
 	if cfg.Logging.Syslog.Enabled && strings.HasPrefix(cfg.Logging.Syslog.Network, "unix") {
 		o.ReadWritePaths = append(o.ReadWritePaths, cfg.Logging.Syslog.Address)
@@ -722,6 +853,12 @@ func cmdServe(args []string, env Env) error {
 			return fmt.Errorf("runner work dir: %w", err)
 		}
 	}
+	// the backup directory must exist before the process is locked down
+	if d := cfg.Backup.Directory; d != "" {
+		if err := os.MkdirAll(d, 0o700); err != nil {
+			log.Error("backup directory not created; scheduled backups fail", "dir", d, "err", err)
+		}
+	}
 	api.Version = Version
 	srv, err := api.New(st, base, log, runner.New(cfg.Runner), webui.FS())
 	if err != nil {
@@ -732,11 +869,26 @@ func cmdServe(args []string, env Env) error {
 	if err != nil {
 		return err
 	}
+	// the separate listener of /metrics (metrics.listen), opened before
+	// the process is locked down
+	var mln net.Listener
+	if addr := srv.MetricsListen(); addr != "" {
+		if mln, err = net.Listen("tcp", addr); err != nil {
+			ln.Close()
+			return fmt.Errorf("metrics listener: %w", err)
+		}
+	}
+	closeAll := func() {
+		ln.Close()
+		if mln != nil {
+			mln.Close()
+		}
+	}
 	tlsOn := cfg.Server.TLSCert != ""
 	if tlsOn {
 		certs, err := newCertReloader(cfg.Server.TLSCert, cfg.Server.TLSKey)
 		if err != nil {
-			ln.Close()
+			closeAll()
 			return err
 		}
 		go certs.watch(ctx, log)
@@ -757,7 +909,7 @@ func cmdServe(args []string, env Env) error {
 	// All files needed at start-up are open: lock the process down.
 	rep, err := hardening.Apply(hardeningOptions(cfg))
 	if err != nil {
-		ln.Close()
+		closeAll()
 		return fmt.Errorf("hardening: %w", err)
 	}
 	log.Info("hardening", "applied", rep.Applied, "skipped", rep.Skipped)
@@ -780,12 +932,22 @@ func cmdServe(args []string, env Env) error {
 	srv.StartJobs(ctx)
 	// automated tests (web tests, "Run automated tests") run in the background
 	srv.StartScriptJobs(ctx)
+	// scheduled backups (backup.enabled; one server of a cluster at a time)
+	srv.StartBackups(ctx)
 	// live updates: the cross-instance bus (PostgreSQL) and presence expiry;
 	// open event streams never become idle, so shutdown ends them
 	srv.StartLive(ctx)
 	hs.RegisterOnShutdown(srv.StopLive)
-	errc := make(chan error, 1)
+	errc := make(chan error, 2)
 	go func() { errc <- hs.Serve(ln) }()
+	var ms *http.Server
+	if mln != nil {
+		// plain HTTP: keep it on an internal address
+		ms = &http.Server{Handler: srv.MetricsHandler(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second,
+			WriteTimeout: 30 * time.Second, ErrorLog: slog.NewLogLogger(log.Handler(), slog.LevelWarn)}
+		go func() { errc <- ms.Serve(mln) }()
+		log.Info("metrics listening", "addr", mln.Addr().String())
+	}
 	log.Info("qtestframe listening", "addr", ln.Addr().String(), "tls", tlsOn, "version", Version, "db", cfg.Database.Driver)
 	if env.Ready != nil {
 		env.Ready(ln.Addr().String())
@@ -799,8 +961,15 @@ func cmdServe(args []string, env Env) error {
 	sctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	err = hs.Shutdown(sctx)
+	if ms != nil {
+		_ = ms.Shutdown(sctx)
+	}
 	srv.WaitJobsStopped(10 * time.Second) // jobs end when ctx does
+	srv.WaitBackups()                     // a backup in flight ends with ctx
 	srv.WaitMail()                        // e-mails in flight (each is bounded by email.timeout)
+	if terr := srv.ShutdownTracing(sctx); terr != nil {
+		log.Warn("tracing: last spans not exported", "err", terr)
+	}
 	return err
 }
 

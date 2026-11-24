@@ -1384,7 +1384,7 @@ Web Content Accessibility Guidelines från W3C: testbara framgångskriterier, or
 
 W3C:s Web Authentication API och FIDO2-standarderna: inloggning med en säkerhetsnyckel eller en passkey, baserad på ett nyckelpar som är bundet till webbplatsen och därför står emot nätfiske.
 
-**I Qtestframe:** inte en inloggningsmetod i Qtestframe självt (det använder lösenord, enkel inloggning och TOTP), men katalogen har krav och testfall för passkeys och säkerhetsnycklar som hänvisar till WebAuthn.
+**I Qtestframe:** du kan logga in med en lösennyckel i stället för lösenord, eller använda en som andra faktor (se [Lösennycklar](getting-started.md#lösennycklar)). Katalogen har också krav och testfall för passkeys och säkerhetsnycklar som hänvisar till WebAuthn.
 
 **Se även:** [Tvåstegsverifiering](#tvåstegsverifiering), [TOTP](#totp), [Katalog](#katalog)
 

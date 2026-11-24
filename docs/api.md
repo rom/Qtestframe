@@ -1291,6 +1291,33 @@ HTML fields become Markdown; statuses and priorities are mapped by name
 with a warning on the row. Without a Jira URL of its own the Jira import
 uses the project's defect tracker when it is Jira. Tokens are encrypted
 and never returned; tracker errors answer 502 `tracker_error`.
+
+### Import tests from other tools
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| POST | `/projects/{pid}/tests/import/preview` | test.write | multipart: what the import would do, nothing is stored |
+| POST | `/projects/{pid}/tests/import/apply` | test.write | multipart: imports (one transaction, impact gate) |
+
+`internal/testimport` reads the test case exports of TestRail (CSV, also of
+a test run, and XML), Xray (CSV and JSON), Zephyr Scale/Squad (CSV) and
+Zephyr Scale (XML), qTest (XLSX or CSV) and Azure Test Plans (CSV, with the
+steps on rows of their own or as Azure DevOps steps XML in one cell) into
+cases with steps, folders, requirement references, custom values and past
+results. Form fields: `file`, `source` (`testrail`, `xray`, `zephyr`,
+`qtest`, `azure`), `format`, `folder_id`, `priorities` and `statuses` (JSON
+objects source value → code), `fields` (JSON object source field → custom
+field key); apply also `create_folders`, `link_requirements`, `history`,
+`overwrite_conflicts`, `create` and `exclude`. Each test is recorded as an
+external reference (entity type `test`, system `testrail`, `xray`,
+`zephyr`, `qtest` or `azure-test-plans`, the external ID and a hash of the
+imported content), so the next import updates it (`update`), leaves it
+alone (`unchanged`) or, when it was edited here since, reports a
+`conflict`. Past results become completed runs (references of type `run`
+and `execution`), so they are imported once. References match requirements
+by key, by the external IDs of the requirement imports and by `ID: x` in
+the source; the others are listed as `unresolved_links`. Audited as
+`test.import`; the CLI is `qtestframe import-tests`.
 ## Catalogue
 
 A built-in library of standard requirements and tests for software
@@ -2258,6 +2285,30 @@ cucumber) unless it has a runner tag; `marked` counts them. The server
 never executes such a script: `run-automated` skips it with the code
 `external` and `run-script` refuses it. Regeneration is the client's job:
 `qtestframe stubs` merges with the files on disk (see the CI/CD guide).
+
+A test in the Gherkin format (`"format": "gherkin"`) gets its own feature
+as the Cucumber stub, tagged `@KEY @qtestframe-stub` (comments and a
+`# language:` header are kept); the other frameworks list its scenarios'
+steps as TODO comments.
+
+**Gherkin tests.** A test with `"format": "gherkin"` holds a feature in
+`gherkin` (English or Swedish keywords; see internal/gherkin); saving one
+that does not parse fails with 400 and the errors with their lines. A run
+gives every scenario, and every Examples row of a Scenario Outline, an
+iteration whose step results are the Background and scenario steps
+(`step_id` `gherkin:<line>`); `GET /tests/{id}/gherkin-results` maps the
+latest results back to the lines. `POST /projects/{pid}/gherkin/check
+{"source"}` returns the errors, steps (defined or not, with a suggested
+Cucumber expression) and scenarios; `POST /projects/{pid}/gherkin/convert`
+converts between the formats (`to`: `gherkin` or `steps`). The step
+library: `GET|POST /projects/{pid}/step-definitions` (with usage, where
+used and undefined steps), `PATCH|DELETE /step-definitions/{id}`, `POST
+/step-definitions/{id}/rename {"pattern"}` (rewrites the step in every
+test). `POST /projects/{pid}/tests/features/import {"files": [{name,
+content}], "mode": "scenario"|"feature", "folder_id", "dry_run"}` makes
+tests of `.feature` files (requirement keys in tags become trace links);
+`GET /projects/{pid}/tests/features?q=&ids=` (or POST
+`…/features/export`) returns them as a zip of `.feature` files.
 
 **Server-side posting.** With `ci.provider` `gitlab`, a token and
 `post_status` or `post_note`, every result upload (`POST /runs/{id}/junit`,

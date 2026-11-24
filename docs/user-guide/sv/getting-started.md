@@ -10,8 +10,9 @@ Den här sidan förklarar hur du loggar in, hittar rätt på skärmen och ställ
 
 1. Ange **E-post** och **Lösenord** och välj **Logga in**.
 2. Om du tillhör flera organisationer och vill börja i en viss, välj **Logga in i en viss organisation …** och ange dess kortnamn, till exempel `acme`. Utan kortnamn hamnar du i din standardorganisation (se [Inställningar](#inställningar)) eller den du använde senast.
-3. Om din organisation använder enkel inloggning (SSO) visar sidan en knapp per leverantör under **eller fortsätt med**. Välj den och logga in hos identitetsleverantören; du kommer automatiskt tillbaka till Qtestframe.
-4. Om du använder [tvåstegsverifiering](#tvåstegsverifiering) frågar sidan sedan efter **Verifieringskod**: öppna autentiseringsappen, ange den sexsiffriga kod den visar för Qtestframe och välj **Verifiera**. Varje kod fungerar en gång; om en kod nekas, vänta på nästa. Utan telefonen väljer du **Använd en återställningskod i stället** och anger en av dina återställningskoder. Om din organisation tillåter det hoppar **Kom ihåg den här enheten** över koden i den här webbläsaren under ett antal dagar.
+3. Med en [lösennyckel](#lösennycklar) väljer du **Logga in med lösennyckel** (eller väljer din lösennyckel bland förslagen i fältet **E-post**) och bekräftar med fingeravtryck, ansikte, PIN eller säkerhetsnyckel: du behöver varken lösenord eller kod. Om webbläsaren inte kan använda lösennycklar står det under knappen; logga då in med ditt lösenord.
+4. Om din organisation använder enkel inloggning (SSO) visar sidan en knapp per leverantör under **eller fortsätt med**. Välj den och logga in hos identitetsleverantören; du kommer automatiskt tillbaka till Qtestframe.
+5. Om du använder [tvåstegsverifiering](#tvåstegsverifiering) frågar sidan sedan efter den andra faktorn. Med en lösennyckel väljer du **Använd lösennyckel** och bekräftar på enheten. Annars anger du **Verifieringskod**: öppna autentiseringsappen, ange den sexsiffriga kod den visar för Qtestframe och välj **Verifiera**. Varje kod fungerar en gång; om en kod nekas, vänta på nästa. Utan telefonen väljer du **Använd en återställningskod i stället** och anger en av dina återställningskoder. Om din organisation tillåter det hoppar **Kom ihåg den här enheten** över koden i den här webbläsaren under ett antal dagar.
 
 Språkknapparna högst upp på inloggningssidan växlar mellan engelska och svenska innan du loggar in. Efter inloggningen gäller språket i dina inställningar.
 
@@ -109,6 +110,7 @@ Sökfältet i övre fältet söker överallt i den aktuella organisationen. Trä
 - **Visningsnamn**: namnet som andra ser i kommentarer, versionshistorik och händelseloggen.
 - **Profilbild**: välj en bild för ditt konto: ladda upp en bild (PNG, JPEG, GIF eller WebP, högst 1 MB), välj en av de inbyggda bilderna eller använd dina initialer.
 - **Inloggningsleverantör**, **Medlem sedan** och dina **Medlemskap**: organisationerna du tillhör och din roll i var och en.
+- **Dina uppgifter**: **Ladda ner mina uppgifter** ger dig en ZIP-fil med JSON-filer med de personuppgifter servern har om dig: profil, medlemskap och roller, kommentarer du skrivit och kommentarer som nämner dig, sessioner, API-tokens (utan sina hemligheter), inloggningslogg, aviseringar, elektroniska signaturer, inmatningshistorik och händelseloggens poster av eller om dig. Nedladdningen registreras i händelseloggen. Vill du att ditt konto raderas, be en superadministratör (se administratörshandboken, *Integritet och gallring*).
 
 ### Inställningar
 
@@ -160,6 +162,22 @@ Därefter frågar varje inloggning med lösenord efter en kod. API-nycklar påve
 - **Ny eller borttappad telefon**: med en återställningskod kan du fortfarande logga in; stäng av tvåstegsverifieringen och konfigurera den igen med den nya telefonen. Utan telefon och återställningskoder ber du en administratör att [återställa din tvåstegsverifiering](administration.md#återställa-tvåstegsverifiering).
 
 Om du loggar in med enkel inloggning frågar oftast identitetsleverantören efter den andra faktorn; Qtestframe frågar efter en egen kod bara om servern är konfigurerad för det.
+
+### Lösennycklar
+
+Med en **lösennyckel** (passkey) loggar du in med enhetens skärmlås (fingeravtryck, ansikte eller PIN), en lösenordshanterare som sparar den, eller en säkerhetsnyckel, i stället för med lösenord. Den kan inte nätfiskas eller gissas, och den räknas också som din andra faktor: med en lösennyckel behöver du ingen autentiseringsapp. Lösennycklar kräver en aktuell webbläsare (Chrome, Edge, Firefox eller Safari) och en server med en https-adress; annars förklarar profilen varför de inte är tillgängliga.
+
+**Lägg till en lösennyckel**
+
+1. I din profil, under **Lösennycklar**, väljer du **Lägg till lösennyckel**.
+2. Ge den ett namn som du känner igen senare (förslaget är din enhet och webbläsare, till exempel *Mac · Safari*) och välj **Lägg till lösennyckel**.
+3. Följ webbläsaren: välj var lösennyckeln ska sparas (den här enheten, din telefon, en lösenordshanterare eller en säkerhetsnyckel) och bekräfta med fingeravtryck, ansikte, PIN eller säkerhetsnyckel.
+
+Om du loggade in för mer än 10 minuter sedan ber Qtestframe dig först att **Bekräfta att det är du**: ange ditt lösenord, en kod från autentiseringsappen eller bekräfta med en befintlig lösennyckel.
+
+**Logga in med den**: på inloggningssidan väljer du **Logga in med lösennyckel**, eller väljer den bland förslagen i fältet **E-post**. Om ditt konto loggar in via enkel inloggning använder du din identitetsleverantör; där kan lösennyckeln vara din andra faktor. När administratören har stängt av inloggning utan lösenord är en lösennyckel din andra faktor efter lösenordet.
+
+**Senare**: listan visar varje lösennyckel med namn, när den lades till och när den senast användes (*Synkad* betyder att den är säkerhetskopierad i en lösenordshanterare eller ett molnkonto och fungerar på dina andra enheter också). **Byt namn** (pennan) ändrar namnet; **Ta bort** (papperskorgen) tar bort den från ditt konto – ta också bort den från enheten eller lösenordshanteraren. Att ta bort kräver en ny inloggning, precis som att lägga till. Om din organisation kräver tvåstegsverifiering kan du inte ta bort din sista andra faktor. Om du tappar bort en enhet tar du bort dess lösennyckel från en annan enhet, eller ber en administratör att [återkalla dina lösennycklar](administration.md#återkalla-lösennycklar).
 
 ## Nästa steg
 

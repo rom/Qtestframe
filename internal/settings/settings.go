@@ -18,15 +18,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/mail"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/backup"
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/tracing"
 )
 
 // Kind is the value type of a setting.
@@ -70,7 +75,7 @@ const (
 )
 
 // Sections of the administration view, in order.
-var Sections = []string{"general", "server", "security", "tokens", "oidc", "logging", "email", "outbound", "runner", "live", "similarity", "ai", "retention"}
+var Sections = []string{"general", "server", "security", "tokens", "oidc", "logging", "monitoring", "email", "outbound", "runner", "live", "similarity", "ai", "retention", "privacy", "backup"}
 
 // Def describes one setting.
 type Def struct {
@@ -197,6 +202,12 @@ var Registry = []*Def{
 	num("auth.login_max_attempts", "security", Runtime, 1, 1000, func(c *config.Config) *int { return &c.Auth.LoginMaxAttempts }),
 	dur("auth.login_lockout", "security", Runtime, time.Minute, 24*time.Hour, func(c *config.Config) *time.Duration { return &c.Auth.LoginLockout }),
 	flag("auth.cookie_secure", "security", ReadOnly, func(c *config.Config) *bool { return &c.Auth.CookieSecure }),
+	// passkeys (WebAuthn)
+	flag("auth.passkeys.enabled", "security", Runtime, func(c *config.Config) *bool { return &c.Auth.Passkeys.Enabled }),
+	flag("auth.passkeys.passwordless", "security", Runtime, func(c *config.Config) *bool { return &c.Auth.Passkeys.Passwordless }),
+	flag("auth.passkeys.require_for_admins", "security", Runtime, func(c *config.Config) *bool { return &c.Auth.Passkeys.RequireForAdmins }),
+	checked(optional(str("auth.passkeys.rp_id", "security", Runtime, func(c *config.Config) *string { return &c.Auth.Passkeys.RPID })), checkRPID),
+	itemChecked(list("auth.passkeys.origins", "security", Runtime, func(c *config.Config) *[]string { return &c.Auth.Passkeys.Origins }), checkOrigin),
 
 	// API tokens
 	num("auth.token_max_days", "tokens", Runtime, 0, 3650, func(c *config.Config) *int { return &c.Auth.TokenMaxDays }),
@@ -218,6 +229,20 @@ var Registry = []*Def{
 	str("logging.syslog.ca_file", "logging", ReadOnly, func(c *config.Config) *string { return &c.Logging.Syslog.CAFile }),
 	str("logging.syslog.cert_file", "logging", ReadOnly, func(c *config.Config) *string { return &c.Logging.Syslog.CertFile }),
 	str("logging.syslog.key_file", "logging", ReadOnly, func(c *config.Config) *string { return &c.Logging.Syslog.KeyFile }),
+
+	// monitoring: the Prometheus endpoint and OpenTelemetry tracing (off
+	// by default; the separate metrics listener is opened at start-up)
+	flag("metrics.enabled", "monitoring", Runtime, func(c *config.Config) *bool { return &c.Metrics.Enabled }),
+	checked(optional(str("metrics.listen", "monitoring", Restart, func(c *config.Config) *string { return &c.Metrics.Listen })), checkListen),
+	{Key: "metrics.token", Section: "monitoring", Kind: Secret, Apply: Runtime, Optional: true, Check: oneLine,
+		get: func(c *config.Config) any { return c.Metrics.Token }, set: func(c *config.Config, v any) { c.Metrics.Token = v.(string) }},
+	itemChecked(list("metrics.allowed_ips", "monitoring", Runtime, func(c *config.Config) *[]string { return &c.Metrics.AllowedIPs }), checkIPOrCIDR),
+	flag("tracing.enabled", "monitoring", Runtime, func(c *config.Config) *bool { return &c.Tracing.Enabled }),
+	checked(optional(str("tracing.endpoint", "monitoring", Runtime, func(c *config.Config) *string { return &c.Tracing.Endpoint })), checkEndpoint),
+	{Key: "tracing.headers", Section: "monitoring", Kind: Secret, Apply: Runtime, Optional: true, Check: checkHeaders,
+		get: func(c *config.Config) any { return c.Tracing.Headers }, set: func(c *config.Config, v any) { c.Tracing.Headers = v.(string) }},
+	checked(str("tracing.sample_ratio", "monitoring", Runtime, func(c *config.Config) *string { return &c.Tracing.SampleRatio }), checkRatio),
+	checked(str("tracing.service_name", "monitoring", Runtime, func(c *config.Config) *string { return &c.Tracing.ServiceName }), checkTag),
 
 	// e-mail
 	{Key: "email.enabled", Section: "email", Kind: Bool, Apply: Runtime,
@@ -305,7 +330,83 @@ var Registry = []*Def{
 	flag("ai.features.suggest_criteria", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Features.SuggestCriteria }),
 	checked(optional(str("ai.price_input", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceInput })), checkPrice),
 	checked(optional(str("ai.price_output", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceOutput })), checkPrice),
+
+	// retention: how long data is kept (days, 0 = forever) and the nightly
+	// job that deletes older records
+	flag("retention.enabled", "retention", Runtime, func(c *config.Config) *bool { return &c.Retention.Enabled }),
+	num("retention.hour", "retention", Runtime, 0, 23, func(c *config.Config) *int { return &c.Retention.Hour }),
+	num("retention.runs_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.RunsDays }),
+	num("retention.runs_keep_latest", "retention", Runtime, 0, 1000, func(c *config.Config) *int { return &c.Retention.RunsKeepLatest }),
+	num("retention.logs_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.LogsDays }),
+	num("retention.notifications_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.NotificationsDays }),
+	num("retention.sessions_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.SessionsDays }),
+	num("retention.chat_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.ChatDays }),
+	num("retention.exploratory_days", "retention", Runtime, 0, MaxRetentionDays, func(c *config.Config) *int { return &c.Retention.ExploratoryDays }),
+
+	// privacy: client address truncation and the privacy notice
+	flag("privacy.truncate_ip", "privacy", Runtime, func(c *config.Config) *bool { return &c.Privacy.TruncateIP }),
+	checked(optional(str("privacy.notice_url", "privacy", Runtime, func(c *config.Config) *string { return &c.Privacy.NoticeURL })), checkEndpoint),
+
+	// backup: scheduled backups into a directory (written by the server:
+	// the directory is opened for writing before the process is locked
+	// down, so it applies at the next start)
+	flag("backup.enabled", "backup", Runtime, func(c *config.Config) *bool { return &c.Backup.Enabled }),
+	checked(str("backup.schedule", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.Schedule }), func(v any) error { return backup.CheckSchedule(v.(string)) }),
+	checked(optional(str("backup.directory", "backup", Restart, func(c *config.Config) *string { return &c.Backup.Directory })), checkDirectory),
+	num("backup.keep_last", "backup", Runtime, 0, 1000, func(c *config.Config) *int { return &c.Backup.KeepLast }),
+	num("backup.keep_days", "backup", Runtime, 0, 3650, func(c *config.Config) *int { return &c.Backup.KeepDays }),
+	{Key: "backup.passphrase", Section: "backup", Kind: Secret, Apply: Runtime, Optional: true, Check: checkPassphrase,
+		get: func(c *config.Config) any { return c.Backup.Passphrase }, set: func(c *config.Config, v any) { c.Backup.Passphrase = v.(string) }},
+	flag("backup.s3.enabled", "backup", Runtime, func(c *config.Config) *bool { return &c.Backup.S3.Enabled }),
+	checked(optional(str("backup.s3.endpoint", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.Endpoint })), checkBaseURL),
+	checked(optional(str("backup.s3.region", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.Region })), checkTagOrEmpty),
+	checked(optional(str("backup.s3.bucket", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.Bucket })), checkBucket),
+	checked(optional(str("backup.s3.prefix", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.Prefix })), checkPrefix),
+	checked(optional(str("backup.s3.access_key_id", "backup", Runtime, func(c *config.Config) *string { return &c.Backup.S3.AccessKeyID })), oneLine),
+	{Key: "backup.s3.secret_access_key", Section: "backup", Kind: Secret, Apply: Runtime, Optional: true,
+		get: func(c *config.Config) any { return c.Backup.S3.SecretAccessKey }, set: func(c *config.Config, v any) { c.Backup.S3.SecretAccessKey = v.(string) }},
 }
+
+// checkDirectory: an absolute path (or empty).
+func checkDirectory(v any) error {
+	s := v.(string)
+	if s == "" {
+		return nil
+	}
+	if !filepath.IsAbs(s) || strings.ContainsAny(s, "\r\n") {
+		return errors.New("must be an absolute path such as /var/backups/qtestframe")
+	}
+	return nil
+}
+
+// checkPassphrase: at least 12 characters (or empty: no encryption).
+func checkPassphrase(v any) error {
+	if s := v.(string); s != "" && len([]rune(s)) < 12 {
+		return errors.New("must be at least 12 characters")
+	}
+	return nil
+}
+
+var bucketRE = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`)
+
+func checkBucket(v any) error {
+	if s := v.(string); s != "" && !bucketRE.MatchString(s) {
+		return errors.New("must be a bucket name: 3-63 lower-case letters, digits, dots and dashes")
+	}
+	return nil
+}
+
+var prefixRE = regexp.MustCompile(`^[A-Za-z0-9!_.*'()/-]{0,200}$`)
+
+func checkPrefix(v any) error {
+	if s := v.(string); !prefixRE.MatchString(s) || strings.Contains(s, "..") {
+		return errors.New("must be a key prefix of letters, digits and !_.*'()/- such as qtestframe/")
+	}
+	return nil
+}
+
+// MaxRetentionDays is the longest retention period (100 years).
+const MaxRetentionDays = model.MaxRetentionDays
 
 // FileOnly are the keys of the configuration file that are not in the
 // Registry, with the reason (the inventory of internal/admindoc checks that
@@ -315,6 +416,10 @@ var FileOnly = map[string]string{
 	"email.password_file":                "a secret file read at start-up (the password itself can be set here)",
 	"similarity.embeddings.api_key_file": "a secret file read at start-up (the key itself can be set here)",
 	"ai.api_key_file":                    "a secret file read at start-up (the key itself can be set here)",
+	"metrics.token_file":                 "a secret file read at start-up (the token itself can be set here)",
+	"tracing.headers_file":               "a secret file read at start-up (the headers themselves can be set here)",
+	"backup.passphrase_file":             "a secret file read at start-up (the passphrase itself can be set here)",
+	"backup.s3.secret_access_key_file":   "a secret file read at start-up (the key itself can be set here)",
 	"bootstrap.admin_password":           "a secret used once, at the first start",
 	"bootstrap.admin_password_file":      "a secret file used once, at the first start",
 	"auth.saml":                          "SAML providers need key and certificate files: listed read-only",
@@ -357,6 +462,14 @@ func mapList(m map[string]string) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+// checkRPID: a domain name (or empty: the host of server.base_url).
+func checkRPID(v any) error {
+	if s := v.(string); s != "" && !config.ValidRPID(s) {
+		return fmt.Errorf("%q is not a domain name such as example.com", s)
+	}
+	return nil
 }
 
 func checkOrigin(s string) error {
@@ -435,6 +548,38 @@ func checkTemperature(v any) error {
 func checkPrice(v any) error {
 	_, err := config.ParsePrice(v.(string))
 	return err
+}
+
+// checkListen: host:port (or empty).
+func checkListen(v any) error {
+	s := v.(string)
+	if s == "" {
+		return nil
+	}
+	if _, port, err := net.SplitHostPort(s); err != nil || port == "" || strings.ContainsAny(s, " \r\n") {
+		return errors.New("must be host:port, e.g. 127.0.0.1:9090")
+	}
+	return nil
+}
+
+func checkIPOrCIDR(s string) error {
+	if !config.ValidIPOrCIDR(s) {
+		return fmt.Errorf("%q is not an IP address or CIDR range such as 10.0.0.0/8", s)
+	}
+	return nil
+}
+
+func checkRatio(v any) error {
+	_, err := config.ParseRatio(v.(string))
+	return err
+}
+
+// checkHeaders: "key=value" pairs separated by commas (or empty).
+func checkHeaders(v any) error {
+	if _, err := tracing.ParseHeaders(v.(string)); err != nil {
+		return errors.New("must be key=value pairs separated by commas, e.g. Authorization=Bearer <token>")
+	}
+	return nil
 }
 
 // checkEndpoint: an absolute http(s) URL (or empty).

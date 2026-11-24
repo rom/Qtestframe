@@ -685,11 +685,12 @@ func (s *Server) RunReportSubscriptions(ctx context.Context) (int, error) {
 		if err := s.Store.StartReportRun(ctx, x.ID, now, next); err != nil {
 			return i, err
 		}
-		msg := ""
+		msg, result := "", "ok"
 		if err := s.sendSubscription(ctx, x.TenantID, &x.ReportSubscription); err != nil {
-			msg = err.Error()
+			msg, result = err.Error(), "error"
 			s.Log.Warn("scheduled report", "subscription", x.ID, "err", err)
 		}
+		s.countJob("report_mail", result)
 		if err := s.Store.RecordReportRun(ctx, x.ID, now, msg, next); err != nil {
 			return i, err
 		}

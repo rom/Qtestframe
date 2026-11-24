@@ -22,7 +22,7 @@ import (
 // whose change makes the links of an item suspect.
 var (
 	RequirementContentFields = []string{"title", "description", "obligation", "criteria"}
-	TestContentFields        = []string{"title", "description", "preconditions", "steps", "expected_result", "script", "execution_type"}
+	TestContentFields        = []string{"title", "description", "preconditions", "steps", "expected_result", "script", "execution_type", "format", "gherkin"}
 )
 
 // ContentChanged returns the content fields among changed (for kind).

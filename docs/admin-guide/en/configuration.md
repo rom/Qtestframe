@@ -185,6 +185,16 @@ Every key of the file, its type, its default and the environment variable that s
 | `auth.saml[].role_mapping` | map | — | — | As for OIDC. |
 | `auth.saml[].allowed_domains` | list | — | — | E-mail domains that may sign in through the provider, as for OIDC. Empty = any. |
 
+### `auth`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `auth.passkeys.enabled` | bool | `true` | — | Users can register passkeys and use them. When off, registered passkeys are kept but cannot be used, also not as a second factor. |
+| `auth.passkeys.passwordless` | bool | `true` | — | Users of local accounts can sign in with a passkey alone ("Sign in with a passkey"; the authenticator must verify the user with a PIN or biometrics). When off, passkeys are only a second factor. Accounts of an identity provider always sign in there. |
+| `auth.passkeys.require_for_admins` | bool | `false` | — | Super administrators and organisation administrators must have a passkey or an authenticator app: without one their next sign-in must set one up first. |
+| `auth.passkeys.rp_id` | string | — | — | The WebAuthn relying party ID: the domain passkeys belong to, e.g. `example.com` (empty = the host of `server.base_url`). Changing it later makes the registered passkeys unusable. |
+| `auth.passkeys.origins` | list | — | — | Origins the browser may use passkeys from, e.g. `https://qtf.example.com` (empty = the origin of `server.base_url`). Each must use https (http only for localhost) and lie within `rp_id`. |
+
 ### `runner`
 
 | Key | Type | Default | Environment | Description |
@@ -342,6 +352,64 @@ Every key of the file, its type, its default and the environment variable that s
 | `outbound.denied_hosts` | list | — | — | Hosts outgoing calls never reach, e.g. `metadata.google.internal` or `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Refuse outgoing calls to loopback, private, link-local and other non-public addresses (checked on the address actually connected to), unless the host is in `allowed_hosts`. Turn it on when the server is reachable from the internet and its users should not reach your internal network through it. |
 
+### `metrics`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `metrics.enabled` | bool | `false` | `QTF_METRICS_ENABLED` | Serve Prometheus metrics on `/metrics` (requests, latency, database pool, Go runtime, background jobs, sign-ins, live connections and the number of projects, requirements, tests and runs). Off by default. |
+| `metrics.listen` | string | — | — | A separate `host:port` for `/metrics` (e.g. `127.0.0.1:9090`), opened at start-up; the main listener then answers `/metrics` with 404. Empty: the main listener serves it. |
+| `metrics.token_file` | string | — | — | File with the bearer token a scraper must send (`Authorization: Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). The token can also be stored, encrypted, in the system settings; it is never shown again. `QTF_METRICS_TOKEN` wins over both. |
+| `metrics.allowed_ips` | list | — | — | Addresses or CIDR ranges that may scrape `/metrics` (the client address, from `X-Forwarded-For` only behind `trusted_proxies`). With a token too, both must match; with neither, only the loopback address may scrape. |
+
+### `tracing`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `tracing.enabled` | bool | `false` | `QTF_TRACING_ENABLED` | Export OpenTelemetry traces of HTTP requests, database queries and outgoing calls to `endpoint`. Off by default. |
+| `tracing.endpoint` | string | — | `QTF_TRACING_ENDPOINT` | OTLP/HTTP address of the collector, e.g. `http://otel-collector:4318`; `/v1/traces` is added to an address without a path. Spans are sent as JSON in batches (every 5 seconds or 512 spans). |
+| `tracing.headers_file` | string | — | — | File with headers sent with every export, `key=value` pairs separated by commas (e.g. `Authorization=Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). Can also be stored, encrypted, in the system settings. `QTF_TRACING_HEADERS` wins over both. |
+| `tracing.sample_ratio` | string | `1` | — | Share of new traces that are recorded, 0–1 (`0.1` = one in ten). A request with a `traceparent` header follows the decision of its caller. |
+| `tracing.service_name` | string | `qtestframe` | — | `service.name` of the exported spans. |
+
+### `backup`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `backup.enabled` | bool | `false` | — | Take scheduled backups: the server writes the archive of `qtestframe backup` into `directory` on the `schedule`. With several servers on one database one of them takes each backup (a lock row in the database). |
+| `backup.schedule` | string | `daily 02:00` | — | When backups run, in UTC: `daily HH:MM`, `weekly DAY HH:MM` (`mon`–`sun`) or `every DURATION` (`15m` to `720h`, e.g. `every 6h`). A slot missed while no server ran is taken once at the next start. |
+| `backup.directory` | string | — | — | Absolute path of the directory the backup files are written to (created with mode 0700, writable under Landlock). Required for scheduled backups and *Run backup now*. Files are named `qtestframe-backup-YYYYMMDD-HHMMSS.zip` (`.zip.enc` when encrypted). |
+| `backup.keep_last` | integer | `7` | — | Keep the newest N backup files in `directory` and delete older ones (`0` = no limit). Only files named like scheduled backups are deleted. |
+| `backup.keep_days` | integer | `0` | — | Delete backup files older than N days (`0` = never). With `keep_last` a file goes when either rule says so; the newest file is always kept. |
+| `backup.passphrase_file` | string | — | — | File holding the passphrase that encrypts scheduled backups (AES-256-GCM with a key derived by scrypt). A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The passphrase can also be set in the system settings; without one, backups are not encrypted. |
+| `backup.s3.enabled` | bool | `false` | — | Upload every scheduled backup to S3-compatible object storage (Amazon S3, MinIO, Ceph, Garage …) after writing it. A failed upload fails the run; the local file is kept. |
+| `backup.s3.endpoint` | string | — | — | Base URL of the storage, e.g. `https://s3.eu-north-1.amazonaws.com` or `https://minio.example.com:9000` (path-style requests: `ENDPOINT/BUCKET/KEY`). The upload follows the `outbound` settings. |
+| `backup.s3.region` | string | `us-east-1` | — | Region of the signature (AWS Signature Version 4); `us-east-1` for most S3-compatible servers. |
+| `backup.s3.bucket` | string | — | — | Bucket the backups are uploaded to. Delete old objects with a lifecycle rule of the bucket: the retention rules apply to the local directory only. |
+| `backup.s3.prefix` | string | — | — | Prefix of the object keys, e.g. `qtestframe/` (empty = the top of the bucket). |
+| `backup.s3.access_key_id` | string | — | — | Access key ID of the credentials allowed to `PutObject` in the bucket. |
+| `backup.s3.secret_access_key_file` | string | — | — | File holding the secret access key. A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The key can also be set in the system settings (write-only). |
+
+### `retention`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `retention.enabled` | bool | `false` | — | Run the nightly retention job, which deletes records older than their retention period (see *Privacy and data retention*). Check the dry-run preview under **Administration → System settings → Retention and backups** before turning it on. |
+| `retention.hour` | integer | `2` | — | Hour of the day (UTC, 0–23) the retention job runs. |
+| `retention.runs_days` | integer | `0` | — | Days to keep test runs with their results, step results, comments and attachments (0 = forever). Runs in progress, of a project or release under legal hold or with an electronic signature are kept. |
+| `retention.runs_keep_latest` | integer | `0` | — | Always keep the runs holding one of the latest N results of each test, however old (0 = no exception). |
+| `retention.logs_days` | integer | `0` | — | Days to keep logs and uploaded artifacts: the sign-in log, finished test runner jobs, CI status posts, tracker sync logs and web test evidence (screenshots, traces, videos) (0 = forever). |
+| `retention.notifications_days` | integer | `0` | — | Days to keep in-app notifications, read or not (0 = forever). |
+| `retention.sessions_days` | integer | `0` | — | Days to keep sign-in sessions not used for that long and API tokens that expired that long ago (0 = forever). |
+| `retention.chat_days` | integer | `0` | — | Days to keep the chat message history (sent or failed messages with their text) and the personal input suggestion history (0 = forever). |
+| `retention.exploratory_days` | integer | `0` | — | Days to keep the notes of completed or debriefed exploratory sessions, counted from the session's last change (0 = forever). The session and its debrief stay. |
+
+### `privacy`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `privacy.truncate_ip` | bool | `false` | — | Store and log client addresses shortened: IPv4 to /24, IPv6 to /48 (sign-in log, sessions, remembered devices, request log). Rate limits still use the full address in memory. |
+| `privacy.notice_url` | string | — | — | Link to your privacy notice, shown on the sign-in page (empty = none). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -364,6 +432,8 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_LIVE_ENABLED` | `live.enabled` (`1` or `true` = on, anything else = off) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
+| `QTF_METRICS_ENABLED` | `metrics.enabled` (`true` or `1`) |
+| `QTF_METRICS_TOKEN` | the bearer token of `/metrics`; wins over `metrics.token_file` and a token stored in the web client |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` or `true` = on) |
 | `QTF_RUNNER_WEB_BROWSERS_PATH` | `runner.web.browsers_path` |
 | `QTF_RUNNER_WEB_ENABLED` | `runner.web.enabled` (`1` or `true` = on) |
@@ -379,9 +449,13 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_SERVER_BASE_URL` | `server.base_url` |
 | `QTF_SERVER_LISTEN` | `server.listen` |
 | `QTF_SERVER_PORT` | the port of `server.listen` (the host stays) |
+| `QTF_TRACING_ENABLED` | `tracing.enabled` (`true` or `1`) |
+| `QTF_TRACING_ENDPOINT` | `tracing.endpoint` |
+| `QTF_TRACING_HEADERS` | the headers of the trace export; win over `tracing.headers_file` and headers stored in the web client |
 | `QTF_OIDC_<NAME>_CLIENT_SECRET` | client secret of the OIDC provider `<name>` (upper case); wins over `client_secret_file` and a secret stored in the web client |
 | `CREDENTIALS_DIRECTORY` | set by systemd (`LoadCredential=`): relative `*_file` paths are resolved in it, and it is readable after the lock-down |
 | `STATE_DIRECTORY` | set by systemd (`StateDirectory=`): default place of the key file when the database is not SQLite |
+| `QTF_BACKUP_PASSPHRASE` | the passphrase of `qtestframe backup --encrypt`, `backup verify` and `restore` when `--passphrase-file` is not given (the server reads `backup.passphrase` instead) |
 | `QTF_URL`, `QTF_TOKEN`, `QTF_CONFIGURATION` | defaults of `--url`, `--token` and `--configuration` of `qtestframe report` |
 
 <!-- END GENERATED: environment -->

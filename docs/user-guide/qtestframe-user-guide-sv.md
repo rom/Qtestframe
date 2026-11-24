@@ -81,8 +81,9 @@ Den här sidan förklarar hur du loggar in, hittar rätt på skärmen och ställ
 
 1. Ange **E-post** och **Lösenord** och välj **Logga in**.
 2. Om du tillhör flera organisationer och vill börja i en viss, välj **Logga in i en viss organisation …** och ange dess kortnamn, till exempel `acme`. Utan kortnamn hamnar du i din standardorganisation (se [Inställningar](#inställningar)) eller den du använde senast.
-3. Om din organisation använder enkel inloggning (SSO) visar sidan en knapp per leverantör under **eller fortsätt med**. Välj den och logga in hos identitetsleverantören; du kommer automatiskt tillbaka till Qtestframe.
-4. Om du använder [tvåstegsverifiering](#tvåstegsverifiering) frågar sidan sedan efter **Verifieringskod**: öppna autentiseringsappen, ange den sexsiffriga kod den visar för Qtestframe och välj **Verifiera**. Varje kod fungerar en gång; om en kod nekas, vänta på nästa. Utan telefonen väljer du **Använd en återställningskod i stället** och anger en av dina återställningskoder. Om din organisation tillåter det hoppar **Kom ihåg den här enheten** över koden i den här webbläsaren under ett antal dagar.
+3. Med en [lösennyckel](#lösennycklar) väljer du **Logga in med lösennyckel** (eller väljer din lösennyckel bland förslagen i fältet **E-post**) och bekräftar med fingeravtryck, ansikte, PIN eller säkerhetsnyckel: du behöver varken lösenord eller kod. Om webbläsaren inte kan använda lösennycklar står det under knappen; logga då in med ditt lösenord.
+4. Om din organisation använder enkel inloggning (SSO) visar sidan en knapp per leverantör under **eller fortsätt med**. Välj den och logga in hos identitetsleverantören; du kommer automatiskt tillbaka till Qtestframe.
+5. Om du använder [tvåstegsverifiering](#tvåstegsverifiering) frågar sidan sedan efter den andra faktorn. Med en lösennyckel väljer du **Använd lösennyckel** och bekräftar på enheten. Annars anger du **Verifieringskod**: öppna autentiseringsappen, ange den sexsiffriga kod den visar för Qtestframe och välj **Verifiera**. Varje kod fungerar en gång; om en kod nekas, vänta på nästa. Utan telefonen väljer du **Använd en återställningskod i stället** och anger en av dina återställningskoder. Om din organisation tillåter det hoppar **Kom ihåg den här enheten** över koden i den här webbläsaren under ett antal dagar.
 
 Språkknapparna högst upp på inloggningssidan växlar mellan engelska och svenska innan du loggar in. Efter inloggningen gäller språket i dina inställningar.
 
@@ -180,6 +181,7 @@ Sökfältet i övre fältet söker överallt i den aktuella organisationen. Trä
 - **Visningsnamn**: namnet som andra ser i kommentarer, versionshistorik och händelseloggen.
 - **Profilbild**: välj en bild för ditt konto: ladda upp en bild (PNG, JPEG, GIF eller WebP, högst 1 MB), välj en av de inbyggda bilderna eller använd dina initialer.
 - **Inloggningsleverantör**, **Medlem sedan** och dina **Medlemskap**: organisationerna du tillhör och din roll i var och en.
+- **Dina uppgifter**: **Ladda ner mina uppgifter** ger dig en ZIP-fil med JSON-filer med de personuppgifter servern har om dig: profil, medlemskap och roller, kommentarer du skrivit och kommentarer som nämner dig, sessioner, API-tokens (utan sina hemligheter), inloggningslogg, aviseringar, elektroniska signaturer, inmatningshistorik och händelseloggens poster av eller om dig. Nedladdningen registreras i händelseloggen. Vill du att ditt konto raderas, be en superadministratör (se administratörshandboken, *Integritet och gallring*).
 
 ### Inställningar
 
@@ -231,6 +233,22 @@ Därefter frågar varje inloggning med lösenord efter en kod. API-nycklar påve
 - **Ny eller borttappad telefon**: med en återställningskod kan du fortfarande logga in; stäng av tvåstegsverifieringen och konfigurera den igen med den nya telefonen. Utan telefon och återställningskoder ber du en administratör att [återställa din tvåstegsverifiering](#återställa-tvåstegsverifiering).
 
 Om du loggar in med enkel inloggning frågar oftast identitetsleverantören efter den andra faktorn; Qtestframe frågar efter en egen kod bara om servern är konfigurerad för det.
+
+### Lösennycklar
+
+Med en **lösennyckel** (passkey) loggar du in med enhetens skärmlås (fingeravtryck, ansikte eller PIN), en lösenordshanterare som sparar den, eller en säkerhetsnyckel, i stället för med lösenord. Den kan inte nätfiskas eller gissas, och den räknas också som din andra faktor: med en lösennyckel behöver du ingen autentiseringsapp. Lösennycklar kräver en aktuell webbläsare (Chrome, Edge, Firefox eller Safari) och en server med en https-adress; annars förklarar profilen varför de inte är tillgängliga.
+
+**Lägg till en lösennyckel**
+
+1. I din profil, under **Lösennycklar**, väljer du **Lägg till lösennyckel**.
+2. Ge den ett namn som du känner igen senare (förslaget är din enhet och webbläsare, till exempel *Mac · Safari*) och välj **Lägg till lösennyckel**.
+3. Följ webbläsaren: välj var lösennyckeln ska sparas (den här enheten, din telefon, en lösenordshanterare eller en säkerhetsnyckel) och bekräfta med fingeravtryck, ansikte, PIN eller säkerhetsnyckel.
+
+Om du loggade in för mer än 10 minuter sedan ber Qtestframe dig först att **Bekräfta att det är du**: ange ditt lösenord, en kod från autentiseringsappen eller bekräfta med en befintlig lösennyckel.
+
+**Logga in med den**: på inloggningssidan väljer du **Logga in med lösennyckel**, eller väljer den bland förslagen i fältet **E-post**. Om ditt konto loggar in via enkel inloggning använder du din identitetsleverantör; där kan lösennyckeln vara din andra faktor. När administratören har stängt av inloggning utan lösenord är en lösennyckel din andra faktor efter lösenordet.
+
+**Senare**: listan visar varje lösennyckel med namn, när den lades till och när den senast användes (*Synkad* betyder att den är säkerhetskopierad i en lösenordshanterare eller ett molnkonto och fungerar på dina andra enheter också). **Byt namn** (pennan) ändrar namnet; **Ta bort** (papperskorgen) tar bort den från ditt konto – ta också bort den från enheten eller lösenordshanteraren. Att ta bort kräver en ny inloggning, precis som att lägga till. Om din organisation kräver tvåstegsverifiering kan du inte ta bort din sista andra faktor. Om du tappar bort en enhet tar du bort dess lösennyckel från en annan enhet, eller ber en administratör att [återkalla dina lösennycklar](#återkalla-lösennycklar).
 
 ## Nästa steg
 
@@ -985,6 +1003,7 @@ Sidan fungerar som [kravsidan](#kravsidan): mappträd, filterfält med snabbfilt
 |---|---|
 | **Titel** | Ett kort namn (obligatoriskt). |
 | **Exekveringstyp** | **Manuellt** eller **Automatiserat**. |
+| **Format** | **Steg** (förutsättningar och steg) eller **Gherkin** (en egenskap med scenarier, se [Gherkin-testfall](#gherkin-testfall-bdd)). |
 | **Beskrivning** | Vad testfallet handlar om. |
 | **Förutsättningar** | Vad som måste gälla innan testet börjar, till exempel *ett kundkonto finns*. Visas för testaren i exekveringsvyn. |
 | **Status** | Utkast, Klart, Granskning eller Utfasat. |
@@ -1067,6 +1086,63 @@ När testfallet läggs till i en körning blir varje rad en **iteration** av exe
 
 Testdatan ingår i testfallets versionshistorik och i exporten (**Exportera → Testdata**: en rad per datarad och parameter).
 
+## Gherkin-testfall (BDD)
+
+Ett testfall kan skrivas som en **Gherkin**-egenskap i stället för förutsättningar och steg, på det sätt som beteendedriven utveckling (BDD) och Cucumber beskriver beteende: *Givet* ett sammanhang, *När* något händer, *Så* ett utfall. Välj format med **Steg** / **Gherkin** bredvid exekveringstypen i testfallsredigeraren.
+
+```gherkin
+# language: sv
+@kassa @REQ-12
+Egenskap: Kassan
+  Bakgrund:
+    Givet en kund med ett sparat kort
+
+  @rök
+  Scenario: Betala med det sparade kortet
+    När kunden betalar 25 kr
+    Så är ordern "betald"
+
+  Scenariomall: Betala <belopp>
+    När kunden betalar <belopp> kr
+    Så visar kvittot <belopp> kr
+
+    Exempel:
+      | belopp |
+      | 5      |
+      | 10     |
+```
+
+En egenskap har ett namn och en beskrivning, en valfri **Bakgrund** (steg som körs före varje scenario), **Scenarier** och **Scenariomallar** med **Exempel**-tabeller (ett scenario per rad; `<belopp>` ersätts med radens värde), **Regler** som grupperar scenarier, **taggar** (`@rök`) på egenskaper, regler, scenarier och exempel, **dokumentsträngar** (text mellan rader med `"""` eller ```` ``` ````) och **datatabeller** under ett steg. Både svenska och engelska nyckelord fungerar i alla testfall: *Egenskap/Feature*, *Bakgrund/Background*, *Scenario*, *Scenariomall/Abstrakt scenario/Scenario Outline*, *Exempel/Examples*, *Regel/Rule*, *Givet/Given*, *När/When*, *Så/Then*, *Och/And*, *Men/But*. En första rad `# language: sv` markerar en svensk egenskap (språket känns också igen på nyckelorden).
+
+**Redigeraren** färgmarkerar nyckelord, taggar, strängar, tal, platshållare, tabeller, dokumentsträngar och kommentarer och kontrollerar texten medan du skriver: en rad med fel stryks under och listas under redigeraren med sitt radnummer (välj det för att gå till raden), och steg som inget steg i [stegbiblioteket](#stegbiblioteket) matchar markeras som *odefinierade*. Ett testfall vars Gherkin-text har fel kan inte sparas. Tangentbord:
+
+| Tangenter | Gör |
+|---|---|
+| **Ctrl+Mellanslag** | Föreslår nyckelord i början av en rad och steg ur stegbiblioteket efter ett stegnyckelord (förslag visas också medan du skriver). **↑**/**↓** väljer, **Retur** eller **Tabb** infogar, **Esc** stänger. Ett infogat steg markerar sin första parameter, till exempel `{int}`, så att du kan skriva över den. |
+| **Retur** | En ny rad med samma indrag, en nivå djupare efter en rubrik som *Scenario:*. |
+| **Alt+Skift+F** | Justerar kolumnerna i alla tabeller (även **Justera tabeller**). Inget annat ändras. |
+| **Tabb** | Lämnar redigeraren (när inget förslag är öppet), som i alla andra fält. Gör indrag med mellanslag. |
+
+**Konvertera:** när ett befintligt testfall byter från **Steg** till **Gherkin** skrivs förutsättningarna som *Givet*-steg, varje åtgärd som ett *När*-steg, varje förväntat resultat som ett *Så*-steg, stegdata som en dokumentsträng och testdata som en *Scenariomall* med *Exempel*. Byter du tillbaka skrivs *Bakgrund* och de första *Givet*-stegen som förutsättningar, varje *När*-steg som ett steg med de följande *Så*-stegen som förväntat resultat, och den första *Exempel*-tabellen som testdata. **Konvertera från stegen** och **Konvertera från Gherkin** gör om konverteringen (de ersätter det som finns). Konverteringen görs så gott det går: regler, flera *Exempel*-tabeller och anropade testfall förenklas, och redigeraren säger till.
+
+**Köra ett Gherkin-testfall:** i en körning är varje scenario, och varje *Exempel*-rad i en scenariomall, en [iteration](runs.md#datadrivna-testfall-iterationer) av exekveringen, med scenariots namn (en mall får radens värden i namnet). Stegen är *Bakgrund*-stegen följda av scenariots steg, med dokumentsträngar och tabeller vid steget, och testaren anger ett utfall per steg som vanligt. Utfallen förs tillbaka till raderna i egenskapen: redigeraren visar det senaste utfallet för varje steg i marginalen (grönt godkänt, rött underkänt) och listar dem under **Senaste utfall per steg**.
+
+**Cucumber**-stubbarna från [Generera testkod](ci-cd.md#generera-testkod) för ett Gherkin-testfall är själva egenskapen, taggad med testfallets nyckel och `@qtestframe-stub`, så att scenarierna som teamet skrev är de scenarier som Cucumber kör. Frågefältet `format` hittar testfall efter format: `format:gherkin`.
+
+### Stegbiblioteket
+
+**Stegbibliotek** (i redigeraren och i menyn **Importera** på testfallssidan) innehåller projektets återanvändbara steg. Varje steg är ett **Cucumber-uttryck** som `kunden betalar {int} kr` eller `jag loggar in som {string}` (parametrarna `{int}`, `{float}`, `{word}`, `{string}` och `{}`; `artikel(n)` för valfri text; `in/på` för alternativ; ett omvänt snedstreck skyddar `{`, `(` och `/`) eller, med typen **Reguljärt uttryck**, ett mönster som `^jag betalar (\d+) kr$`. Ett steg kan ha ett nyckelord (*Givet*, *När* eller *Så*: föreslås först efter det nyckelordet) och en beskrivning, som visas i förslagen.
+
+Listan visar hur ofta varje steg används och, under **Var det används**, testfallen och raderna. **Odefinierade steg** listar stegen i Gherkin-testfallen som ingen definition matchar, med ett föreslaget uttryck (text inom citattecken blir `{string}`, tal `{int}` eller `{float}`); **Lägg till i biblioteket** fyller i formuläret med det. Samma erbjudande finns under redigeraren för det öppna testfallets odefinierade steg.
+
+**Byt namn i alla testfall** ändrar ett stegs uttryck och skriver om varje steg som använde det i alla Gherkin-testfall i projektet, med parametrarna kvar: byter du `kunden betalar {int} kr` till `kunden betalar {int} kronor` blir *kunden betalar 25 kr* till *kunden betalar 25 kronor*. Det nya uttrycket måste ha lika många parametrar som det gamla. Varje ändrat testfall får en ny version, så ändringen syns i dess historik. Tar du bort ett steg ur biblioteket lämnas testfallen som de är; deras steg blir odefinierade. Att läsa biblioteket kräver **Läsare**, att ändra det **Testare**.
+
+### Import och export av feature-filer
+
+**Importera → Importera .feature-filer** på testfallssidan skapar Gherkin-testfall av `.feature`-filer: välj **Ett testfall per scenario** (vart och ett med egenskapens *Bakgrund*; en scenariomall behåller sina *Exempel*) eller **Ett testfall per feature-fil**. Förhandsvisningen listar testfallen som skapas och filerna som har fel (med raden), som hoppas över. Taggar blir testfallens taggar, utom taggar som namnger ett krav i projektet, som i stället länkar testfallet till kravet: `@SHOP-REQ-12`, `@req:SHOP-REQ-12` eller `@REQ-12` utan projektnyckeln.
+
+**Importera → Exportera som .feature-filer** laddar ned en zip-fil med en `.feature`-fil per testfall i listan (eller i urvalet): ett Gherkin-testfall som det är skrivet, ett testfall i stegformat konverterat, vart och ett taggat med sin nyckel och nycklarna till kraven det verifierar.
+
 ## Kategorier
 
 Kategorier klassificerar testfall och krav längs **dimensioner**. Nya projekt får dessa standardvärden:
@@ -1082,7 +1158,7 @@ Kategorier klassificerar testfall och krav längs **dimensioner**. Nya projekt f
 
 Ett objekt kan ha hur många kategorivärden som helst, även flera i samma dimension. Hantera dem under **Kategorier & inställningar**:
 
-![Sidan Kategorier och inställningar med kravkategorier, testfallskategorier och deras färger](images/sv-settings-categories.png)
+![Sidan Kategorier och inställningar med kravkategorier, testfallskategorier och deras färger](../images/sv-settings-categories.png)
 
 - **Ny dimension** skapar en dimension med dess första värde; **Lägg till värde** lägger till fler.
 - Välj en färgruta för att ändra ett värdes färg; värdet visas i den färgen överallt.
@@ -1092,17 +1168,17 @@ Ett objekt kan ha hur många kategorivärden som helst, även flera i samma dime
 
 I frågor matchar `category:Negative` värdets namn och `dimension:Polarity/Negative` den fullständiga formen.
 
-På samma sida finns projektets **Namn**, **Beskrivning**, **URL-mall för felhanteringssystem** (se [Defekter](#defekter)), avsnittet [Spara och läs in](#spara-och-läs-in-projekt) (**Spara projekt**, **Duplicera projekt**, **Läs in projekt**) och, för administratörer, **Ta bort projekt**. Att redigera kategorier kräver **Ansvarig** (eller skrivbehörighet för deras område, Testare för testfallskategorier).
+På samma sida finns projektets **Namn**, **Beskrivning**, **URL-mall för felhanteringssystem** (se [Defekter](runs.md#defekter)), avsnittet [Spara och läs in](reports-and-export.md#spara-och-läs-in-projekt) (**Spara projekt**, **Duplicera projekt**, **Läs in projekt**) och, för administratörer, **Ta bort projekt**. Att redigera kategorier kräver **Ansvarig** (eller skrivbehörighet för deras område, Testare för testfallskategorier).
 
 ## Markera många tester som klara på en gång
 
-Den som har `test.review` kan markera många tester som *Klart* i ett steg: kryssa i testerna och välj **Markera som klara…**, eller välj **Massgranskning** ovanför listan när inget är markerat. Precis som för krav (se [Godkänn många krav på en gång](#godkänn-många-krav-på-en-gång)) väljer du tester (markerade, de som visas i listan eller alla), vilka statusar de får komma från (som standard *Granskning*; lägg till *Utkast* för att ta med utkast) och en valfri kommentar, och en förhandsgranskning visar vad som ändras.
+Den som har `test.review` kan markera många tester som *Klart* i ett steg: kryssa i testerna och välj **Markera som klara…**, eller välj **Massgranskning** ovanför listan när inget är markerat. Precis som för krav (se [Godkänn många krav på en gång](requirements.md#godkänn-många-krav-på-en-gång)) väljer du tester (markerade, de som visas i listan eller alla), vilka statusar de får komma från (som standard *Granskning*; lägg till *Utkast* för att ta med utkast) och en valfri kommentar, och en förhandsgranskning visar vad som ändras.
 
 Utöver kontrollerna för krav (den senaste granskningen begärde ändringar, öppna granskningsförfrågningar, misstänkta länkar) hoppas ett test över när det inte kan köras som det är skrivet: ett **manuellt test utan steg** eller ett **automatiserat test utan skript**. Välj kontrollen under **Ta med ändå, trots** för att markera dem som klara ändå.
 
 ## Kalkylbladsvy
 
-Välj **Kalkylblad** för att redigera testfall som i ett kalkylblad; det fungerar som för [krav](#kalkylbladsvy) (tangentbord, kopiera och klistra in från Excel, fyll nedåt, nya rader, sparande, konflikter, ångra och **Exportera vyn**). Kolumnerna är **Nyckel**, **Titel**, **Beskrivning**, **Prioritet**, **Status**, **Exekvering**, **Förutsättningar**, **Förväntat resultat**, **Uppskattning (min)**, **Kategorier**, **Taggar**, **Mapp** och de skrivskyddade **Steg** (antalet steg), **Senaste utfall**, **Krav**, **Skapad av** och **Version**. Steg, skript och testdata redigeras i redigeraren (dubbelklicka på nyckeln eller tryck **Ctrl+Enter**). Att sätta ett testfall till *Klart* är ett granskningsbeslut och kräver `test.review`, i bladet som i redigeraren.
+Välj **Kalkylblad** för att redigera testfall som i ett kalkylblad; det fungerar som för [krav](requirements.md#kalkylbladsvy) (tangentbord, kopiera och klistra in från Excel, fyll nedåt, nya rader, sparande, konflikter, ångra och **Exportera vyn**). Kolumnerna är **Nyckel**, **Titel**, **Beskrivning**, **Prioritet**, **Status**, **Exekvering**, **Förutsättningar**, **Förväntat resultat**, **Uppskattning (min)**, **Kategorier**, **Taggar**, **Mapp** och de skrivskyddade **Steg** (antalet steg), **Senaste utfall**, **Krav**, **Skapad av** och **Version**. Steg, skript och testdata redigeras i redigeraren (dubbelklicka på nyckeln eller tryck **Ctrl+Enter**). Att sätta ett testfall till *Klart* är ett granskningsbeslut och kräver `test.review`, i bladet som i redigeraren.
 
 ## Kopiera ett testfall
 
@@ -1120,7 +1196,7 @@ Ett testfall kan **bero på** andra testfall: de är dess förutsättningar och 
 
 I testfallsredigeraren listar avsnittet **Beror på** förutsättningarna med deras senaste utfall. Välj **Lägg till förutsättning** för att välja testfall i samma projekt, och **×** för att ta bort en *(Testare)*. **Krävs av** listar de testfall som väntar på det här. Ett testfall kan inte bero på sig självt, och beroenden får inte bilda en cykel.
 
-När testfallet exekveras räknas en förutsättning som godkänd när dess exekvering i samma körning har godkänts; när förutsättningen inte ingår i körningen räknas dess senaste utfall. Fram till dess visar exekveringsvyn varför testfallet inte kan startas, om inte [inställningarna för testexekvering](#inställningar-för-testexekvering) tillåter det. Kolumnen **Relationer** i testfallslistan visar *beror på* och *krävs av*, [beroendegrafen](#beroendegrafer) ritar dem, och filtret `depends_on:SHOP-TC-1` (eller `depends:`) hittar testfallen som beror på SHOP-TC-1.
+När testfallet exekveras räknas en förutsättning som godkänd när dess exekvering i samma körning har godkänts; när förutsättningen inte ingår i körningen räknas dess senaste utfall. Fram till dess visar exekveringsvyn varför testfallet inte kan startas, om inte [inställningarna för testexekvering](administration.md#inställningar-för-testexekvering) tillåter det. Kolumnen **Relationer** i testfallslistan visar *beror på* och *krävs av*, [beroendegrafen](traceability-and-coverage.md#beroendegrafer) ritar dem, och filtret `depends_on:SHOP-TC-1` (eller `depends:`) hittar testfallen som beror på SHOP-TC-1.
 
 ## Testflöde
 
@@ -1140,9 +1216,9 @@ När testfallet exekveras räknas en förutsättning som godkänd när dess exek
 
 Fliken **Exekveringar** listar alla exekveringar av testfallet i alla körningar, nyast först, med körning, miljö och bygge, utfall, vem som exekverade, när, tidsåtgång och eventuella defekter. Använd den för att se om ett testfall är instabilt eller när det började underkännas.
 
-![Fliken Exekveringar för ett testfall med utfall från flera körningar](images/sv-tests-executions.png)
+![Fliken Exekveringar för ett testfall med utfall från flera körningar](../images/sv-tests-executions.png)
 
-I körningar med [konfigurationer](#konfigurationer-i-en-körning) visas varje exekverings konfiguration under körningen, och en datadriven exekvering länkar till sina iterationer i exekveringsvyn.
+I körningar med [konfigurationer](runs.md#konfigurationer-i-en-körning) visas varje exekverings konfiguration under körningen, och en datadriven exekvering länkar till sina iterationer i exekveringsvyn.
 
 Kolumnen **Senaste utfall** visar det senaste utfallet (i vilken konfiguration som helst). I frågor hittar `last_result:failed` testfall vars senaste utfall är underkänt och `defect:SHOP-*` testfall med en sådan defekt.
 
@@ -3727,7 +3803,7 @@ Nyckelord och fältnamn är skiftlägesokänsliga. Värden med blanksteg behöve
 
 ### Testfall
 
-`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: åtgärd, förväntat resultat och data för alla steg), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (nycklar för länkade krav), `last_result` (`result`), `defect` (`defects`), `calls` (nycklar för anropade testfall), `depends_on` (`depends`: nycklar för förutsättningar), `comments`, `open_discussions` (`open-discussion`: olösta trådar, `has:open-discussion`), `mention` (@-namn i texterna och stegen, och personerna som nämns i diskussionen; `mentions:me` för dig själv), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` för [instabila testfall](#instabila-testfall): `flaky:true`), `flakiness` (`flips`: antalet växlingar mellan godkänt och underkänt bland de senaste utfallen: `flakiness>=3`), `catalog` (katalogposten testfallet kopierades från), `variant` (`variants`: varianterna testfallet gäller), `applicability` (`all` eller `selected`).
+`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: åtgärd, förväntat resultat och data för alla steg, och Gherkin-texten i ett Gherkin-testfall), `format` (`steps` eller `gherkin`: `format:gherkin`), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (nycklar för länkade krav), `last_result` (`result`), `defect` (`defects`), `calls` (nycklar för anropade testfall), `depends_on` (`depends`: nycklar för förutsättningar), `comments`, `open_discussions` (`open-discussion`: olösta trådar, `has:open-discussion`), `mention` (@-namn i texterna och stegen, och personerna som nämns i diskussionen; `mentions:me` för dig själv), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` för [instabila testfall](#instabila-testfall): `flaky:true`), `flakiness` (`flips`: antalet växlingar mellan godkänt och underkänt bland de senaste utfallen: `flakiness>=3`), `catalog` (katalogposten testfallet kopierades från), `variant` (`variants`: varianterna testfallet gäller), `applicability` (`all` eller `selected`).
 
 ### Ägare och tilldelade
 
@@ -4152,7 +4228,7 @@ Qtestframe fungerar tillsammans med krav- och ALM-verktyg som IBM DOORS och DOOR
 - **ReqIF-filer** flyttar hela specifikationer mellan verktyg: krav, testfall, mappar, relationer, spårlänkar och bilagor. Du exporterar en fil här och importerar den där, eller tvärtom, så ofta du vill.
 - **OSLC** kopplar ihop verktygen direkt: ett annat verktyg hittar Qtestframes krav och testfall, länkar sina egna poster till dem och kan skapa och ändra dem utan någon fil.
 
-Den här sidan förklarar båda. Excel fram och tillbaka och de andra exportformaten beskrivs i [Rapporter och export](#utbyta-data-med-andra-verktyg); din administratör kopplar ihop verktygen enligt administratörshandboken (*Koppla ihop med andra verktyg*).
+Den här sidan förklarar båda, och hur du [importerar testfall från andra testverktyg](#importera-testfall-från-andra-verktyg) som TestRail, Xray, Zephyr, qTest och Azure Test Plans. Excel fram och tillbaka och de andra exportformaten beskrivs i [Rapporter och export](#utbyta-data-med-andra-verktyg); din administratör kopplar ihop verktygen enligt administratörshandboken (*Koppla ihop med andra verktyg*).
 
 ## ReqIF-export
 
@@ -4214,6 +4290,36 @@ Urvals- och skapafönstren använder din session i Qtestframe i webbläsaren. Om
 
 Varje verktyg ansluter med en [API-nyckel](#api-nycklar) för en person eller ett tjänstekonto; verktyget kan göra det som nyckelns roll tillåter och ser bara projekt som den personen får se.
 
+## Importera testfall från andra verktyg
+
+Byter ni från ett annat testverktyg? Importera dess testfall till ett projekt: öppna **Import och utbyte** under **Testfall** och välj **Testfall från TestRail, Xray, Zephyr, qTest eller Azure …** (behörighet *test.write*).
+
+1. **Välj verktyget** som filen kommer från och **exportfilen**. Dialogen förklarar hur du exporterar från det valda verktyget.
+2. **Granska förhandsvisningen.** Ingenting sparas ännu. Varje testfall markeras *Nytt*, *Uppdatera* (importerat tidigare, ändrat i filen), *Oförändrat*, *Konflikt* (importerat tidigare, ändrat i filen *och* i Qtestframe sedan dess) eller *Fel* (kan inte importeras, till exempel utan titel). Varningarna anger vad som utelämnas och vilka referenser som inte matchar något krav.
+3. **Justera mappningen.** Det andra verktygets prioriteter och statusar mappas till Qtestframes (till exempel *Highest*, *Urgent* och *1* → *Kritisk*; *Approved* → *Klart*; *Obsolete* och *Closed* → *Utfasat*); okända värden blir *Medel* och *Utkast*. Fält som Qtestframe saknar plats för erbjuds projektets [egna fält](#egna-fält) för testfall: ett fält med samma namn som ett eget fält är förvalt. Varje ändring visar en ny förhandsvisning.
+4. **Välj placeringen** (en testmapp att importera till, om mappar ska skapas för sektioner, sviter, moduler eller områdessökvägar), om testfallen ska **länkas till krav** och om **tidigare resultat** ska importeras, och **Spara**. Importen är en transaktion: allt eller inget.
+
+| Verktyg | Export | Vad som importeras |
+|---|---|---|
+| **TestRail** | Testsvit → *Export* → CSV (alla fält; separata steg eller i en cell) eller XML. CSV-exporten av en testkörning tar med dess resultat. | Sektioner (och sviter, när filen har flera) → mappar; separata steg eller textmallens steg och förväntade resultat; förutsättningar; prioritet; typ; uppskattning; *References* → kravlänkar; övriga fält (*Automation Type*, era egna fält) → egna fält; med en körningsexport resultaten som körningar. |
+| **Xray (Jira)** | Test Repository eller ärendesökning → CSV; eller JSON från Xrays REST-export | *Manual*-testfall med sina steg (åtgärd, data, förväntat resultat); *Cucumber*-testfall med Gherkin-scenariot (sparas i beskrivningen och blir steg: *Given*/*When* → åtgärder, *Then* → förväntade resultat); *Generic*-testfall som automatiserade testfall med sin definition; förutsättningar; mappen i testarkivet (annars den första testmängden) → mapp; testmängder och etiketter → taggar; länkade krav via ärendenyckel; i JSON testkörningarna som körningar. |
+| **Zephyr Scale / Squad** | Zephyr Scale: *Tests* → *Export* → CSV eller XML; Zephyr Squad: testärendena med deras steg som CSV | Mapp; steg-för-steg-, fritext- och BDD-skript; mål, förutsättning, status, prioritet, etiketter, ägare, uppskattad tid; *Coverage (Issues)* → kravlänkar; egna fält. |
+| **qTest** | *Test Design* → *Export* → *Test Cases* (Excel, eller sparad som CSV) | Moduler → mappar; steg med förväntade resultat; beskrivning, förutsättning, prioritet, status, typ, tilldelad; länkade krav; övriga kolumner → egna fält. |
+| **Azure Test Plans** | Testsvit → *Export test cases to CSV*, eller en arbetsobjektsfråga med testfall och kolumnen *Steps* | Områdessökväg → mappar (utan projektets rotområde); stegen (egna rader, eller Azure DevOps steg-XML i en cell, delade steg som ett steg som namnger dem); tillstånd, prioritet, taggar, tilldelad; arbetsobjekt i en *Tests*-kolumn → kravlänkar. Andra typer av arbetsobjekt utelämnas. |
+
+**En ny import uppdaterar.** Varje testfall minns verktyget och sitt id där, så du kan importera en nyare export så fort det andra verktyget ändras under en migrering: ändrade testfall uppdateras, oförändrade lämnas orörda och ingenting dubbleras. Ett testfall som du ändrat i Qtestframe sedan dess är en *Konflikt* och skrivs bara över när du kryssar i *Uppdatera även … testfall som ändrats i Qtestframe*. Tidigare resultat importeras en gång: varje körning i det andra verktyget blir en avslutad körning med samma namn (*TestRail: Release 2.4 regression*), med resultatet, vem som utförde det, när och kommentaren (behörighet *run.write*). Testfall utan id i filen skapas på nytt vid varje import.
+
+**Kravlänkar.** En referens i filen (en ärendenyckel som *SHOP-101*, ett arbetsobjekts-id eller en TestRail-referens) länkar testfallet till det krav vars nyckel den är, vars nyckel sparades när det [importerades från Jira eller Azure DevOps](#jira-och-azure-devops) eller [ReqIF](#reqif-import), eller vars *Källa* anger *ID: SHOP-101*. Importera kraven först; referenser som inte matchar något visas i förhandsvisningen, och en ny import av testfallen när kraven finns lägger till de länkar som saknas. Länkar läggs bara till, de tas aldrig bort.
+
+Samma import går att köra på kommandoraden med en [API-nyckel](#api-nycklar), till exempel i ett migreringsskript:
+
+```
+qtestframe import-tests --from testrail suite.csv --project SHOP --dry-run
+qtestframe import-tests --from xray tests.json --project SHOP --folder "Legacy/Xray"
+```
+
+`--dry-run` skriver bara ut förhandsvisningen; `--overwrite`, `--no-history`, `--no-links` och `--no-folders` motsvarar dialogens val (se administratörshandboken, *Kommandoradsreferens*).
+
 ## Vilket ska jag välja?
 
 | Du vill … | Använd |
@@ -4223,6 +4329,7 @@ Varje verktyg ansluter med en [API-nyckel](#api-nycklar) för en person eller et
 | Kopiera ett projekt med testfall till ett annat Qtestframe | ReqIF med testfall (eller [Spara och läs in projekt](#spara-och-läs-in-projekt)) |
 | Frysa det som lämnades över | ReqIF-export av en baslinje |
 | Länka poster i ett ALM-verktyg till krav och testfall medan du arbetar | OSLC |
+| Flytta testfall och deras resultat från TestRail, Xray, Zephyr, qTest eller Azure Test Plans | [Importera testfall från andra verktyg](#importera-testfall-från-andra-verktyg) |
 
 # Dokument
 
@@ -4438,6 +4545,10 @@ Administratörer kan bara återställa lösenord för personer som enbart tillh�
 Kolumnen **MFA** visar vem som använder tvåstegsverifiering: **På**, *Av*, eller **Saknas** när [MFA-policyn](#tvåstegsverifiering-1) kräver den för medlemmen men hen inte har konfigurerat den än.
 
 *(Administratör)* När någon har tappat bort både telefonen och återställningskoderna väljer du **Återställ MFA** (skölden) på hens rad och bekräftar. Autentiseringsappen, återställningskoderna och ihågkomna enheter tas bort, personen loggas ut överallt och får en notis och ett e-postmeddelande. Därefter loggar hen in med bara lösenordet, eller, om MFA krävs för hen, konfigurerar en ny autentiseringsapp vid nästa inloggning. Försäkra dig om att begäran verkligen kommer från personen innan du återställer. Precis som för lösenord kan administratörer bara återställa personer som enbart tillhör deras organisation; superadministratörer kan återställa vem som helst, även under [Användare](#användare). Varje återställning registreras i [händelseloggen](#händelselogg).
+
+### Återkalla lösennycklar
+
+Kolumnen **Lösennycklar** visar hur många [lösennycklar](#lösennycklar) varje medlem har. *(Administratör)* När någon har tappat bort en enhet med en lösennyckel, eller en lösennyckel kan ha hamnat i fel händer, väljer du **Återkalla lösennycklar** (den överkryssade cirkeln) på hens rad och bekräftar: alla hens lösennycklar tas bort och hen loggas ut överallt. Därefter loggar hen in med sitt lösenord (och kan lägga till nya lösennycklar). Samma begränsningar som för att återställa MFA gäller; superadministratörer kan också göra det under [Användare](#användare). Det registreras i [händelseloggen](#händelselogg).
 
 ## Tvåstegsverifiering
 
@@ -4678,6 +4789,7 @@ Administratören anger på samma sida vilka åtgärder som kräver signatur, inn
 - Du kan inte ta bort din egen superadministratörsflagga eller inaktivera dig själv, och den sista aktiverade superadministratören förblir alltid en.
 - **Filtrera** på namn eller e-post, status (aktiverad eller inaktiverad), inloggningssätt, flerfaktorsautentisering eller superadministratörer.
 - Knapparna på en rad visar användarens **organisationer** med roller och öppna sessioner, **loggar ut användaren överallt** (API-tokens fortsätter att gälla), återställer den andra faktorn eller ett lokalt lösenord och **inaktiverar** eller **aktiverar** kontot.
+- **Exportera personuppgifter** (nedladdningsknappen) ger en ZIP-fil med allt servern har om personen, för en begäran om registerutdrag. **Radera användare** anonymiserar kontot när du har skrivit dess e-postadress: det får en pseudonym (*Former user #n*), personuppgifter, sessioner och tokens raderas, innehållet finns kvar under pseudonymen, och elektroniska signaturer och poster i händelseloggen finns kvar som de registrerades. Raderingen kan inte ångras; se [administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/privacy.md#radering-anonymisering).
 
 Användare som loggar in med enkel inloggning via OIDC eller SAML kan skapas automatiskt vid första inloggningen, med en roll som hämtas från grupperna hos identitetsleverantören; det konfigureras på servern (se [administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authentication.md#provisionering-av-anv%C3%A4ndare-med-single-sign-on)).
 
@@ -4739,6 +4851,10 @@ När du ändrat leverantörerna här ersätter den här listan leverantörerna i
 ### Loggning och syslog
 
 Välj **Loggnivå** och **Loggformat** för serverloggen, och om loggen (även händelseloggen) också ska skickas till en central **syslog**-server: nätverk (`udp`, `tcp`, `tls` eller en lokal socket), adress, meddelandeformat, facility och tagg. **Skicka testmeddelande** skickar ett meddelande med värdena i formuläret, innan du sparar dem; resultatet visas och läses upp vid knappen. Ändringar gäller direkt. Certifikat för syslog över TLS anges i konfigurationsfilen.
+
+### Mätvärden och spårning
+
+Båda är av som standard. **Prometheus-mätvärden** slår på adressen `/metrics` för ett övervakningssystem: förfrågningar, svarstider, databasanslutningarna, bakgrundsjobb, inloggningar och antalet projekt, krav, tester och körningar. Skydda den med en **Bearer-token** (kan bara skrivas, som de andra hemligheterna på sidan) eller en lista med **Tillåtna adresser**; utan någon av dem får bara servern själv läsa den. En **Separat adress för mätvärden** visar den på en egen port efter nästa omstart. **OpenTelemetry-spårning** skickar ett spår av varje förfrågan, med dess databasfrågor och utgående anrop, till **Insamlarens adress**; **Urvalsandel** avgör hur många förfrågningar som spåras. Rutan **Status** visar var mätvärdena visas och hur de skyddas, och hur många spann som nått insamlaren, med dess senaste fel. Se [Loggning och övervakning](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/logging-and-monitoring.md#prometheus-m%C3%A4tv%C3%A4rden) i administratörshandboken för mätvärdena och en exempelpanel.
 
 ### E-postserver
 
@@ -5341,7 +5457,7 @@ För kravformuleringar RFC 2119 och RFC 8174 (och SIS praxis på svenska); för 
 
 ### Stöder Qtestframe passkeys eller säkerhetsnycklar?
 
-Inte för inloggning i Qtestframe: där används lösenord eller enkel inloggning, med TOTP som andra faktor. Med enkel inloggning kan din identitetsleverantör kräva passkeys eller säkerhetsnycklar. Katalogen har krav och testfall som hänvisar till WebAuthn för dina egna produkter. Se [WebAuthn och FIDO2](#webauthn-och-fido2).
+Ja. Lägg till en lösennyckel (passkey) i din profil (se [Lösennycklar](#lösennycklar)): den loggar in dig utan lösenord, och den är en andra faktor efter lösenordet, vid sidan av en autentiseringsapp. Konton med enkel inloggning loggar in hos identitetsleverantören, som också kan kräva passkeys eller säkerhetsnycklar. Katalogen har också krav och testfall som hänvisar till WebAuthn för dina egna produkter. Se [WebAuthn och FIDO2](#webauthn-och-fido2).
 
 ### Var kommer uppgifterna om MITRE ATT&CK ifrån?
 
@@ -6767,7 +6883,7 @@ Web Content Accessibility Guidelines från W3C: testbara framgångskriterier, or
 
 W3C:s Web Authentication API och FIDO2-standarderna: inloggning med en säkerhetsnyckel eller en passkey, baserad på ett nyckelpar som är bundet till webbplatsen och därför står emot nätfiske.
 
-**I Qtestframe:** inte en inloggningsmetod i Qtestframe självt (det använder lösenord, enkel inloggning och TOTP), men katalogen har krav och testfall för passkeys och säkerhetsnycklar som hänvisar till WebAuthn.
+**I Qtestframe:** du kan logga in med en lösennyckel i stället för lösenord, eller använda en som andra faktor (se [Lösennycklar](#lösennycklar)). Katalogen har också krav och testfall för passkeys och säkerhetsnycklar som hänvisar till WebAuthn.
 
 **Se även:** [Tvåstegsverifiering](#tvåstegsverifiering-2), [TOTP](#totp), [Katalog](#katalog-1)
 

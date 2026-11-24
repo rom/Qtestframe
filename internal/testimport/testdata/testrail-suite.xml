@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite>
+  <id>S3</id>
+  <name>Web shop</name>
+  <description>Regression suite of the web shop (synthetic sample)</description>
+  <sections>
+    <section>
+      <name>Accounts</name>
+      <description/>
+      <cases/>
+      <sections>
+        <section>
+          <name>Sign in</name>
+          <cases>
+            <case>
+              <id>C101</id>
+              <title>Sign in with a valid password</title>
+              <template>Test Case (Steps)</template>
+              <type>Functional</type>
+              <priority>High</priority>
+              <estimate>5m</estimate>
+              <references>SHOP-101, SHOP-102</references>
+              <custom>
+                <automation_type><id>0</id><value>None</value></automation_type>
+                <component>Accounts</component>
+                <preconds>A registered customer account exists.</preconds>
+                <steps_separated>
+                  <step><index>1</index><content>Open the sign-in page</content><expected>The sign-in form is shown</expected></step>
+                  <step><index>2</index><content>Enter the e-mail address and the password</content><expected>The fields accept the input</expected><additional_info>ada@example.com / &lt;password&gt;</additional_info></step>
+                  <step><index>3</index><content>Press Sign in</content><expected>The account overview is shown</expected></step>
+                </steps_separated>
+              </custom>
+            </case>
+          </cases>
+        </section>
+      </sections>
+    </section>
+    <section>
+      <name>Checkout</name>
+      <cases>
+        <case>
+          <id>C103</id>
+          <title>Add an item to the cart</title>
+          <template>Test Case (Text)</template>
+          <type>Regression</type>
+          <priority>Medium</priority>
+          <references>SHOP-200</references>
+          <custom>
+            <steps>1. Open a product page
+2. Press Add to cart</steps>
+            <expected>1. The product page is shown
+2. The cart shows one item</expected>
+            <browsers><item><id>1</id><value>Firefox</value></item><item><id>2</id><value>Chrome</value></item></browsers>
+          </custom>
+        </case>
+      </cases>
+    </section>
+  </sections>
+</suite>

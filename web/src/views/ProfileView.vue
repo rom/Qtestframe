@@ -14,6 +14,7 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import AvatarPicker from '@/components/AvatarPicker.vue'
 import ThemePicker from '@/components/ThemePicker.vue'
 import MfaSettings from '@/components/MfaSettings.vue'
+import PasskeySettings from '@/components/PasskeySettings.vue'
 import { isThemeId, type ThemeId } from '@/themes/registry'
 import { useConfirm } from 'primevue/useconfirm'
 import { api, asItems, errorMessage } from '@/lib/api'
@@ -35,6 +36,19 @@ import { EMAIL_MODES, emailMode, type EmailMode } from '@/lib/email'
 import { autocompleteMode, clearHistory, historyCount } from '@/lib/suggest'
 
 const auth = useAuthStore()
+
+// self-service export of the personal data (GET /auth/me/export)
+const downloadingData = ref(false)
+async function downloadMyData() {
+  downloadingData.value = true
+  try {
+    await api.download('/auth/me/export', undefined, 'personal-data.zip')
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    downloadingData.value = false
+  }
+}
 const prefsStore = usePrefsStore()
 const proj = useProjectStore()
 const notify = useNotify()
@@ -385,7 +399,7 @@ onMounted(() => {
   // the link in notification e-mails (/profile#email)
   if (route.hash === '#email') requestAnimationFrame(() => document.getElementById('email')?.scrollIntoView({ block: 'start' }))
   // the link in MFA security e-mails (/profile#mfa)
-  if (route.hash === '#mfa') setTimeout(() => document.getElementById('mfa')?.scrollIntoView({ block: 'start' }), 300)
+  if (route.hash === '#mfa' || route.hash === '#passkeys') setTimeout(() => document.getElementById(route.hash.slice(1))?.scrollIntoView({ block: 'start' }), 300)
   loadProjects()
   loadRbac()
   loadSessions()
@@ -423,6 +437,9 @@ onMounted(() => {
       </div>
       <div class="section-title">{{ t('avatar.title') }}</div>
       <AvatarPicker kind="avatar" :value="auth.user?.avatar" :name="auth.user?.display_name || auth.user?.email || ''" upload-path="/auth/me/avatar" :save="saveAvatar" @uploaded="onAvatarUploaded" />
+      <div class="section-title">{{ t('privacy.myData.title') }}</div>
+      <p class="small muted" style="margin: 0 0 8px">{{ t('privacy.myData.text') }}</p>
+      <Button :label="t('privacy.myData.download')" icon="pi pi-download" severity="secondary" outlined size="small" :loading="downloadingData" @click="downloadMyData" />
     </section>
 
     <!-- memberships -->
@@ -570,6 +587,7 @@ onMounted(() => {
 
     <!-- multi-factor authentication -->
     <MfaSettings />
+    <PasskeySettings />
 
     <!-- security -->
     <section class="card" aria-labelledby="h-security" style="grid-column: 1 / -1">

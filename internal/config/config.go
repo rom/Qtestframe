@@ -18,6 +18,9 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/rom/qtestframe/internal/backup"
+	"github.com/rom/qtestframe/internal/tracing"
 )
 
 // Config is the complete server configuration.
@@ -55,6 +58,20 @@ type Config struct {
 	// the hosts they may reach (protection against server-side request
 	// forgery).
 	Outbound Outbound `yaml:"outbound"`
+	// Metrics configures the Prometheus endpoint /metrics (off by
+	// default).
+	Metrics Metrics `yaml:"metrics"`
+	// Tracing configures the export of OpenTelemetry traces over OTLP/HTTP
+	// (off by default).
+	Tracing Tracing `yaml:"tracing"`
+	// Backup configures the scheduled backups the server takes itself
+	// (Administration → Backup, see internal/backup).
+	Backup Backup `yaml:"backup"`
+	// Retention configures how long data is kept (the nightly retention
+	// job; see docs/admin-guide "Privacy and data retention").
+	Retention Retention `yaml:"retention"`
+	// Privacy configures IP address truncation and the privacy notice.
+	Privacy Privacy `yaml:"privacy"`
 
 	// Meta records where values came from (file keys, environment
 	// variables); filled by Load, not part of the YAML.
@@ -339,6 +356,93 @@ type Live struct {
 	PresenceTTL time.Duration `yaml:"presence_ttl"`
 }
 
+// Metrics configures the Prometheus endpoint /metrics. It is off by
+// default; when on, it answers only requests that pass every configured
+// protection: the bearer token and the address allowlist. With neither
+// configured only the loopback address may scrape it.
+type Metrics struct {
+	Enabled bool `yaml:"enabled"`
+	// Listen is a separate host:port for /metrics ("" = the main
+	// listener); with it, the main listener does not serve /metrics.
+	Listen    string `yaml:"listen"`
+	TokenFile string `yaml:"token_file"`
+	Token     string `yaml:"-"`
+	// AllowedIPs are addresses or CIDR ranges that may scrape.
+	AllowedIPs []string `yaml:"allowed_ips"`
+}
+
+func (m Metrics) validate() []error {
+	var errs []error
+	if m.Listen != "" {
+		if _, port, err := net.SplitHostPort(m.Listen); err != nil || port == "" {
+			errs = append(errs, fmt.Errorf("metrics.listen %q must be host:port (e.g. \"127.0.0.1:9090\")", m.Listen))
+		}
+	}
+	for _, a := range m.AllowedIPs {
+		if !ValidIPOrCIDR(a) {
+			errs = append(errs, fmt.Errorf("metrics.allowed_ips: %q is not an IP address or CIDR range", a))
+		}
+	}
+	return errs
+}
+
+// ValidIPOrCIDR reports whether s is an IP address or a CIDR range.
+func ValidIPOrCIDR(s string) bool {
+	if net.ParseIP(s) != nil {
+		return true
+	}
+	_, _, err := net.ParseCIDR(s)
+	return err == nil
+}
+
+// Tracing configures OpenTelemetry tracing: spans of HTTP requests,
+// database queries and outgoing calls exported to an OTLP/HTTP collector.
+type Tracing struct {
+	Enabled bool `yaml:"enabled"`
+	// Endpoint is the OTLP/HTTP URL of the collector, e.g.
+	// http://otel-collector:4318 (/v1/traces is added to a bare host).
+	Endpoint string `yaml:"endpoint"`
+	// Headers are sent with every export as "key=value,key2=value2"
+	// (e.g. an authorization header); a secret.
+	HeadersFile string `yaml:"headers_file"`
+	Headers     string `yaml:"-"`
+	// SampleRatio is the share of new traces recorded, 0–1.
+	SampleRatio string `yaml:"sample_ratio"`
+	ServiceName string `yaml:"service_name"`
+}
+
+// ParseRatio parses a sample ratio (0–1).
+func ParseRatio(s string) (float64, error) {
+	f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil || f < 0 || f > 1 || f != f {
+		return 0, errors.New("must be a number from 0 to 1")
+	}
+	return f, nil
+}
+
+func (t Tracing) validate() []error {
+	var errs []error
+	if t.Endpoint != "" {
+		u, err := url.Parse(t.Endpoint)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errs = append(errs, errors.New("tracing.endpoint must be an absolute http(s) URL"))
+		}
+	}
+	if t.Enabled && t.Endpoint == "" {
+		errs = append(errs, errors.New("tracing.endpoint is required when tracing is enabled"))
+	}
+	if _, err := tracing.ParseHeaders(t.Headers); err != nil {
+		errs = append(errs, errors.New("tracing.headers must be key=value pairs separated by commas"))
+	}
+	if _, err := ParseRatio(t.SampleRatio); err != nil {
+		errs = append(errs, fmt.Errorf("tracing.sample_ratio %s", err))
+	}
+	if strings.TrimSpace(t.ServiceName) == "" || strings.ContainsAny(t.ServiceName, "\r\n") {
+		errs = append(errs, errors.New("tracing.service_name must be one line of text"))
+	}
+	return errs
+}
+
 // Similarity configures the similarity checks. Without embeddings the
 // similarity is computed locally (TF-IDF); nothing leaves the server.
 type Similarity struct {
@@ -375,6 +479,68 @@ func (e Embeddings) validate() []error {
 	}
 	if e.Timeout < 0 {
 		errs = append(errs, errors.New("similarity.embeddings.timeout must not be negative"))
+	}
+	return errs
+}
+
+// Backup configures scheduled backups: the server writes a logical backup
+// (the archive of `qtestframe backup`) into Directory on a schedule, keeps
+// the newest files by the retention rules, optionally encrypts them with a
+// passphrase and uploads them to S3-compatible storage. In a cluster one
+// server takes each backup (a lock row in the database).
+type Backup struct {
+	Enabled bool `yaml:"enabled"`
+	// Schedule: "daily HH:MM", "weekly DAY HH:MM" or "every DURATION"
+	// (UTC, see backup.ParseSchedule).
+	Schedule string `yaml:"schedule"`
+	// Directory receives the backup files (created with mode 0700).
+	Directory string `yaml:"directory"`
+	// KeepLast keeps the newest files (0 = no limit), KeepDays deletes
+	// older files (0 = never).
+	KeepLast int `yaml:"keep_last"`
+	KeepDays int `yaml:"keep_days"`
+	// Passphrase, when set, encrypts the archives (AES-256-GCM, key from
+	// scrypt); from passphrase_file or the system settings, never in the file.
+	PassphraseFile string   `yaml:"passphrase_file"`
+	Passphrase     string   `yaml:"-"`
+	S3             BackupS3 `yaml:"s3"`
+}
+
+// BackupS3 is the optional upload of scheduled backups to S3-compatible
+// object storage (path-style requests signed with Signature Version 4).
+type BackupS3 struct {
+	Enabled             bool   `yaml:"enabled"`
+	Endpoint            string `yaml:"endpoint"`
+	Region              string `yaml:"region"`
+	Bucket              string `yaml:"bucket"`
+	Prefix              string `yaml:"prefix"`
+	AccessKeyID         string `yaml:"access_key_id"`
+	SecretAccessKeyFile string `yaml:"secret_access_key_file"`
+	SecretAccessKey     string `yaml:"-"`
+}
+
+func (b Backup) validate() []error {
+	var errs []error
+	if err := backup.CheckSchedule(b.Schedule); err != nil {
+		errs = append(errs, fmt.Errorf("backup.schedule %w", err))
+	}
+	if b.Directory != "" && !filepath.IsAbs(b.Directory) {
+		errs = append(errs, errors.New("backup.directory must be an absolute path"))
+	}
+	if b.Enabled && b.Directory == "" {
+		errs = append(errs, errors.New("backup.directory is required for scheduled backups"))
+	}
+	if b.KeepLast < 0 || b.KeepLast > 1000 {
+		errs = append(errs, errors.New("backup.keep_last must be between 0 and 1000"))
+	}
+	if b.KeepDays < 0 || b.KeepDays > 3650 {
+		errs = append(errs, errors.New("backup.keep_days must be between 0 and 3650"))
+	}
+	if b.S3.Endpoint != "" {
+		u, err := url.Parse(b.S3.Endpoint)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errs = append(errs, errors.New("backup.s3.endpoint must be an absolute http(s) URL"))
+		}
 	}
 	return errs
 }
@@ -585,6 +751,26 @@ type Auth struct {
 	TokenRequireExpiry bool   `yaml:"token_require_expiry"`
 	OIDC               []OIDC `yaml:"oidc"`
 	SAML               []SAML `yaml:"saml"`
+	// Passkeys configures WebAuthn passkeys.
+	Passkeys Passkeys `yaml:"passkeys"`
+}
+
+// Passkeys configures WebAuthn passkeys: a passwordless sign-in and a
+// second factor next to TOTP.
+type Passkeys struct {
+	// Enabled lets users register and use passkeys.
+	Enabled bool `yaml:"enabled"`
+	// Passwordless allows signing in with a passkey alone (local accounts,
+	// with user verification); otherwise passkeys are a second factor only.
+	Passwordless bool `yaml:"passwordless"`
+	// RequireForAdmins: super administrators and organisation
+	// administrators must have a passkey or an authenticator app.
+	RequireForAdmins bool `yaml:"require_for_admins"`
+	// RPID is the WebAuthn relying party id ("" = the host of
+	// server.base_url); Origins the allowed origins ("" = the origin of
+	// server.base_url).
+	RPID    string   `yaml:"rp_id"`
+	Origins []string `yaml:"origins"`
 }
 
 // Provisioning holds settings shared by external identity providers.
@@ -763,6 +949,32 @@ type Bootstrap struct {
 	AdminPasswordFile string `yaml:"admin_password_file"`
 }
 
+// Retention is how long data is kept, in days (0 = forever). The nightly
+// job (when Enabled) deletes older records, except what is under a legal
+// hold or electronically signed. The audit trail is never purged: it is a
+// hash chain (export it for archiving instead).
+type Retention struct {
+	Enabled bool `yaml:"enabled"`
+	// Hour is the hour of the day (UTC) the job runs.
+	Hour              int `yaml:"hour"`
+	RunsDays          int `yaml:"runs_days"`
+	RunsKeepLatest    int `yaml:"runs_keep_latest"`
+	LogsDays          int `yaml:"logs_days"`
+	NotificationsDays int `yaml:"notifications_days"`
+	SessionsDays      int `yaml:"sessions_days"`
+	ChatDays          int `yaml:"chat_days"`
+	ExploratoryDays   int `yaml:"exploratory_days"`
+}
+
+// Privacy holds data protection options.
+type Privacy struct {
+	// TruncateIP stores and logs client addresses shortened (IPv4 /24,
+	// IPv6 /48).
+	TruncateIP bool `yaml:"truncate_ip"`
+	// NoticeURL is a link to the privacy notice shown on the sign-in page.
+	NoticeURL string `yaml:"notice_url"`
+}
+
 // Default returns a configuration suitable for local development.
 func Default() Config {
 	return Config{
@@ -777,7 +989,8 @@ func Default() Config {
 			Network: "udp", Tag: "qtestframe", Facility: "local0", Format: "rfc5424",
 		}},
 		Auth: Auth{Local: true, SessionTTL: 12 * time.Hour, CookieSecure: true,
-			PasswordMinLength: 10, LoginMaxAttempts: 10, LoginLockout: 5 * time.Minute},
+			PasswordMinLength: 10, LoginMaxAttempts: 10, LoginLockout: 5 * time.Minute,
+			Passkeys: Passkeys{Enabled: true, Passwordless: true}},
 		Runner: Runner{
 			Timeout:        60 * time.Second,
 			WorkDir:        filepath.Join(os.TempDir(), "qtestframe-runner"),
@@ -800,6 +1013,9 @@ func Default() Config {
 			ReplayBuffer: 512, PresenceTTL: 45 * time.Second},
 		AI: AI{Provider: AIAnthropic, Timeout: 2 * time.Minute, MaxTokens: 8192, RateLimit: 30,
 			Features: AIFeatures{DraftTests: true, ImproveRequirement: true, SummarizeRun: true, SuggestMappings: true, SuggestCriteria: true}},
+		Tracing:   Tracing{SampleRatio: "1", ServiceName: "qtestframe"},
+		Backup:    Backup{Schedule: "daily 02:00", KeepLast: 7, S3: BackupS3{Region: "us-east-1"}},
+		Retention: Retention{Hour: 2},
 		Secrets: Secrets{Provider: SecretsLocal, TPM: TPMKey{Device: "/dev/tpmrm0", PCRBank: "sha256"},
 			PKCS11: PKCS11Key{KeyLabel: "qtestframe-kek"}},
 	}
@@ -939,6 +1155,11 @@ var EnvVars = map[string]string{
 	"QTF_SECRETS_TPM_DEVICE":        "secrets.tpm.device",
 	"QTF_SECRETS_PKCS11_MODULE":     "secrets.pkcs11.module",
 	"QTF_SECRETS_PKCS11_PIN":        "secrets.pkcs11.pin",
+	"QTF_METRICS_ENABLED":           "metrics.enabled",
+	"QTF_METRICS_TOKEN":             "metrics.token",
+	"QTF_TRACING_ENABLED":           "tracing.enabled",
+	"QTF_TRACING_ENDPOINT":          "tracing.endpoint",
+	"QTF_TRACING_HEADERS":           "tracing.headers",
 }
 
 func (c *Config) initMeta() {
@@ -1002,6 +1223,9 @@ func applyEnv(c *Config) {
 	set("QTF_SECRETS_KEY_FILE", &c.Secrets.Local.KeyFile)
 	set("QTF_SECRETS_TPM_DEVICE", &c.Secrets.TPM.Device)
 	set("QTF_SECRETS_PKCS11_MODULE", &c.Secrets.PKCS11.Module)
+	setBool("QTF_METRICS_ENABLED", &c.Metrics.Enabled)
+	setBool("QTF_TRACING_ENABLED", &c.Tracing.Enabled)
+	set("QTF_TRACING_ENDPOINT", &c.Tracing.Endpoint)
 }
 
 // readSecret returns the trimmed contents of file. A relative path is
@@ -1049,6 +1273,38 @@ func (c *Config) resolveSecrets() error {
 			return err
 		}
 		c.Meta.FileKeys["ai.api_key"] = true
+	}
+	if c.Metrics.TokenFile != "" {
+		if c.Metrics.Token, err = readSecret(c.Metrics.TokenFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["metrics.token"] = true
+	}
+	if c.Tracing.HeadersFile != "" {
+		if c.Tracing.Headers, err = readSecret(c.Tracing.HeadersFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["tracing.headers"] = true
+	}
+	if env := os.Getenv("QTF_METRICS_TOKEN"); env != "" {
+		c.Metrics.Token = env
+		c.Meta.EnvKeys["metrics.token"] = "QTF_METRICS_TOKEN"
+	}
+	if env := os.Getenv("QTF_TRACING_HEADERS"); env != "" {
+		c.Tracing.Headers = env
+		c.Meta.EnvKeys["tracing.headers"] = "QTF_TRACING_HEADERS"
+	}
+	if c.Backup.PassphraseFile != "" {
+		if c.Backup.Passphrase, err = readSecret(c.Backup.PassphraseFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["backup.passphrase"] = true
+	}
+	if c.Backup.S3.SecretAccessKeyFile != "" {
+		if c.Backup.S3.SecretAccessKey, err = readSecret(c.Backup.S3.SecretAccessKeyFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["backup.s3.secret_access_key"] = true
 	}
 	if env := os.Getenv("QTF_EMAIL_PASSWORD"); env != "" {
 		c.Email.Password = env
@@ -1152,6 +1408,14 @@ func (c *Config) Validate() error {
 	if c.Auth.TokenMaxDays < 0 || c.Auth.TokenMaxDays > 3650 {
 		errs = append(errs, errors.New("auth.token_max_days must be between 0 and 3650"))
 	}
+	if id := c.Auth.Passkeys.RPID; id != "" && !ValidRPID(id) {
+		errs = append(errs, fmt.Errorf("auth.passkeys.rp_id %q must be a domain name such as example.com", id))
+	}
+	for _, o := range c.Auth.Passkeys.Origins {
+		if !ValidOrigin(o) {
+			errs = append(errs, fmt.Errorf("auth.passkeys.origins: %q is not an origin such as https://qtf.example.com", o))
+		}
+	}
 	if _, err := ParseLevel(c.Logging.Level); err != nil {
 		errs = append(errs, fmt.Errorf("logging.level %q must be debug, info, warn or error", c.Logging.Level))
 	}
@@ -1206,6 +1470,9 @@ func (c *Config) Validate() error {
 	errs = append(errs, c.Similarity.Embeddings.validate()...)
 	errs = append(errs, c.AI.validate()...)
 	errs = append(errs, c.Outbound.validate()...)
+	errs = append(errs, c.Metrics.validate()...)
+	errs = append(errs, c.Tracing.validate()...)
+	errs = append(errs, c.Backup.validate()...)
 	if c.Email.On() && c.Server.BaseURL == "" {
 		errs = append(errs, errors.New("server.base_url is required for e-mail (links in the messages)"))
 	}
@@ -1303,6 +1570,20 @@ func (p Provisioning) DomainAllowed(email string) bool {
 	}
 	_, domain, ok := strings.Cut(strings.TrimSpace(email), "@")
 	return ok && MatchHost(domain, p.AllowedDomains)
+}
+
+// ValidRPID reports whether s can be a WebAuthn RP ID: a lower-case
+// domain name (no scheme, port or path).
+func ValidRPID(s string) bool {
+	if s == "" || len(s) > 253 || strings.HasPrefix(s, ".") || strings.HasSuffix(s, ".") || strings.Contains(s, "..") {
+		return false
+	}
+	for _, r := range s {
+		if !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '.') {
+			return false
+		}
+	}
+	return true
 }
 
 // ValidOrigin reports whether s is an origin: http(s)://host[:port]

@@ -39,8 +39,11 @@ Använd miljövariabler eller lås för det som inte får ändras från webbklie
 | Allmänt, Inloggning och lösenord, API-tokens, Enkel inloggning, Loggning och syslog, E-post (SMTP), Utgående anslutningar, Likhet, AI-assistans | **direkt** – e-postavsändaren, OIDC-leverantörerna (oförändrade leverantörer behålls, så pågående inloggningar fortsätter), loggningen, inloggningsgränserna och den utgående HTTP-klienten följer de nya värdena |
 | Liveuppdateringar | brytaren och pulsen **direkt** (nya anslutningar); anslutningsgränserna, repriskbufferten och tidsgränsen för närvaro **efter en omstart** |
 | Server och databas | HTTP-tidsgränserna för läsning och skrivning **efter en omstart**; allt annat anges i filen och visas med sin källa (lyssningsadress, TLS-filer, databas, första start, härdning, nyckelleverantör) |
+| Mätvärden och spårning | **direkt** – brytarna, token, adresslistan och spårexporten; den separata adressen för mätvärden (`metrics.listen`) **efter en omstart**. Avsnittet visar också läget: var `/metrics` visas, hur den skyddas, och antalet exporterade, misslyckade och kastade spann med senaste export och senaste fel |
 | Körning av skript och webbtester | **efter en omstart** – körningen och dess sandlåda sätts upp innan processen låses (Landlocks körbara sökvägar, arbetskatalogen); värdet sparas direkt och sidan visar värdet som används tills dess |
-| Gallring och säkerhetskopior, Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem (papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast) |
+| Schemalagda säkerhetskopior | **direkt** (på/av, schema, gallring, lösenfras, uppladdning); katalogen **efter omstart**, eftersom servern öppnar den för skrivning innan processen låses – se [Schemalagda säkerhetskopior](backup-and-migration.md#schemalagda-säkerhetskopior) |
+| Gallring och säkerhetskopior, Integritet | **direkt** – lagringstiderna läses av nästa förhandsvisning och nästa gallring (den nattliga körningen vid `retention.hour` UTC); se [Integritet och gallring](privacy.md). Papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast |
+| Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem |
 
 Inställningar märkta **Gäller efter omstart** behåller sitt värde tills nästa start. En banderoll överst på sidan listar varje sparad ändring som väntar på en omstart, med en länk till inställningen.
 
@@ -88,6 +91,11 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Inloggning och lösenord | `auth.login_max_attempts` | 1–1000 | direkt |
 | Inloggning och lösenord | `auth.login_lockout` | 1m–24h | direkt |
 | Inloggning och lösenord | `auth.cookie_secure` | på/av | visas bara (filen) |
+| Inloggning och lösenord | `auth.passkeys.enabled` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.passwordless` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.require_for_admins` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.rp_id` | text | direkt |
+| Inloggning och lösenord | `auth.passkeys.origins` | lista | direkt |
 | API-tokens | `auth.token_max_days` | 0–3650 | direkt |
 | API-tokens | `auth.token_require_expiry` | på/av | direkt |
 | Enkel inloggning | `auth.oidc` | lista med leverantörer | direkt |
@@ -102,6 +110,15 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Loggning och syslog | `logging.syslog.ca_file` | text | visas bara (filen) |
 | Loggning och syslog | `logging.syslog.cert_file` | text | visas bara (filen) |
 | Loggning och syslog | `logging.syslog.key_file` | text | visas bara (filen) |
+| Mätvärden och spårning | `metrics.enabled` | på/av | direkt |
+| Mätvärden och spårning | `metrics.listen` | text | efter omstart |
+| Mätvärden och spårning | `metrics.token` | hemlighet (skrivskyddad läsning) | direkt |
+| Mätvärden och spårning | `metrics.allowed_ips` | lista | direkt |
+| Mätvärden och spårning | `tracing.enabled` | på/av | direkt |
+| Mätvärden och spårning | `tracing.endpoint` | text | direkt |
+| Mätvärden och spårning | `tracing.headers` | hemlighet (skrivskyddad läsning) | direkt |
+| Mätvärden och spårning | `tracing.sample_ratio` | text | direkt |
+| Mätvärden och spårning | `tracing.service_name` | text | direkt |
 | E-post (SMTP) | `email.enabled` | på/av | direkt |
 | E-post (SMTP) | `email.host` | text | direkt |
 | E-post (SMTP) | `email.port` | 1–65535 | direkt |
@@ -169,6 +186,30 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | AI-assistans | `ai.features.suggest_criteria` | på/av | direkt |
 | AI-assistans | `ai.price_input` | text | direkt |
 | AI-assistans | `ai.price_output` | text | direkt |
+| Gallring och säkerhetskopior | `retention.enabled` | på/av | direkt |
+| Gallring och säkerhetskopior | `retention.hour` | 0–23 | direkt |
+| Gallring och säkerhetskopior | `retention.runs_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.runs_keep_latest` | 0–1000 | direkt |
+| Gallring och säkerhetskopior | `retention.logs_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.notifications_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.sessions_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.chat_days` | 0–36500 | direkt |
+| Gallring och säkerhetskopior | `retention.exploratory_days` | 0–36500 | direkt |
+| Integritet | `privacy.truncate_ip` | på/av | direkt |
+| Integritet | `privacy.notice_url` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.enabled` | på/av | direkt |
+| Schemalagda säkerhetskopior | `backup.schedule` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.directory` | text | efter omstart |
+| Schemalagda säkerhetskopior | `backup.keep_last` | 0–1000 | direkt |
+| Schemalagda säkerhetskopior | `backup.keep_days` | 0–3650 | direkt |
+| Schemalagda säkerhetskopior | `backup.passphrase` | hemlighet (skrivskyddad läsning) | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.enabled` | på/av | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.endpoint` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.region` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.bucket` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.prefix` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.access_key_id` | text | direkt |
+| Schemalagda säkerhetskopior | `backup.s3.secret_access_key` | hemlighet (skrivskyddad läsning) | direkt |
 
 <!-- END GENERATED: system-settings -->
 
@@ -188,7 +229,7 @@ Vad varje nyckel betyder står i [konfigurationsreferensen](configuration.md#ref
 - **Syslog över TLS** använder `ca_file`, `cert_file` och `key_file` från filen; de är läsbara efter låsningen eftersom de läggs till bland Landlocks skrivskyddade sökvägar vid start. En Unix-socket som inte var konfigurerad vid start kan nekas av Landlock; använd `udp`, `tcp` eller `tls`, eller starta om.
 - **Hemligheter** som anges på sidan (SMTP-lösenordet, OIDC-klienthemligheter) kan bara skrivas, lagras [krypterade](security.md#kryptering-av-lagrade-hemligheter), loggas aldrig och visas aldrig igen.
 - **Testknapparna** (*Testa anslutningen* för OIDC-discovery, *Testa metadata* för SAML, *Skicka testmeddelande* för syslog, *Skicka testmejl*, *Testa tjänsten* för inbäddningar och AI, *Kontrollera adress* för utgående anslutningar) får servern att ansluta till en adress som superadministratören anger. De följer reglerna för utgående anslutningar när de använder HTTP; filtrera serverns utgående trafik om den når interna tjänster.
-- **Inte på sidan:** schema för säkerhetskopior (de görs vid behov eller från en systemd-timer med `qtestframe backup`), metrikslutpunkter (det finns ingen; `/healthz` och `/readyz` är publika och innehåller inga data), standardvärden för CI och ärendehanterare (de är per projekt) och inställningar per organisation, som finns på organisationens egna sidor (AI-assistans, Elektroniska poster, Flerfaktorsautentisering) eller i dess regler (Administration → Organisationer).
+- **Inte på sidan:** historiken för de schemalagda säkerhetskopiorna (den finns under Administration → Säkerhetskopiering, se [Schemalagda säkerhetskopior](backup-and-migration.md#schemalagda-säkerhetskopior)), metrikslutpunkter (det finns ingen; `/healthz` och `/readyz` är publika och innehåller inga data), standardvärden för CI och ärendehanterare (de är per projekt) och inställningar per organisation, som finns på organisationens egna sidor (AI-assistans, Elektroniska poster, Flerfaktorsautentisering) eller i dess regler (Administration → Organisationer).
 
 ## Tjänst för inbäddningar för liknande objekt
 

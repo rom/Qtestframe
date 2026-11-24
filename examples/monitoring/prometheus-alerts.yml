@@ -1,0 +1,82 @@
+# Prometheus alert rules for Qtestframe (metrics of /metrics, see
+# docs/admin-guide/en/logging-and-monitoring.md). Load with
+#
+#   rule_files: [/etc/prometheus/rules/qtestframe-alerts.yml]
+#
+# and scrape the server as job "qtestframe". Adjust the thresholds to your
+# installation; check the file with `promtool check rules`.
+groups:
+  - name: qtestframe
+    rules:
+      - alert: QtestframeDown
+        expr: up{job="qtestframe"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Qtestframe on {{ $labels.instance }} cannot be scraped"
+          description: "Prometheus could not read /metrics for 2 minutes: the server is down, or the token or allowlist changed."
+
+      - alert: QtestframeHighErrorRate
+        expr: |
+          sum by (instance) (rate(qtf_http_requests_total{job="qtestframe",status="5xx"}[5m]))
+            / sum by (instance) (rate(qtf_http_requests_total{job="qtestframe"}[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 5 % of the requests fail on {{ $labels.instance }}"
+          description: "Look for log records with level=ERROR (\"request failed\")."
+
+      - alert: QtestframeSlowRequests
+        expr: |
+          histogram_quantile(0.95,
+            sum by (instance, le) (rate(qtf_http_request_duration_seconds_bucket{job="qtestframe"}[5m]))) > 2
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "95th percentile of request time above 2 s on {{ $labels.instance }}"
+
+      - alert: QtestframeDatabasePoolSaturated
+        expr: |
+          qtf_db_connections{job="qtestframe",state="in_use"} / qtf_db_max_open_connections{job="qtestframe"} > 0.9
+            and rate(qtf_db_wait_total{job="qtestframe"}[5m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The database pool of {{ $labels.instance }} is nearly full and queries wait"
+          description: "Raise database.max_open_conns (PostgreSQL) or look for slow queries."
+
+      - alert: QtestframeBackgroundJobsFailing
+        expr: |
+          sum by (instance, kind) (increase(qtf_jobs_total{job="qtestframe",result=~"error|interrupted"}[1h])) > 3
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} {{ $labels.kind }} jobs failed in the last hour on {{ $labels.instance }}"
+
+      - alert: QtestframeSignInFailures
+        expr: sum by (instance) (increase(qtf_logins_total{job="qtestframe",result="failure"}[15m])) > 50
+        labels:
+          severity: warning
+        annotations:
+          summary: "Many failed sign-ins on {{ $labels.instance }}"
+          description: "{{ $value }} failed sign-ins in 15 minutes: check the log (\"login failed\") for the addresses."
+
+      - alert: QtestframeTraceExportFailing
+        expr: increase(qtf_tracing_spans_total{job="qtestframe",outcome=~"failed|dropped"}[30m]) > 0
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "Spans of {{ $labels.instance }} do not reach the collector"
+          description: "See Administration → System settings → Metrics and tracing for the last error."
+
+      - alert: QtestframeRestarted
+        expr: changes(process_start_time_seconds{job="qtestframe"}[1h]) > 2
+        labels:
+          severity: warning
+        annotations:
+          summary: "Qtestframe on {{ $labels.instance }} restarted more than twice in an hour"

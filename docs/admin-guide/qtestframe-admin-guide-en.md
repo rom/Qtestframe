@@ -14,13 +14,14 @@ The people who *use* Qtestframe – including organisation administrators who ma
 6. [Authorisation](#authorisation) – roles, custom roles, the permission matrix, restricted and shared projects.
 7. [Runtime system settings](#runtime-system-settings) – what super administrators can change in the web client, and what needs a restart.
 8. [Security](#security) – TLS, hardening with Landlock and seccomp, encryption of stored secrets and the key providers, key rotation, disaster recovery, the audit log, security headers.
-9. [E-mail, webhooks and integrations](#e-mail-webhooks-and-integrations) – SMTP, notifications, webhooks, Jira, GitHub and GitLab, the script and web test runner.
-10. [Connecting other tools](#connecting-other-tools-oslc-and-reqif) – OSLC connections with IBM DOORS Next and ETM, Polarion and Codebeamer, dialogs in frames, ReqIF.
-11. [Logging and monitoring](#logging-and-monitoring) – log formats, syslog, health endpoints.
-12. [Backup, restore and migration](#backup-restore-and-migration) – what a backup contains, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
-13. [Operations runbook](#operations-runbook) – routine tasks, capacity, troubleshooting, log messages.
-14. [Command line reference](#command-line-reference) – every `qtestframe` command and flag.
-15. [Features added later](#features-added-later) – administration notes of newer features.
+9. [Privacy and data retention](#privacy-and-data-retention) – retention periods and the nightly purge, legal hold, exporting and erasing personal data, and what regulations require to keep.
+10. [E-mail, webhooks and integrations](#e-mail-webhooks-and-integrations) – SMTP, notifications, webhooks, Jira, GitHub and GitLab, the script and web test runner.
+11. [Connecting other tools](#connecting-other-tools-oslc-and-reqif) – OSLC connections with IBM DOORS Next and ETM, Polarion and Codebeamer, dialogs in frames, ReqIF.
+12. [Logging and monitoring](#logging-and-monitoring) – log formats, syslog, health endpoints.
+13. [Backup, restore and migration](#backup-restore-and-migration) – what a backup contains, scheduled and encrypted backups, verification, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
+14. [Operations runbook](#operations-runbook) – routine tasks, capacity, troubleshooting, log messages.
+15. [Command line reference](#command-line-reference) – every `qtestframe` command and flag.
+16. [Features added later](#features-added-later) – administration notes of newer features.
 
 ## Conventions
 
@@ -429,6 +430,16 @@ Every key of the file, its type, its default and the environment variable that s
 | `auth.saml[].role_mapping` | map | — | — | As for OIDC. |
 | `auth.saml[].allowed_domains` | list | — | — | E-mail domains that may sign in through the provider, as for OIDC. Empty = any. |
 
+### `auth`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `auth.passkeys.enabled` | bool | `true` | — | Users can register passkeys and use them. When off, registered passkeys are kept but cannot be used, also not as a second factor. |
+| `auth.passkeys.passwordless` | bool | `true` | — | Users of local accounts can sign in with a passkey alone ("Sign in with a passkey"; the authenticator must verify the user with a PIN or biometrics). When off, passkeys are only a second factor. Accounts of an identity provider always sign in there. |
+| `auth.passkeys.require_for_admins` | bool | `false` | — | Super administrators and organisation administrators must have a passkey or an authenticator app: without one their next sign-in must set one up first. |
+| `auth.passkeys.rp_id` | string | — | — | The WebAuthn relying party ID: the domain passkeys belong to, e.g. `example.com` (empty = the host of `server.base_url`). Changing it later makes the registered passkeys unusable. |
+| `auth.passkeys.origins` | list | — | — | Origins the browser may use passkeys from, e.g. `https://qtf.example.com` (empty = the origin of `server.base_url`). Each must use https (http only for localhost) and lie within `rp_id`. |
+
 ### `runner`
 
 | Key | Type | Default | Environment | Description |
@@ -586,6 +597,64 @@ Every key of the file, its type, its default and the environment variable that s
 | `outbound.denied_hosts` | list | — | — | Hosts outgoing calls never reach, e.g. `metadata.google.internal` or `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Refuse outgoing calls to loopback, private, link-local and other non-public addresses (checked on the address actually connected to), unless the host is in `allowed_hosts`. Turn it on when the server is reachable from the internet and its users should not reach your internal network through it. |
 
+### `metrics`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `metrics.enabled` | bool | `false` | `QTF_METRICS_ENABLED` | Serve Prometheus metrics on `/metrics` (requests, latency, database pool, Go runtime, background jobs, sign-ins, live connections and the number of projects, requirements, tests and runs). Off by default. |
+| `metrics.listen` | string | — | — | A separate `host:port` for `/metrics` (e.g. `127.0.0.1:9090`), opened at start-up; the main listener then answers `/metrics` with 404. Empty: the main listener serves it. |
+| `metrics.token_file` | string | — | — | File with the bearer token a scraper must send (`Authorization: Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). The token can also be stored, encrypted, in the system settings; it is never shown again. `QTF_METRICS_TOKEN` wins over both. |
+| `metrics.allowed_ips` | list | — | — | Addresses or CIDR ranges that may scrape `/metrics` (the client address, from `X-Forwarded-For` only behind `trusted_proxies`). With a token too, both must match; with neither, only the loopback address may scrape. |
+
+### `tracing`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `tracing.enabled` | bool | `false` | `QTF_TRACING_ENABLED` | Export OpenTelemetry traces of HTTP requests, database queries and outgoing calls to `endpoint`. Off by default. |
+| `tracing.endpoint` | string | — | `QTF_TRACING_ENDPOINT` | OTLP/HTTP address of the collector, e.g. `http://otel-collector:4318`; `/v1/traces` is added to an address without a path. Spans are sent as JSON in batches (every 5 seconds or 512 spans). |
+| `tracing.headers_file` | string | — | — | File with headers sent with every export, `key=value` pairs separated by commas (e.g. `Authorization=Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). Can also be stored, encrypted, in the system settings. `QTF_TRACING_HEADERS` wins over both. |
+| `tracing.sample_ratio` | string | `1` | — | Share of new traces that are recorded, 0–1 (`0.1` = one in ten). A request with a `traceparent` header follows the decision of its caller. |
+| `tracing.service_name` | string | `qtestframe` | — | `service.name` of the exported spans. |
+
+### `backup`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `backup.enabled` | bool | `false` | — | Take scheduled backups: the server writes the archive of `qtestframe backup` into `directory` on the `schedule`. With several servers on one database one of them takes each backup (a lock row in the database). |
+| `backup.schedule` | string | `daily 02:00` | — | When backups run, in UTC: `daily HH:MM`, `weekly DAY HH:MM` (`mon`–`sun`) or `every DURATION` (`15m` to `720h`, e.g. `every 6h`). A slot missed while no server ran is taken once at the next start. |
+| `backup.directory` | string | — | — | Absolute path of the directory the backup files are written to (created with mode 0700, writable under Landlock). Required for scheduled backups and *Run backup now*. Files are named `qtestframe-backup-YYYYMMDD-HHMMSS.zip` (`.zip.enc` when encrypted). |
+| `backup.keep_last` | integer | `7` | — | Keep the newest N backup files in `directory` and delete older ones (`0` = no limit). Only files named like scheduled backups are deleted. |
+| `backup.keep_days` | integer | `0` | — | Delete backup files older than N days (`0` = never). With `keep_last` a file goes when either rule says so; the newest file is always kept. |
+| `backup.passphrase_file` | string | — | — | File holding the passphrase that encrypts scheduled backups (AES-256-GCM with a key derived by scrypt). A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The passphrase can also be set in the system settings; without one, backups are not encrypted. |
+| `backup.s3.enabled` | bool | `false` | — | Upload every scheduled backup to S3-compatible object storage (Amazon S3, MinIO, Ceph, Garage …) after writing it. A failed upload fails the run; the local file is kept. |
+| `backup.s3.endpoint` | string | — | — | Base URL of the storage, e.g. `https://s3.eu-north-1.amazonaws.com` or `https://minio.example.com:9000` (path-style requests: `ENDPOINT/BUCKET/KEY`). The upload follows the `outbound` settings. |
+| `backup.s3.region` | string | `us-east-1` | — | Region of the signature (AWS Signature Version 4); `us-east-1` for most S3-compatible servers. |
+| `backup.s3.bucket` | string | — | — | Bucket the backups are uploaded to. Delete old objects with a lifecycle rule of the bucket: the retention rules apply to the local directory only. |
+| `backup.s3.prefix` | string | — | — | Prefix of the object keys, e.g. `qtestframe/` (empty = the top of the bucket). |
+| `backup.s3.access_key_id` | string | — | — | Access key ID of the credentials allowed to `PutObject` in the bucket. |
+| `backup.s3.secret_access_key_file` | string | — | — | File holding the secret access key. A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The key can also be set in the system settings (write-only). |
+
+### `retention`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `retention.enabled` | bool | `false` | — | Run the nightly retention job, which deletes records older than their retention period (see *Privacy and data retention*). Check the dry-run preview under **Administration → System settings → Retention and backups** before turning it on. |
+| `retention.hour` | integer | `2` | — | Hour of the day (UTC, 0–23) the retention job runs. |
+| `retention.runs_days` | integer | `0` | — | Days to keep test runs with their results, step results, comments and attachments (0 = forever). Runs in progress, of a project or release under legal hold or with an electronic signature are kept. |
+| `retention.runs_keep_latest` | integer | `0` | — | Always keep the runs holding one of the latest N results of each test, however old (0 = no exception). |
+| `retention.logs_days` | integer | `0` | — | Days to keep logs and uploaded artifacts: the sign-in log, finished test runner jobs, CI status posts, tracker sync logs and web test evidence (screenshots, traces, videos) (0 = forever). |
+| `retention.notifications_days` | integer | `0` | — | Days to keep in-app notifications, read or not (0 = forever). |
+| `retention.sessions_days` | integer | `0` | — | Days to keep sign-in sessions not used for that long and API tokens that expired that long ago (0 = forever). |
+| `retention.chat_days` | integer | `0` | — | Days to keep the chat message history (sent or failed messages with their text) and the personal input suggestion history (0 = forever). |
+| `retention.exploratory_days` | integer | `0` | — | Days to keep the notes of completed or debriefed exploratory sessions, counted from the session's last change (0 = forever). The session and its debrief stay. |
+
+### `privacy`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `privacy.truncate_ip` | bool | `false` | — | Store and log client addresses shortened: IPv4 to /24, IPv6 to /48 (sign-in log, sessions, remembered devices, request log). Rate limits still use the full address in memory. |
+| `privacy.notice_url` | string | — | — | Link to your privacy notice, shown on the sign-in page (empty = none). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -608,6 +677,8 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_LIVE_ENABLED` | `live.enabled` (`1` or `true` = on, anything else = off) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
+| `QTF_METRICS_ENABLED` | `metrics.enabled` (`true` or `1`) |
+| `QTF_METRICS_TOKEN` | the bearer token of `/metrics`; wins over `metrics.token_file` and a token stored in the web client |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` or `true` = on) |
 | `QTF_RUNNER_WEB_BROWSERS_PATH` | `runner.web.browsers_path` |
 | `QTF_RUNNER_WEB_ENABLED` | `runner.web.enabled` (`1` or `true` = on) |
@@ -623,9 +694,13 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_SERVER_BASE_URL` | `server.base_url` |
 | `QTF_SERVER_LISTEN` | `server.listen` |
 | `QTF_SERVER_PORT` | the port of `server.listen` (the host stays) |
+| `QTF_TRACING_ENABLED` | `tracing.enabled` (`true` or `1`) |
+| `QTF_TRACING_ENDPOINT` | `tracing.endpoint` |
+| `QTF_TRACING_HEADERS` | the headers of the trace export; win over `tracing.headers_file` and headers stored in the web client |
 | `QTF_OIDC_<NAME>_CLIENT_SECRET` | client secret of the OIDC provider `<name>` (upper case); wins over `client_secret_file` and a secret stored in the web client |
 | `CREDENTIALS_DIRECTORY` | set by systemd (`LoadCredential=`): relative `*_file` paths are resolved in it, and it is readable after the lock-down |
 | `STATE_DIRECTORY` | set by systemd (`StateDirectory=`): default place of the key file when the database is not SQLite |
+| `QTF_BACKUP_PASSPHRASE` | the passphrase of `qtestframe backup --encrypt`, `backup verify` and `restore` when `--passphrase-file` is not given (the server reads `backup.passphrase` instead) |
 | `QTF_URL`, `QTF_TOKEN`, `QTF_CONFIGURATION` | defaults of `--url`, `--token` and `--configuration` of `qtestframe report` |
 
 <!-- END GENERATED: environment -->
@@ -709,7 +784,8 @@ Qtestframe knows these ways to prove who someone is:
 | Method | For | Configured in |
 |---|---|---|
 | Local password | people | `auth.local`, password policy |
-| Second factor (TOTP authenticator app, recovery codes) | people with a local password, optionally after OIDC | MFA policy in the web client; `local_mfa` per OIDC provider |
+| Second factor (TOTP authenticator app, recovery codes, passkeys) | people with a local password, optionally after OIDC | MFA policy in the web client; `local_mfa` per OIDC provider |
+| Passkey (WebAuthn), passwordless | people with a local account | `auth.passkeys` (file or system settings) |
 | OpenID Connect | people | `auth.oidc` (file or system settings) |
 | SAML 2.0 | people | `auth.saml` (file only) |
 | E-mail invitation | a person's first sign-in | needs e-mail |
@@ -745,7 +821,37 @@ Guessing is limited three ways: every code counts against the sign-in limit abov
 
 **Lost phone and recovery codes:** an organisation admin uses **Reset MFA** in **Members** (for members of only that organisation), a super administrator under **Users**. It removes the authenticator, recovery codes and remembered devices, signs the user out and tells them by notification and e-mail. Verify the request out of band first.
 
-The TOTP secrets are stored encrypted (see [Security](#encryption-of-stored-secrets)). API tokens and SCIM tokens are not affected by MFA; protect them like passwords. WebAuthn and passkeys are not implemented.
+The TOTP secrets are stored encrypted (see [Security](#encryption-of-stored-secrets)). API tokens and SCIM tokens are not affected by MFA; protect them like passwords. [Passkeys](#passkeys) are a second factor too.
+
+## Passkeys
+
+A **passkey** is a WebAuthn credential: a key pair kept by the user's device (platform authenticator with fingerprint, face or PIN, a password manager that syncs it, or a security key). Qtestframe stores only the public key. Passkeys are used three ways:
+
+- **Passwordless sign-in** – **Sign in with a passkey** on the sign-in page, and passkey suggestions in the e-mail field where the browser supports them (conditional mediation). It uses *discoverable* credentials and requires **user verification** (UV flag: PIN or biometrics), so it counts as multi-factor on its own: no TOTP code is asked for. Only **local accounts** can sign in this way; accounts of an identity provider sign in there (Qtestframe does not let a passkey bypass the provider).
+- **Second factor** – after the password (and after OIDC with `local_mfa`) a user with passkeys can confirm with one instead of a TOTP code. User verification is preferred but not required (user presence is). A passkey counts as a second factor for every MFA policy, so a user can have passkeys, an authenticator app or both.
+- **Re-authentication** – adding and deleting passkeys needs a sign-in less than 10 minutes ago; otherwise the user confirms their identity again with their password, a TOTP or recovery code, or a passkey (`POST /api/v1/auth/reauth`).
+
+Users manage their passkeys in their profile (several per account, at most 25, each with a name, the date added and the last use; rename and delete). Deleting the last second factor of an account that a policy requires MFA of is refused.
+
+**Settings** (System settings → Sign-in and passwords, or the configuration file):
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `auth.passkeys.enabled` | on | Users can register and use passkeys. Off keeps registered passkeys but they cannot be used, also not as a second factor. |
+| `auth.passkeys.passwordless` | on | The passwordless sign-in is offered (also needs `auth.local`). Off: passkeys are a second factor only. |
+| `auth.passkeys.require_for_admins` | off | Super administrators and organisation administrators must have a passkey or an authenticator app, without a grace period: their next sign-in must set one up first. |
+| `auth.passkeys.rp_id` | host of `server.base_url` | The WebAuthn relying party ID, the domain the passkeys are scoped to (`example.com` lets `qtf.example.com` and other subdomains use them). |
+| `auth.passkeys.origins` | origin of `server.base_url` | The web origins that may use the passkeys. Each must be `https` (`http` only for `localhost`) and lie within the RP ID. |
+
+Passkeys need an **https** `server.base_url` (or the two settings above): browsers offer WebAuthn only in a secure context, and the RP ID binds every passkey to the domain. Without one, users see that passkeys are not set up. **Choose the RP ID before users register passkeys**: changing it, or moving the server to another domain, makes all registered passkeys unusable (users then sign in with their password and register new ones).
+
+**What the server checks.** Challenges are 32 random bytes, stored on the server, valid for 5 minutes and deleted when answered (single use). They are bound to the browser session, to the pending second-factor sign-in or, for the passwordless sign-in, to a short-lived `qtf_passkey` cookie of the browser that asked for it. For every ceremony the server checks the client data type, challenge and origin (no cross-origin frames), the SHA-256 of the RP ID in the authenticator data, the user-present flag and, where required, the user-verified flag, and the signature. Registrations accept the attestation formats `none` (what Qtestframe asks for) and `packed` (self attestation, or an x5c certificate whose signature is checked but which is not chained to a trust anchor: Qtestframe does not decide by authenticator model), with the algorithms ES256, EdDSA (Ed25519) and RS256 (at least 2048 bits). The **signature counter** must increase for authenticators that have one: if it does not, the sign-in goes ahead, but a warning is logged and the event `passkey.counter_regressed` is audited, because it can mean a cloned authenticator. Synced passkeys report no counter. The implementation uses only the Go standard library (a small, bounded CBOR decoder for the attestation objects); it does not add a WebAuthn dependency.
+
+**Limits.** The passwordless sign-in counts against the sign-in limit of the client address; its options are limited to 60 per 5 minutes per address. A passkey as second factor counts like a code (10 attempts per 15 minutes per account, 5 per pending sign-in).
+
+**Administrators** see the number of passkeys per user in **Members** (column *Passkeys*) and **Users**, and can **Revoke passkeys** (a lost or compromised device): all passkeys of the user are deleted and the user is signed out everywhere. As for MFA resets, organisation administrators can do this for members who belong only to their organisation.
+
+**Audit log:** `passkey.register`, `passkey.rename`, `passkey.delete`, `user.reauth`, `member.revoke_passkeys`, `user.revoke_passkeys`, `passkey.counter_regressed`, and the sign-ins as `login` with the method `passkey` (passwordless) or `mfa=passkey` (second factor), with the passkey's name. Failed passkey sign-ins are recorded in the sign-in history with the method *passkey*.
 
 ## OpenID Connect
 
@@ -1046,8 +1152,11 @@ Use environment variables or locks for what must not change from the web client 
 | General, Sign-in and passwords, API tokens, Single sign-on, Logging and syslog, E-mail (SMTP), Outgoing connections, Similarity, AI assistance | **at once** – the e-mail sender, the OIDC providers (unchanged providers are kept, so sign-ins in progress continue), the logger, the sign-in limits and the outgoing HTTP client follow the new values |
 | Live updates | the switch and the heartbeat **at once** (new connections); the connection limits, the replay buffer and the presence timeout **after a restart** |
 | Server and database | the HTTP read and write timeouts **after a restart**; everything else is set in the file and shown with its source (listen address, TLS files, database, first start, hardening, key provider) |
+| Metrics and tracing | **at once** – the switches, the token, the allowlist and the trace export; the separate metrics address (`metrics.listen`) **after a restart**. The section also shows the state: where `/metrics` is served, how it is protected, and the spans exported, failed and dropped with the last export and the last error |
 | Script and web test runner | **after a restart** – the runner and its sandbox are set up before the process is locked down (Landlock execute paths, work directory); the value is stored at once and the page shows the value in use until then |
-| Retention and backups, Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them (the trash keeps deleted items for 30 days, which is fixed) |
+| Scheduled backups | **at once** (switch, schedule, retention, passphrase, upload); the directory **after a restart**, because the server opens it for writing before the process is locked down – see [Scheduled backups](#scheduled-backups) |
+| Retention and backups, Privacy | **at once** – the retention periods are read by the next preview and the next purge (the nightly job at `retention.hour` UTC); see [Privacy and data retention](#privacy-and-data-retention). The trash keeps deleted items for 30 days, which is fixed |
+| Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them |
 
 Settings marked **Applies after restart** keep their value in use until the next start. A banner at the top of the page lists every saved change that waits for a restart, with a link to the setting.
 
@@ -1095,6 +1204,11 @@ The settings the page offers, generated from `internal/settings`:
 | Sign-in and passwords | `auth.login_max_attempts` | 1–1000 | at once |
 | Sign-in and passwords | `auth.login_lockout` | 1m–24h | at once |
 | Sign-in and passwords | `auth.cookie_secure` | on/off | shown only (file) |
+| Sign-in and passwords | `auth.passkeys.enabled` | on/off | at once |
+| Sign-in and passwords | `auth.passkeys.passwordless` | on/off | at once |
+| Sign-in and passwords | `auth.passkeys.require_for_admins` | on/off | at once |
+| Sign-in and passwords | `auth.passkeys.rp_id` | text | at once |
+| Sign-in and passwords | `auth.passkeys.origins` | list | at once |
 | API tokens | `auth.token_max_days` | 0–3650 | at once |
 | API tokens | `auth.token_require_expiry` | on/off | at once |
 | Single sign-on | `auth.oidc` | list of providers | at once |
@@ -1109,6 +1223,15 @@ The settings the page offers, generated from `internal/settings`:
 | Logging and syslog | `logging.syslog.ca_file` | text | shown only (file) |
 | Logging and syslog | `logging.syslog.cert_file` | text | shown only (file) |
 | Logging and syslog | `logging.syslog.key_file` | text | shown only (file) |
+| Metrics and tracing | `metrics.enabled` | on/off | at once |
+| Metrics and tracing | `metrics.listen` | text | after a restart |
+| Metrics and tracing | `metrics.token` | secret (write-only) | at once |
+| Metrics and tracing | `metrics.allowed_ips` | list | at once |
+| Metrics and tracing | `tracing.enabled` | on/off | at once |
+| Metrics and tracing | `tracing.endpoint` | text | at once |
+| Metrics and tracing | `tracing.headers` | secret (write-only) | at once |
+| Metrics and tracing | `tracing.sample_ratio` | text | at once |
+| Metrics and tracing | `tracing.service_name` | text | at once |
 | E-mail (SMTP) | `email.enabled` | on/off | at once |
 | E-mail (SMTP) | `email.host` | text | at once |
 | E-mail (SMTP) | `email.port` | 1–65535 | at once |
@@ -1176,6 +1299,30 @@ The settings the page offers, generated from `internal/settings`:
 | AI assistance | `ai.features.suggest_criteria` | on/off | at once |
 | AI assistance | `ai.price_input` | text | at once |
 | AI assistance | `ai.price_output` | text | at once |
+| Retention and backups | `retention.enabled` | on/off | at once |
+| Retention and backups | `retention.hour` | 0–23 | at once |
+| Retention and backups | `retention.runs_days` | 0–36500 | at once |
+| Retention and backups | `retention.runs_keep_latest` | 0–1000 | at once |
+| Retention and backups | `retention.logs_days` | 0–36500 | at once |
+| Retention and backups | `retention.notifications_days` | 0–36500 | at once |
+| Retention and backups | `retention.sessions_days` | 0–36500 | at once |
+| Retention and backups | `retention.chat_days` | 0–36500 | at once |
+| Retention and backups | `retention.exploratory_days` | 0–36500 | at once |
+| Privacy | `privacy.truncate_ip` | on/off | at once |
+| Privacy | `privacy.notice_url` | text | at once |
+| Scheduled backups | `backup.enabled` | on/off | at once |
+| Scheduled backups | `backup.schedule` | text | at once |
+| Scheduled backups | `backup.directory` | text | after a restart |
+| Scheduled backups | `backup.keep_last` | 0–1000 | at once |
+| Scheduled backups | `backup.keep_days` | 0–3650 | at once |
+| Scheduled backups | `backup.passphrase` | secret (write-only) | at once |
+| Scheduled backups | `backup.s3.enabled` | on/off | at once |
+| Scheduled backups | `backup.s3.endpoint` | text | at once |
+| Scheduled backups | `backup.s3.region` | text | at once |
+| Scheduled backups | `backup.s3.bucket` | text | at once |
+| Scheduled backups | `backup.s3.prefix` | text | at once |
+| Scheduled backups | `backup.s3.access_key_id` | text | at once |
+| Scheduled backups | `backup.s3.secret_access_key` | secret (write-only) | at once |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1195,7 +1342,7 @@ What each key means is in the [configuration reference](#reference). Every key o
 - **Syslog over TLS** uses `ca_file`, `cert_file` and `key_file` from the file; they are readable after the lock-down because they are added to the Landlock read-only paths at start-up. A Unix socket that was not configured at start-up may be refused by Landlock; use `udp`, `tcp` or `tls`, or restart.
 - **Secrets** entered on the page (the SMTP password, OIDC client secrets) are write-only, stored [encrypted](#encryption-of-stored-secrets), never logged and never shown again.
 - **Test buttons** (*Test connection* for OIDC discovery, *Test metadata* for SAML, *Send test message* for syslog, *Send test e-mail*, *Test the service* for embeddings and AI, *Check URL* for outgoing connections) make the server connect to an address the super administrator enters. They follow the outgoing-connection rules where they use HTTP; filter the server's egress if it can reach internal services.
-- **Not on the page:** a backup schedule (backups are made on demand or from a systemd timer with `qtestframe backup`), metrics endpoints (there is none; `/healthz` and `/readyz` are public and carry no data), CI and tracker defaults (they are per project), and per-organisation settings, which are on the organisation's own pages (AI assistance, Electronic records, Multi-factor authentication) or in its policy (Administration → Organisations).
+- **Not on the page:** the history of the scheduled backups (it is under Administration → Backup, see [Scheduled backups](#scheduled-backups)), metrics endpoints (there is none; `/healthz` and `/readyz` are public and carry no data), CI and tracker defaults (they are per project), and per-organisation settings, which are on the organisation's own pages (AI assistance, Electronic records, Multi-factor authentication) or in its policy (Administration → Organisations).
 
 ## Embeddings service for similar items
 
@@ -1486,6 +1633,8 @@ The audit log of each organisation is a **hash chain** (the system entries of th
 
 The chain in backups, restores and project archives is described in [Backup, restore and migration](#the-audit-trail-in-backups).
 
+**Data protection.** The retention job never purges the audit trail, and erasing a user leaves the entries about them unchanged: see [Privacy and data retention](#privacy-and-data-retention) for the reasons and for legal holds.
+
 ## Electronic-records mode (21 CFR Part 11 / EU GMP Annex 11)
 
 An organisation setting under **Administration → Electronic records** (change: `tenant.manage`; read and report: `audit.read`; `GET`/`PUT /api/v1/erecords`), **off by default**. When it is on, the server enforces:
@@ -1553,6 +1702,85 @@ Project administrators (`project.update`) choose the URLs of trackers and webhoo
 - [ ] SELinux module or AppArmor profile loaded; `systemd-analyze security qtestframe` ≤ 2.0
 - [ ] `server.trusted_proxies` set behind a reverse proxy
 - [ ] backups encrypted, stored off-host and a restore tested
+
+# Privacy and data retention
+
+This chapter is for super administrators and data protection officers. It explains how long Qtestframe keeps data, how the retention job deletes older records, what a **legal hold** protects, how to answer a **data subject request** (export and erasure under the GDPR) and where regulatory record-keeping rules win over erasure.
+
+## Retention policy
+
+Super administrators set the retention under **Administration → System settings → Retention and backups**. Every period is in **days; 0 keeps the data forever**, which is the default. Nothing is deleted until you turn on the nightly job.
+
+| Setting | What it deletes when older than the period |
+|---|---|
+| `retention.runs_days` | Test runs with their executions, step results, iterations, comments, defect and item links and attachments. Runs in progress are kept. |
+| `retention.runs_keep_latest` | Not a period: runs that hold one of the latest *N* results of a test are always kept, however old (0 = no exception). |
+| `retention.logs_days` | Logs and uploaded artifacts: the sign-in log, finished test runner jobs, CI status posts that were sent or gave up, finished tracker sync logs, and web test evidence (screenshots, traces, videos) of old executions – the results themselves stay. |
+| `retention.notifications_days` | In-app notifications, read or not. |
+| `retention.sessions_days` | Sign-in sessions not used for that long, and API tokens that expired that long ago. |
+| `retention.chat_days` | The chat message history (messages sent or given up, with their text) and the personal input suggestion history. |
+| `retention.exploratory_days` | The notes of completed or debriefed exploratory sessions, counted from the session's last change. The session and its debrief stay. |
+| `retention.enabled`, `retention.hour` | The nightly job and the hour (UTC) it runs. |
+
+**Per-organisation overrides.** Under **Administration → Organisations → (organisation) → Policy → Data retention** a super administrator can give one organisation its own periods (for example a customer contract that requires 10 years for runs). An empty field uses the system setting. The sign-in log and sign-in sessions belong to no organisation and always use the system setting.
+
+**The audit trail is never purged.** It is a hash chain ([Tamper-evident audit trail](#tamper-evident-audit-trail)): verification walks every entry from the first, and signed checkpoints name entries by sequence number, so deleting old entries would break the chain. The chain code has no sealed starting point that would allow cutting it safely, so Qtestframe keeps the trail whole. To limit what the live database holds, archive the trail with **Export with hashes** to write-once storage; the archive verifies on its own (`qtestframe audit verify --file`). Electronic signatures and sign-offs are not purged either.
+
+### Preview before you enable it
+
+Below the settings, **Preview and purge** shows what the job would delete *now*: per organisation and category the number of records older than the period, and how many older records are **held** – kept by a legal hold or an electronic signature. The preview changes nothing. Check it, adjust the periods, and only then turn on `retention.enabled`.
+
+**Purge now** runs the purge at once (also while the nightly job is off) after you type `PURGE`. API: `GET /api/v1/admin/retention` (preview), `POST /api/v1/admin/retention/run` with `{"confirm": "PURGE"}`.
+
+Every purge is recorded in the audit trail as `retention.purge`, in each organisation where something was deleted and in the system trail, with the counts per category and the held records. Deleted records cannot be restored except from a [backup](#backup-restore-and-migration); take one before the first purge.
+
+## Legal hold
+
+A legal hold protects a whole **project** or a single **release** when data must be preserved – litigation, an authority's request, an audit. While the hold is on:
+
+- the retention job deletes nothing of it (runs of the project or release, their results and evidence, its logs, exploratory notes and chat history);
+- the project, the organisation that holds it, and the runs of a held release **cannot be deleted** (409).
+
+Organisation administrators (`tenant.manage`) and super administrators set and lift holds in the project's **Settings → Legal hold**, with a reason that is shown with the hold. Setting and lifting are audited (`legal_hold.set`, `legal_hold.lift`). The retention page lists every project and release under hold across organisations. API: `GET`/`PUT /api/v1/projects/{pid}/legal-hold` and `PUT /api/v1/projects/{pid}/releases/{rid}/legal-hold` with `{"on": true, "reason": "…"}`.
+
+## Data subject requests
+
+### Access and portability (export)
+
+In **Administration → Users**, **Export personal data** downloads a ZIP of JSON files with everything the server holds about the person: profile and preferences, memberships and roles, project roles, comments they wrote, comments that mention them, sessions, API tokens (names and dates, never the secret), the sign-in log, remembered devices, notifications, electronic signatures, input history and the audit entries by or about them. Passwords, second-factor secrets and token hashes are never exported. API: `GET /api/v1/users/{id}/export`.
+
+Every user can download the same export for themselves on their **Profile** (**Download my data**, `GET /api/v1/auth/me/export`). Both are audited as `user.data_export`.
+
+The content a person created in projects (requirements, tests, runs, documents) belongs to the organisation; export it with the project exports if the request covers it.
+
+### Erasure (anonymisation)
+
+**Erase user** in **Administration → Users** anonymises an account after you type its e-mail address:
+
+- its name and address become a pseudonym, **Former user #*n*** (`former-user-n@erased.invalid`), numbered in order;
+- deleted: personal settings, avatar, sessions, API tokens, second factor and recovery codes, remembered devices, pending signing tickets, notifications, the sign-in log, input history, invitations, SCIM links, memberships and project roles;
+- the account is disabled, has no password and **can never sign in again**; single sign-on can no longer match it;
+- content the person authored stays and is **attributed to the pseudonym**: fields that name the author by e-mail address (created by, assignee, owner, tester, uploaded by and similar) are rewritten, and `@` mentions of the person in comments become `@former-user-n`.
+
+You cannot erase your own account or the last super administrator. The erasure is audited as `user.erase` with the pseudonym and counts – not with the erased address. API: `POST /api/v1/users/{id}/erase` with `{"confirm": "<e-mail address>"}`.
+
+### What erasure keeps, and why
+
+- **Electronic signatures and sign-offs** (baseline, waiver and change-request sign-offs, `esignatures`) keep the signer's printed name and e-mail exactly as signed. 21 CFR Part 11 (§11.50, §11.70) and EU GMP Annex 11 (§14) require the signature manifestation to stay linked to the signed record; changing it would invalidate the record. GDPR art. 17(3)(b) allows keeping data needed to comply with such a legal obligation.
+- **The audit trail** keeps the e-mail address of the entries the person made, and entries that name them in their details. Rewriting an entry breaks the hash chain, and the trail is itself a regulatory record (Part 11 §11.10(e), Annex 11 §9). The user list and new audit views show the pseudonym for the account.
+- **Backups** made before the erasure still contain the original data. Keep backups only as long as your retention schedule says, and repeat the erasure after a restore.
+- **Free text** – a name typed into a description, a step or an owner field as plain text – is not searched and replaced; review it if the request requires.
+
+Document these exceptions in your records of processing and in the answer to the person.
+
+## Privacy settings
+
+| Setting | Effect |
+|---|---|
+| `privacy.truncate_ip` | Client addresses are stored and logged shortened – IPv4 to /24 (`192.0.2.0`), IPv6 to /48 – in the sign-in log, sessions, remembered devices, the request log and the failed sign-in messages. Rate limits still use the full address, in memory only. Audit entries never contain client addresses. |
+| `privacy.notice_url` | A link to your privacy notice, shown on the sign-in page (empty = none). |
+
+Both are in **Administration → System settings → Privacy** and apply at once.
 
 # E-mail, webhooks and integrations
 
@@ -1923,10 +2151,12 @@ The server writes structured log records (Go `log/slog`) to **standard error**; 
 
 What is logged:
 
-- **Every request** except `/healthz` and `/readyz`: method, path (without the query), status, bytes, duration and client address (from `X-Forwarded-For` only for `trusted_proxies`). Requests answered with 5xx are logged at ERROR, the others at INFO.
+- **Every request** except `/healthz`, `/readyz` and `/metrics`: method, path (without the query), status, bytes, duration and client address (from `X-Forwarded-For` only for `trusted_proxies`). Requests answered with 5xx are logged at ERROR, the others at INFO.
 - **Audit records** (`msg=audit`, INFO) with organisation, user, action, entity and id, one for every entry of the audit log.
 - **Security events**: `login failed` and `second factor failed` (WARN, with e-mail and client address), configuration and key problems at start-up, the `hardening` line.
 - **Background work**: migrations, purged sessions and trash, metric snapshots, e-mail and webhook failures, job resets.
+
+When a request belongs to a trace (an incoming `traceparent` header, or tracing on), its records carry `trace_id`, and `span_id` for the span of this server, so a log line can be found from a trace and the other way round.
 
 Passwords, tokens, cookies and `Authorization` headers are never logged. Unexpected errors are answered with only "internal server error"; the details are in the log line `request failed` (path and error).
 
@@ -1963,17 +2193,94 @@ Receiver examples for rsyslog (`imtcp` with `gtls`) and syslog-ng (`network(tran
 | Endpoint | Answers | Use |
 |---|---|---|
 | `GET /healthz` | `200 {"status":"ok","version":"…"}` while the process serves requests | liveness probe |
-| `GET /readyz` | `200 {"status":"ready"}`, or `503` when the database does not answer within 2 seconds | readiness probe, load balancer |
+| `GET /readyz` | `200 {"status":"ready","checks":{"database":"ok","migrations":"ok"}}`, or `503` when the database does not answer within 2 seconds or migrations are not applied (another process is still migrating) | readiness probe, load balancer |
 
 Both need no sign-in and are not written to the request log. `qtestframe healthcheck` probes `/healthz` of the local server for container health checks.
 
-There is **no metrics endpoint** (no Prometheus exporter). The dashboard *trends* are project data (daily snapshots), not server metrics.
+## Prometheus metrics
+
+`GET /metrics` serves metrics in the Prometheus text format. It is **off by default**; turn it on with `metrics.enabled` (or `QTF_METRICS_ENABLED=true`, or **Administration → System settings → Metrics and tracing**). The dashboard *trends* are project data (daily snapshots), not server metrics.
+
+| Metric | Type | Labels | Meaning |
+|---|---|---|---|
+| `qtf_http_requests_total` | counter | `route`, `method`, `status` | requests by route template (`/api/v1/tests/{id}`, never the id itself), method and status class (`2xx` … `5xx`) |
+| `qtf_http_request_duration_seconds` | histogram | `route`, `method` | duration of requests (event streams excluded) |
+| `qtf_http_requests_in_flight` | gauge | | requests being served (event streams excluded) |
+| `qtf_live_connections` | gauge | | open live-update streams (Server-Sent Events) |
+| `qtf_db_connections` | gauge | `state` (`in_use`, `idle`) | connections of the database pool |
+| `qtf_db_max_open_connections` | gauge | | the pool limit |
+| `qtf_db_wait_total`, `qtf_db_wait_duration_seconds_total` | counter | | queries that waited for a free connection, and how long |
+| `qtf_db_closed_connections_total` | counter | `reason` | connections closed by the pool |
+| `qtf_jobs_total` | counter | `kind` (`script_job`, `req_sync`, `report_mail`), `result` | finished background jobs: automated tests (`passed`, `failed`, `skipped`, `cancelled`, `error`, `interrupted`), requirement syncs (`ok`, `partial`, `error`) and scheduled reports (`ok`, `error`) |
+| `qtf_script_jobs_running` | gauge | | automated tests running on this process |
+| `qtf_logins_total` | counter | `method` (`local`, `oidc`, `saml`, `mfa`, `invitation`, `external`, `other`), `result` (`success`, `failure`) | sign-in attempts |
+| `qtf_tenants`, `qtf_users`, `qtf_projects`, `qtf_requirements`, `qtf_tests`, `qtf_runs` | gauge | | the size of the installation, counted at most once a minute |
+| `qtf_tracing_spans_total` | counter | `outcome` (`exported`, `failed`, `dropped`) | spans of the trace export |
+| `qtf_build_info` | gauge | `version`, `goversion` | always 1 |
+| `process_start_time_seconds` | gauge | | start of the process (Unix time) |
+| `go_goroutines`, `go_memstats_alloc_bytes`, `go_memstats_heap_inuse_bytes`, `go_memstats_heap_objects`, `go_memstats_sys_bytes`, `go_gc_next_bytes` | gauge | | Go runtime |
+| `go_gc_cycles_total`, `go_gc_pause_seconds_total` | counter | | garbage collection |
+
+The endpoint is protected by what is configured, and a request must pass **every** configured check:
+
+- **`metrics.token`** – the scraper sends `Authorization: Bearer <token>`. The token is a secret: write-only in the system settings (stored encrypted), or from `metrics.token_file` or `QTF_METRICS_TOKEN`. A missing or wrong token gets `401`.
+- **`metrics.allowed_ips`** – addresses or CIDR ranges (`10.0.0.0/8`). The client address is taken from `X-Forwarded-For` only behind `server.trusted_proxies`. Other addresses get `403`.
+- With **neither**, only the loopback address (`127.0.0.1`, `::1`) may scrape: everyone else gets `403`.
+
+`metrics.listen` (e.g. `127.0.0.1:9090`, applies after a restart) serves `/metrics`, `/healthz` and `/readyz` on a listener of its own, in plain HTTP; the main listener then answers `/metrics` with `404`. Keep that address on an internal network.
+
+```yaml
+metrics:
+  enabled: true
+  listen: "10.0.0.5:9090"          # optional
+  token_file: metrics-token        # relative: in $CREDENTIALS_DIRECTORY
+  allowed_ips: [10.0.0.0/24]
+```
+
+The matching Prometheus job:
+
+```yaml
+scrape_configs:
+  - job_name: qtestframe
+    scheme: http
+    authorization:
+      credentials_file: /etc/prometheus/qtestframe-token
+    static_configs:
+      - targets: ["10.0.0.5:9090"]
+```
+
+An example Grafana dashboard (`examples/monitoring/grafana-dashboard.json`) and alert rules (`examples/monitoring/prometheus-alerts.yml`) are in the repository: error rate, latency, pool saturation, failing jobs and sign-in failures.
+
+## OpenTelemetry tracing
+
+With tracing on, the server records a span for every request (named after its route, e.g. `GET /api/v1/tests/{id}`), a child span for every database query of the request (the statement without its values) and a client span for every outgoing call (webhooks, trackers, AI, …). Spans are sent in batches to an OpenTelemetry collector over **OTLP/HTTP with JSON** (every 5 seconds or 512 spans; at most 4096 wait, more are dropped and counted).
+
+| Setting | Meaning |
+|---|---|
+| `tracing.enabled` | on/off (off by default) |
+| `tracing.endpoint` | the collector, e.g. `http://otel-collector:4318`; `/v1/traces` is added to an address without a path |
+| `tracing.headers` | headers of every export as `key=value` pairs separated by commas, e.g. `Authorization=Bearer <token>`; a secret (write-only, stored encrypted, or `tracing.headers_file`, `QTF_TRACING_HEADERS`) |
+| `tracing.sample_ratio` | share of new traces that are recorded, `0`–`1` (default `1`) |
+| `tracing.service_name` | `service.name` of the spans (default `qtestframe`) |
+
+W3C Trace Context is followed both ways: a request with a `traceparent` header continues the caller's trace (and its sampling decision), and outgoing calls carry a `traceparent` header of their own. Health checks and scrapes are not traced. The export does not go through the outgoing-connection rules of the server (like syslog). The section **Metrics and tracing** of the system settings shows the spans exported, failed and dropped and the last error of the collector.
+
+```yaml
+tracing:
+  enabled: true
+  endpoint: "http://otel-collector:4318"
+  headers_file: otlp-headers       # e.g. Authorization=Bearer <token>
+  sample_ratio: "0.2"
+  service_name: qtestframe
+```
 
 ## What to monitor
 
 | Signal | How |
 |---|---|
 | liveness and readiness | `/healthz`, `/readyz` (e.g. Prometheus `blackbox_exporter`, module `http_2xx`) |
+| error rate and latency | `qtf_http_requests_total{status="5xx"}`, `qtf_http_request_duration_seconds` (see the alert rules in `examples/monitoring/`) |
+| background work | `qtf_jobs_total` with a `result` of `error`, `failed` or `partial` |
 | service state | `systemctl is-active qtestframe`; the unit restarts the server on failure |
 | errors | log records with `level=ERROR`; `stored system settings are invalid`; `tls reload failed` |
 | attacks | many `login failed`, `second factor failed` or SCIM authentication failures from one address |
@@ -2008,9 +2315,9 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**In a backup** (115 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
+**In a backup** (117 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `webauthn_credentials`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`, `step_definitions`.
 
-**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Not in a backup:** `backup_locks`, `backup_runs`, `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`, `webauthn_challenges`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -2045,6 +2352,75 @@ WantedBy=timers.target
 
 The directory must exist and be writable by `qtestframe`. Copy the files off-host (restic, borg) and delete old ones.
 
+## Scheduled backups
+
+Instead of a timer, the server can take the backups itself. Turn them on under **Administration → System settings → Scheduled backups** (or in the `backup` section of the configuration file):
+
+| Setting | Meaning |
+|---|---|
+| `backup.enabled` | take scheduled backups |
+| `backup.schedule` | when, in UTC: `daily 02:00`, `weekly sun 03:30` or `every 6h` (15 minutes to 30 days) |
+| `backup.directory` | absolute path of the directory the files are written to, e.g. `/var/backups/qtestframe`; it applies **after a restart**, because the server opens it for writing before the process is locked down (Landlock) |
+| `backup.keep_last`, `backup.keep_days` | retention: keep the newest N files, delete files older than N days |
+| `backup.passphrase` | encrypt the files (see below); write-only |
+| `backup.s3.*` | also upload them to S3-compatible storage (see below) |
+
+```yaml
+backup:
+  enabled: true
+  schedule: daily 02:00
+  directory: /var/backups/qtestframe
+  keep_last: 14
+  keep_days: 30
+  passphrase_file: backup-passphrase   # in $CREDENTIALS_DIRECTORY
+```
+
+What happens:
+
+- A goroutine of the server checks the schedule every minute. A backup writes the same archive as `qtestframe backup` to a temporary file in the directory, renames it to `qtestframe-backup-YYYYMMDD-HHMMSS.zip` (`.zip.enc` when encrypted) and records its size and **SHA-256**.
+- **Several servers** on one PostgreSQL database: each backup takes a lock row in the database (`backup_locks`) with a lease of five minutes that the server renews while it writes, so exactly one server takes each backup; the lock of a server that crashed expires. Give every server the same directory only if it is shared storage; otherwise the files are spread over the servers.
+- A slot missed while no server ran (an upgrade at 02:00) is taken once, at the next check. A failed backup is not retried every minute but at the next slot; use **Run backup now** to retry at once.
+- After a successful backup the **retention rules** delete old files: `keep_last` keeps the newest N, `keep_days` deletes files older than N days, and with both a file goes when either rule says so. The newest file is always kept, and only files named like scheduled backups are ever deleted. `0` turns a rule off; with both at `0` nothing is deleted.
+- Every run is recorded (table `backup_runs`: started, finished, file, size, SHA-256, encryption, upload, status, error) and audited: `admin.backup.completed` or `admin.backup.failed` (system entries), `admin.backup.run` when a super administrator starts one. A failed backup is also **e-mailed to every super administrator** when e-mail is set up. A backup still running when the server stops is recorded as failed (`interrupted`) by the next one.
+
+**Administration → Backup** shows the schedule, the next backup and the history, with **Run backup now** (`POST /api/v1/admin/backups/run`, also without a schedule once the directory is set), **download** of a file (`GET /api/v1/admin/backups/{id}/download`, audited as `admin.backup.download`) and **verify** (below). The history and the lock are not part of a backup; the files are outside the database, so copy the directory off-host or use the upload.
+
+## Encrypted backups
+
+With a passphrase the archive is encrypted: AES-256-GCM in chunks of 1 MiB with a key derived from the passphrase with scrypt (N = 2^15, r = 8, p = 1, random salt). Every chunk is authenticated, so a changed, truncated or reordered file is detected; a wrong passphrase and a damaged file give the same error. The encrypted file starts with `QTFENC01`.
+
+- Scheduled backups: set `backup.passphrase` in the system settings (at least 12 characters; stored encrypted with the key of the stored secrets, never shown) or `backup.passphrase_file` in the configuration file.
+- Command line: `qtestframe backup --out FILE.zip.enc --encrypt` reads the passphrase from `--passphrase-file FILE`, else `QTF_BACKUP_PASSPHRASE`, else one line of standard input. Leading and trailing spaces are ignored.
+- Restore: `qtestframe restore --in FILE.zip.enc --yes` recognises an encrypted file and asks for the passphrase the same way; it decrypts into a temporary file next to the backup (or in `$TMPDIR`), which is removed afterwards. Under **Administration → Backup** type the passphrase into the restore form, or leave it empty to use the passphrase of the scheduled backups.
+
+Keep the passphrase somewhere else than the backups – a password manager or a sealed envelope. Without it an encrypted backup cannot be restored by anyone. The passphrase protects the whole archive; the stored secrets inside it are additionally encrypted with the server's key as before.
+
+## Verifying a backup
+
+```sh
+qtestframe backup verify /var/backups/qtestframe/qtestframe-backup-20261124-020000.zip.enc
+```
+
+The check needs no database: it decrypts an encrypted file (passphrase as above), opens the ZIP archive and reads every entry to its end (which checks its CRC-32), checks the manifest (format version, a file for every table it lists and no other) and that every row is a JSON object, and compares the row counts with the manifest. It prints the SHA-256, the creation time, version, driver and schema version of the backup and exits with `1` when anything is wrong. Flags come before the file. It does not check that the schema version fits a database – a restore does.
+
+**Verify** in the history does the same on the server and also compares the SHA-256 of the file with the one recorded when it was written (`POST /api/v1/admin/backups/{id}/verify`, audited as `admin.backup.verify`; the outcome is shown in the history). Verify a backup now and then, and restore one into a test installation once in a while: only a restore proves a backup.
+
+## Upload to S3-compatible storage
+
+Scheduled backups can also be uploaded to Amazon S3 or any S3-compatible object storage (MinIO, Ceph, Garage, …). Qtestframe sends one `PUT` per file with plain HTTPS, signed with AWS Signature Version 4 – no SDK, no multipart upload, so a file can be at most 5 GiB. The request carries the SHA-256 of the file as its payload hash, so the storage rejects a corrupted upload.
+
+| Setting | Example |
+|---|---|
+| `backup.s3.enabled` | `true` |
+| `backup.s3.endpoint` | `https://s3.eu-north-1.amazonaws.com`, `https://minio.example.com:9000` |
+| `backup.s3.region` | `eu-north-1` (`us-east-1` for most S3-compatible servers) |
+| `backup.s3.bucket` | `qtf-backups` |
+| `backup.s3.prefix` | `qtestframe/` |
+| `backup.s3.access_key_id` | the access key ID |
+| `backup.s3.secret_access_key` | write-only; or `backup.s3.secret_access_key_file` in the configuration file |
+
+Requests use path-style addressing (`ENDPOINT/BUCKET/KEY`) and go through the outgoing connection settings (proxy, allowed and denied hosts). The credentials only need `s3:PutObject` on the prefix. A failed upload fails the run (and is e-mailed); the local file is kept. The retention rules apply to the directory only: delete old objects with a **lifecycle rule** of the bucket, and consider object lock (WORM) so that a compromised server cannot delete its backups.
+
 ## Restore
 
 A restore **replaces all data** of the installation with the backup, in **one transaction**: every table is emptied and refilled, so either everything is restored or nothing changes.
@@ -2055,7 +2431,7 @@ sudo -u qtestframe qtestframe restore --config /etc/qtestframe/config.yaml --in 
 sudo systemctl start qtestframe
 ```
 
-The command prints the rows per table and is audited (`admin.restore`). Super administrators can also restore under **Administration → Backup** (`POST /api/v1/admin/restore`, confirmed by typing `RESTORE`); the upload is bounded by `server.read_timeout`, so use the command line for large backups. Stop the server for a command-line restore: a running server keeps its keys and caches of the old data.
+The command prints the rows per table and is audited (`admin.restore`). An encrypted backup (`.zip.enc`) is decrypted first, see [Encrypted backups](#encrypted-backups). Super administrators can also restore under **Administration → Backup** (`POST /api/v1/admin/restore`, confirmed by typing `RESTORE`); the upload is bounded by `server.read_timeout`, so use the command line for large backups. Stop the server for a command-line restore: a running server keeps its keys and caches of the old data.
 
 A restore is refused, and nothing is changed, when:
 
@@ -2154,6 +2530,10 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 62 | `0062_project_logo.sql` |
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
+| 65 | `0065_backup_schedule.sql` |
+| 67 | `0067_passkeys.sql` |
+| 68 | `0068_privacy_retention.sql` |
+| 70 | `0070_gherkin.sql` |
 
 <!-- END GENERATED: migrations -->
 
@@ -2380,21 +2760,32 @@ Adds the demo projects to an organisation (default `bootstrap.tenant_slug`, crea
 
 ### `qtestframe backup`
 
-Writes a logical backup of all data (every organisation) to a ZIP file, through a temporary file that is renamed when complete. Audited as `admin.backup`.
+Writes a logical backup of all data (every organisation) to a ZIP file, through a temporary file that is renamed when complete, and prints its SHA-256. `--encrypt` encrypts it with a passphrase (AES-256-GCM, key derived with scrypt) read from `--passphrase-file`, `QTF_BACKUP_PASSPHRASE` or one line of standard input. Audited as `admin.backup`.
 
 | Flag | Value | Meaning |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--encrypt` | — | encrypt the backup with a passphrase (AES-256-GCM, key derived with scrypt) |
 | `--out` | `string` | backup file to write (ZIP) |
+| `--passphrase-file` | `string` | file holding the passphrase of --encrypt (default $QTF_BACKUP_PASSPHRASE, else standard input) |
+
+### `qtestframe backup verify`
+
+Checks a backup file without a database: decrypts an encrypted one (passphrase as for `backup --encrypt`), checks the ZIP structure and the checksum of every entry, the manifest, that every row is a JSON object and that the row counts match the manifest. Prints the SHA-256, the manifest and `intact`; exit `1` for a damaged file or a wrong passphrase. Flags come before the file.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 
 ### `qtestframe restore`
 
-Replaces **all** data with a backup, in one transaction, and signs everyone out. Needs `--yes`. Audited as `admin.restore`.
+Replaces **all** data with a backup, in one transaction, and signs everyone out. An encrypted backup is decrypted into a temporary file first (passphrase as for `backup --encrypt`). Needs `--yes`. Audited as `admin.restore`.
 
 | Flag | Value | Meaning |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
-| `--in` | `string` | backup file to restore (ZIP) |
+| `--in` | `string` | backup file to restore (ZIP, or encrypted) |
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 | `--yes` | — | confirm that ALL existing data is replaced |
 
 ### `qtestframe secrets`
@@ -2603,6 +2994,24 @@ Builds a prompt for an AI assistant on a server, through the REST API with an AP
 | `--token` | `string` | API token (default $QTF_TOKEN) |
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 | `--variant` | `string` | only the requirements that apply to this variant (id or name) |
+
+### `qtestframe import-tests`
+
+Imports the test cases of another test management tool into a project on a server, through the REST API with an API token: `--from` `testrail` (CSV or XML export), `xray` (CSV or JSON), `zephyr` (Zephyr Scale/Squad CSV or Zephyr Scale XML), `qtest` (XLSX or CSV) or `azure` (Azure Test Plans CSV). It prints what would be created, updated, left unchanged or is in conflict, with warnings such as requirement references that match no requirement, and then imports; `--dry-run` stops after the preview. Each test remembers its source and external ID, so importing the file again updates the tests instead of duplicating them; `--overwrite` also updates tests changed in Qtestframe since. Past results in the file become completed runs (`--no-history` leaves them out); `--folder`, `--no-folders` and `--no-links` control placement and requirement links (see the user guide page Interoperability).
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--dry-run` | — | only show what would be created and updated |
+| `--folder` | `string` | test folder to import into (path or id; default: top level) |
+| `--format` | `string` | file format: csv, xml, json or xlsx (default: from the file name) |
+| `--from` | `string` | the tool the file comes from: testrail, xray, zephyr, qtest, azure |
+| `--no-folders` | — | do not create folders for the sections, suites, modules or area paths |
+| `--no-history` | — | do not import past results as runs |
+| `--no-links` | — | do not link the tests to the requirements they reference |
+| `--overwrite` | — | also update tests changed in Qtestframe since the last import (conflicts) |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 
 ### `qtestframe version`
 

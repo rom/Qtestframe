@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/tracing"
 )
 
 // ParseLevel converts a level name to slog.Level.
@@ -51,8 +52,33 @@ func New(cfg config.Logging, out io.Writer) (*slog.Logger, io.Closer, error) {
 		closer = w
 		h = Fanout(h, NewSyslogHandler(w, opts))
 	}
-	return slog.New(h), closer, nil
+	return slog.New(TraceIDs(h)), closer, nil
 }
+
+// TraceIDs returns a handler that adds trace_id (and span_id, for a span
+// of this server) to the records logged with a context of a trace (see
+// internal/tracing), so log lines can be matched with traces.
+func TraceIDs(h slog.Handler) slog.Handler { return traceHandler{h} }
+
+type traceHandler struct{ slog.Handler }
+
+func (t traceHandler) Handle(ctx context.Context, r slog.Record) error {
+	if ctx != nil {
+		if sc, ok := tracing.SpanContextFromContext(ctx); ok && sc.IsValid() {
+			r = r.Clone()
+			r.AddAttrs(slog.String("trace_id", sc.TraceID.String()))
+			if !sc.Remote {
+				r.AddAttrs(slog.String("span_id", sc.SpanID.String()))
+			}
+		}
+	}
+	return t.Handler.Handle(ctx, r)
+}
+
+func (t traceHandler) WithAttrs(a []slog.Attr) slog.Handler {
+	return traceHandler{t.Handler.WithAttrs(a)}
+}
+func (t traceHandler) WithGroup(n string) slog.Handler { return traceHandler{t.Handler.WithGroup(n)} }
 
 type nopCloser struct{}
 

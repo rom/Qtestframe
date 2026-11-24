@@ -97,6 +97,15 @@ func (s *Server) mfaRequirementFor(ctx context.Context, u *model.User, ms []mode
 	if u.SuperAdmin {
 		consider(server, model.MFASuperAdminRole)
 	}
+	// auth.passkeys.require_for_admins: a passkey or an authenticator app,
+	// without a grace period
+	if s.conf().Auth.Passkeys.RequireForAdmins && isAdminAnywhere(u, ms) {
+		d := u.CreatedAt
+		if req.Deadline == nil || d.Before(*req.Deadline) {
+			req.Deadline = &d
+		}
+		req.Required = true
+	}
 	for _, m := range ms {
 		for _, role := range m.Roles {
 			consider(server, role)
@@ -141,7 +150,32 @@ func (s *Server) mfaEnrolDue(ctx context.Context, u *model.User) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return req.enrolDue(s.now(), m != nil), nil
+	pk, err := s.hasPasskeys(ctx, u.ID)
+	if err != nil {
+		return false, err
+	}
+	return req.enrolDue(s.now(), m != nil || pk), nil
+}
+
+// mfaMethods returns the second factors the user can give: an
+// authenticator app (and its recovery codes) and passkeys.
+func (s *Server) mfaMethods(ctx context.Context, userID string) ([]string, error) {
+	methods := []string{}
+	m, err := s.userMFA(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if m != nil {
+		methods = append(methods, "totp", "recovery_code")
+	}
+	pk, err := s.hasPasskeys(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if pk {
+		methods = append(methods, "passkey")
+	}
+	return methods, nil
 }
 
 // ---------------------------------------------------------------- sign-in
@@ -173,7 +207,7 @@ func (s *Server) afterFirstFactor(w http.ResponseWriter, r *http.Request, u *mod
 		return
 	}
 	ctx := r.Context()
-	m, err := s.userMFA(ctx, u.ID)
+	methods, err := s.mfaMethods(ctx, u.ID)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -188,7 +222,7 @@ func (s *Server) afterFirstFactor(w http.ResponseWriter, r *http.Request, u *mod
 		s.fail(w, r, err)
 		return
 	}
-	if m == nil {
+	if len(methods) == 0 {
 		opts.EnrolRequired = req.enrolDue(s.now(), false)
 		done()
 		return
@@ -211,12 +245,12 @@ func (s *Server) afterFirstFactor(w http.ResponseWriter, r *http.Request, u *mod
 		http.Redirect(w, r, "/login?mfa=1", http.StatusFound)
 		return
 	}
-	writeJSON(w, http.StatusOK, s.challengeView(ch, req.RememberDays))
+	writeJSON(w, http.StatusOK, s.challengeView(ch, methods, req.RememberDays))
 }
 
 // challengeView answers a sign-in that waits for its second factor.
-func (s *Server) challengeView(ch *model.MFAChallenge, rememberDays int) map[string]any {
-	return map[string]any{"mfa_required": true, "methods": []string{"totp", "recovery_code"},
+func (s *Server) challengeView(ch *model.MFAChallenge, methods []string, rememberDays int) map[string]any {
+	return map[string]any{"mfa_required": true, "methods": methods,
 		"remember_days": rememberDays, "expires_at": ch.ExpiresAt}
 }
 
@@ -257,7 +291,12 @@ func (s *Server) handleMFAChallenge(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, s.challengeView(ch, pol.RememberDays))
+	methods, err := s.mfaMethods(r.Context(), ch.UserID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.challengeView(ch, methods, pol.RememberDays))
 }
 
 // handleMFAVerify: POST /auth/mfa/verify (public) {"code", "remember"}
@@ -309,7 +348,7 @@ func (s *Server) handleMFAVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ok {
-		s.Log.Warn("second factor failed", "email", u.Email, "remote", s.clientIP(r))
+		s.Log.Warn("second factor failed", "email", u.Email, "remote", s.loggedIP(r))
 		s.recordLogin(r, u.ID, "mfa", false)
 		writeError(w, http.StatusUnauthorized, "mfa_invalid", "the code is wrong or was already used")
 		return
@@ -337,7 +376,7 @@ func (s *Server) handleMFAVerify(w http.ResponseWriter, r *http.Request) {
 func (s *Server) rememberDevice(w http.ResponseWriter, r *http.Request, userID string, days int) {
 	tok := auth.RandomToken(32)
 	exp := s.Store.Now().AddDate(0, 0, days)
-	if err := s.Store.AddTrustedDevice(r.Context(), auth.HashToken(tok), userID, s.clientIP(r), r.UserAgent(), exp); err != nil {
+	if err := s.Store.AddTrustedDevice(r.Context(), auth.HashToken(tok), userID, s.loggedIP(r), r.UserAgent(), exp); err != nil {
 		s.Log.Warn("remembered device not stored", "err", err)
 		return
 	}
@@ -378,6 +417,8 @@ type mfaStatus struct {
 	EnrolmentDeadline  *time.Time `json:"enrolment_deadline"`
 	EnrolmentRequired  bool       `json:"enrolment_required"`
 	RememberDays       int        `json:"remember_days"`
+	// Passkeys is the number of the user's passkeys (a second factor too).
+	Passkeys int `json:"passkeys"`
 }
 
 func (s *Server) mfaStatusOf(ctx context.Context, p *Principal, ms []model.Membership) (*mfaStatus, error) {
@@ -400,11 +441,15 @@ func (s *Server) mfaStatusOf(ctx context.Context, p *Principal, ms []model.Membe
 	if err != nil {
 		return nil, err
 	}
+	if st.Passkeys, err = s.Store.CountPasskeys(ctx, p.User.ID); err != nil {
+		return nil, err
+	}
+	hasPasskey := st.Passkeys > 0 && s.passkeysUsable()
 	st.Required, st.RememberDays = req.Required, req.RememberDays
-	if req.Required && !st.Enabled {
+	if req.Required && !st.Enabled && !hasPasskey {
 		st.EnrolmentDeadline = req.Deadline
 	}
-	st.EnrolmentRequired = p.Session != nil && p.Session.MFAEnrolRequired && !st.Enabled
+	st.EnrolmentRequired = p.Session != nil && p.Session.MFAEnrolRequired && !st.Enabled && !hasPasskey
 	return st, nil
 }
 
@@ -558,7 +603,12 @@ func (s *Server) handleMFADisable(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
-	if need.Required {
+	pk, err := s.hasPasskeys(ctx, p.User.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if need.Required && !pk {
 		writeError(w, http.StatusForbidden, "mfa_required", "multi-factor authentication is required for your account and cannot be turned off")
 		return
 	}
@@ -662,7 +712,7 @@ func (s *Server) handleMFAPolicyGet(w http.ResponseWriter, r *http.Request, p *P
 		}
 		v.Members = len(ms)
 		for _, m := range ms {
-			if m.MFAEnabled {
+			if m.MFAEnabled || m.Passkeys > 0 {
 				v.MembersMFA++
 			}
 		}
@@ -677,6 +727,14 @@ func (s *Server) handleMFAPolicyGet(w http.ResponseWriter, r *http.Request, p *P
 		if err != nil {
 			s.fail(w, r, err)
 			return
+		}
+		pks, err := s.Store.PasskeyCounts(ctx)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		for id := range pks {
+			on[id] = true
 		}
 		v.UsersTotal, v.UsersEnabled = len(us), len(on)
 	}
@@ -765,29 +823,41 @@ func (s *Server) saveMFAPolicy(w http.ResponseWriter, r *http.Request, p *Princi
 // e-mail and in-app notification, and must enrol again at the next sign-in
 // if a policy requires MFA.
 func (s *Server) handleResetMemberMFA(w http.ResponseWriter, r *http.Request, p *Principal) {
+	u, ok := s.memberToReset(w, r, p, "only a super administrator can reset the multi-factor authentication of this user")
+	if !ok {
+		return
+	}
+	s.resetMFA(w, r, p, u, "member.reset_mfa", p.TenantID())
+}
+
+// memberToReset returns the member {uid} of the caller's tenant whose
+// credentials a tenant administrator may reset: one who belongs to no
+// other tenant and is not a super administrator (super administrators
+// may reset anyone). It answers itself (denied) otherwise.
+func (s *Server) memberToReset(w http.ResponseWriter, r *http.Request, p *Principal, denied string) (*model.User, bool) {
 	ctx := r.Context()
 	uid := r.PathValue("uid")
 	if _, err := s.Store.GetMembership(ctx, p.TenantID(), uid); err != nil {
 		s.fail(w, r, err)
-		return
+		return nil, false
 	}
 	u, err := s.Store.GetUser(ctx, uid)
 	if err != nil {
 		s.fail(w, r, err)
-		return
+		return nil, false
 	}
 	if !(p.User.SuperAdmin && p.Token == nil) {
 		ms, err := s.Store.ListUserMemberships(ctx, uid)
 		if err != nil {
 			s.fail(w, r, err)
-			return
+			return nil, false
 		}
 		if u.SuperAdmin || len(ms) != 1 {
-			writeError(w, http.StatusForbidden, "forbidden", "only a super administrator can reset the multi-factor authentication of this user")
-			return
+			writeError(w, http.StatusForbidden, "forbidden", denied)
+			return nil, false
 		}
 	}
-	s.resetMFA(w, r, p, u, "member.reset_mfa", p.TenantID())
+	return u, true
 }
 
 // handleResetUserMFA: POST /users/{id}/mfa/reset (super administrators).

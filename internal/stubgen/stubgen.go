@@ -27,6 +27,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/rom/qtestframe/internal/gherkin"
 	"github.com/rom/qtestframe/internal/model"
 )
 
@@ -121,6 +122,10 @@ type Test struct {
 	// parametrised test.
 	Parameters []string
 	Rows       []Row
+	// Gherkin is the feature of a test in the Gherkin format ("" for a
+	// test in the step format): the Cucumber stub is that feature, tagged
+	// with the key.
+	Gherkin string
 }
 
 // Step is one step of a test.
@@ -158,7 +163,38 @@ func FromModel(t *model.TestCase, requirements []string, url string) Test {
 	for _, r := range t.DataRows {
 		out.Rows = append(out.Rows, Row{Name: r.Name, Values: r.Values})
 	}
+	if t.Format == model.FormatGherkin && strings.TrimSpace(t.Gherkin) != "" {
+		out.Gherkin = t.Gherkin
+		// the other frameworks document the scenarios as steps
+		if doc, err := gherkin.Parse(t.Gherkin); err == nil {
+			pt, _ := gherkin.ToPlain(doc)
+			if strings.TrimSpace(out.Preconditions) == "" {
+				out.Preconditions = pt.Preconditions
+			}
+			out.Steps = nil
+			for _, st := range pt.Steps {
+				out.Steps = append(out.Steps, Step{Action: st.Action, Expected: st.Expected, Data: st.Data})
+			}
+			out.Parameters, out.Rows = pt.Parameters, nil
+			for _, r := range pt.Rows {
+				out.Rows = append(out.Rows, Row{Name: r.Name, Values: r.Values})
+			}
+		}
+	}
 	return out
+}
+
+// gherkinBody is the Cucumber stub of a Gherkin test: its feature with
+// the key and the stub tag ("" when it does not parse).
+func gherkinBody(t Test) string {
+	if strings.TrimSpace(t.Gherkin) == "" {
+		return ""
+	}
+	src, err := gherkin.AddTags(t.Gherkin, []string{"@" + oneLine(t.Key), "@qtestframe-stub"})
+	if err != nil {
+		return ""
+	}
+	return src
 }
 
 // Options tune the generated code.
@@ -226,10 +262,18 @@ func Generate(fwID string, t Test, o Options) (File, error) {
 	}
 	d := newData(fw, t, o)
 	var body bytes.Buffer
-	if err := templates().ExecuteTemplate(&body, fw.tmpl, d); err != nil {
+	if g := gherkinBody(t); fw.ID == "cucumber" && g != "" {
+		body.WriteString(g)
+	} else if err := templates().ExecuteTemplate(&body, fw.tmpl, d); err != nil {
 		return File{}, err
 	}
 	src := tidy(body.String())
+	// a "# language:" header stays the first line of a feature file
+	lang := ""
+	if fw.ID == "cucumber" && strings.HasPrefix(src, "# language:") {
+		first, rest, _ := strings.Cut(src, "\n")
+		lang, src = first+"\n", strings.TrimLeft(rest, "\n")
+	}
 	if fw.ID == "go" {
 		b, err := format.Source([]byte(src))
 		if err != nil {
@@ -238,7 +282,7 @@ func Generate(fwID string, t Test, o Options) (File, error) {
 		src = string(b)
 	}
 	head := header(fw, t, bodyHash(src))
-	return File{Path: FileName(fw.ID, t.Key), Content: head + "\n" + src, Key: t.Key, Framework: fw.ID}, nil
+	return File{Path: FileName(fw.ID, t.Key), Content: lang + head + "\n" + src, Key: t.Key, Framework: fw.ID}, nil
 }
 
 // tidy removes trailing spaces and runs of blank lines, and ends the text

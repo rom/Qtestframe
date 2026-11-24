@@ -58,6 +58,9 @@ type Server struct {
 	limiter *rateLimiter
 	// mfaLimiter bounds the second-factor attempts of one account.
 	mfaLimiter *rateLimiter
+	// passkeyLimiter bounds the passwordless sign-in challenges one client
+	// address asks for.
+	passkeyLimiter *rateLimiter
 	// scimLimiter bounds the requests of one SCIM token, scimAuthLimiter
 	// the failed SCIM authentications of one client address.
 	scimLimiter     *rateLimiter
@@ -101,6 +104,10 @@ type Server struct {
 	sys sysState
 	// erec caches the electronic-records settings per tenant (erecords.go)
 	erec erecCache
+	// obs holds the metrics and the tracer (observability.go)
+	obs *observability
+	// bk is the state of the scheduled backups (backups.go)
+	bk backupState
 }
 
 // New creates a server and its identity providers. cfg is the
@@ -116,6 +123,9 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		limiter: newRateLimiter(10, 5*time.Minute),
 		// second-factor attempts per account, whatever the address
 		mfaLimiter: newRateLimiter(10, 15*time.Minute),
+		// passwordless challenges per address (the sign-in page asks for one
+		// on every visit, for the passkey suggestions of the e-mail field)
+		passkeyLimiter: newRateLimiter(60, 5*time.Minute),
 		// identity providers sync in bursts (Entra ID: initial cycle)
 		scimLimiter:     newRateLimiter(1200, time.Minute),
 		scimAuthLimiter: newRateLimiter(20, 5*time.Minute),
@@ -125,6 +135,7 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		suggestLimiter: newRateLimiter(300, time.Minute),
 		jobs:           newJobManager(),
 	}
+	s.obs = newObservability(s)
 	// outgoing calls follow the outbound settings (outbound.go)
 	s.HTTPClient = s.outboundClient()
 	// e-mail, OIDC providers and login limits follow the system settings
@@ -148,7 +159,7 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 // Handler returns the root HTTP handler.
 func (s *Server) Handler() http.Handler {
 	s.once.Do(s.routes)
-	return s.recoverer(s.securityHeaders(s.logRequests(s.mux)))
+	return s.recoverer(s.securityHeaders(s.observe(s.logRequests(s.mux))))
 }
 
 func (s *Server) routes() {
@@ -164,6 +175,8 @@ func (s *Server) routes() {
 	}
 	pub("GET /healthz", s.handleHealth)
 	pub("GET /readyz", s.handleReady)
+	// Prometheus metrics (observability.go): off by default, its own protection
+	pub("GET /metrics", s.handleMetrics)
 	pub("GET /api/v1/openapi.json", s.handleOpenAPI)
 	pub("GET /api/v1/openapi.yaml", s.handleOpenAPI)
 
@@ -174,6 +187,8 @@ func (s *Server) routes() {
 	// the second factor of a sign-in (mfa.go): the qtf_mfa cookie is the credential
 	pub("GET /api/v1/auth/mfa/challenge", s.handleMFAChallenge)
 	pub("POST /api/v1/auth/mfa/verify", s.handleMFAVerify)
+	// passkeys (passkeys.go): passwordless sign-in and the second factor
+	s.routesPasskeysPublic(pub)
 	// e-mail invitations (invitations.go): the token is the credential
 	pub("GET /api/v1/invitations/{token}", s.handleGetInvitation)
 	pub("POST /api/v1/invitations/{token}/accept", s.handleAcceptInvitation)
@@ -372,6 +387,7 @@ func (s *Server) routes() {
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)
+	s.routesTestImport(h)
 	// Excel round-trip and ReqIF import (exchange.go), OSLC (oslc.go)
 	s.routesExchange(h)
 	s.routesRequirementSources(h)
@@ -390,10 +406,12 @@ func (s *Server) routes() {
 	s.routesCode(h)
 	s.routesCI(h)
 	s.routesStubs(h)
+	s.routesGherkin(h)
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)
 	s.routesMFA(h)
+	s.routesPasskeys(h)
 	s.routesSharing(h)
 	// autocomplete suggestions and history (suggest.go)
 	s.routesSuggest(h)
@@ -416,6 +434,8 @@ func (s *Server) routes() {
 	s.routesLogo(h)
 	// the solution preamble of software projects (solution.go)
 	s.routesSolution(h)
+	// privacy and data retention (privacy.go)
+	s.routesPrivacy(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -436,7 +456,20 @@ func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusServiceUnavailable, "unavailable", "database unavailable")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ready"})
+	// the schema must be complete (e.g. another process is still migrating)
+	if !s.obs.migrated.Load() {
+		n, err := s.Store.DB.Pending(ctx)
+		switch {
+		case err != nil:
+			writeError(w, http.StatusServiceUnavailable, "unavailable", "database unavailable")
+			return
+		case n > 0:
+			writeError(w, http.StatusServiceUnavailable, "unavailable", fmt.Sprintf("%d database migrations are not applied", n))
+			return
+		}
+		s.obs.migrated.Store(true)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"status": "ready", "checks": map[string]string{"database": "ok", "migrations": "ok"}})
 }
 
 // ---------------------------------------------------------------- UI
@@ -546,7 +579,7 @@ func (s *Server) logRequests(next http.Handler) http.Handler {
 		start := time.Now()
 		sw := &statusWriter{ResponseWriter: w}
 		next.ServeHTTP(sw, r)
-		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+		if quietPath(r.URL.Path) {
 			return
 		}
 		lvl := slog.LevelInfo
@@ -555,7 +588,7 @@ func (s *Server) logRequests(next http.Handler) http.Handler {
 		}
 		s.Log.Log(r.Context(), lvl, "http request", "method", r.Method, "path", r.URL.Path,
 			"status", sw.status, "bytes", sw.bytes, "duration_ms", time.Since(start).Milliseconds(),
-			"remote", s.clientIP(r))
+			"remote", s.loggedIP(r))
 	})
 }
 

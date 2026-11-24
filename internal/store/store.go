@@ -15,6 +15,7 @@ import (
 
 	"github.com/rom/qtestframe/internal/db"
 	"github.com/rom/qtestframe/internal/secrets"
+	"github.com/rom/qtestframe/internal/tracing"
 )
 
 // Sentinel errors.
@@ -101,15 +102,55 @@ type conn struct {
 }
 
 func (c conn) exec(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return c.q.ExecContext(ctx, db.Rebind(c.d, q), args...)
+	q = db.Rebind(c.d, q)
+	sctx, span := querySpan(ctx, c.d, q)
+	res, err := c.q.ExecContext(sctx, q, args...)
+	endQuery(span, err)
+	return res, err
 }
 
 func (c conn) query(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return c.q.QueryContext(ctx, db.Rebind(c.d, q), args...)
+	q = db.Rebind(c.d, q)
+	sctx, span := querySpan(ctx, c.d, q)
+	rows, err := c.q.QueryContext(sctx, q, args...)
+	endQuery(span, err)
+	return rows, err
 }
 
 func (c conn) row(ctx context.Context, q string, args ...any) *sql.Row {
-	return c.q.QueryRowContext(ctx, db.Rebind(c.d, q), args...)
+	q = db.Rebind(c.d, q)
+	sctx, span := querySpan(ctx, c.d, q)
+	r := c.q.QueryRowContext(sctx, q, args...)
+	endQuery(span, r.Err())
+	return r
+}
+
+// querySpan starts the span of a database query inside a traced request
+// (nil otherwise). The statement is recorded without its arguments.
+func querySpan(ctx context.Context, d db.Dialect, q string) (context.Context, *tracing.Span) {
+	if tracing.SpanFromContext(ctx) == nil {
+		return ctx, nil
+	}
+	op, _, _ := strings.Cut(strings.TrimSpace(q), " ")
+	op = strings.ToUpper(op)
+	system := "sqlite"
+	if d == db.Postgres {
+		system = "postgresql"
+	}
+	text := q
+	if len(text) > 2000 {
+		text = text[:2000] + "…"
+	}
+	return tracing.StartChild(ctx, "db "+op, tracing.KindClient,
+		tracing.Attr{Key: "db.system", Value: system}, tracing.Attr{Key: "db.operation.name", Value: op},
+		tracing.Attr{Key: "db.query.text", Value: text})
+}
+
+func endQuery(s *tracing.Span, err error) {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		s.SetError(err)
+	}
+	s.End()
 }
 
 // c returns the connection for ctx: the transaction started by InTx when

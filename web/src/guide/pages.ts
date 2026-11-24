@@ -48,6 +48,7 @@ export const ADMIN_GUIDE_PAGES = [
   'authorisation',
   'system-settings',
   'security',
+  'privacy',
   'integrations',
   'connecting-tools',
   'logging-and-monitoring',

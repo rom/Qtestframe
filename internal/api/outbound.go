@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/tracing"
 )
 
 // errOutboundBlocked is returned for a call the outbound settings forbid.
@@ -25,7 +26,8 @@ var errOutboundBlocked = errors.New("outbound call blocked")
 
 // outboundClient returns the client of outgoing calls of s.
 func (s *Server) outboundClient() *http.Client {
-	return &http.Client{Timeout: 60 * time.Second, Transport: newOutboundTransport(func() config.Outbound { return s.conf().Outbound })}
+	// inside a traced request the call gets a span and a traceparent header
+	return &http.Client{Timeout: 60 * time.Second, Transport: &tracing.Transport{Base: newOutboundTransport(func() config.Outbound { return s.conf().Outbound })}}
 }
 
 func newOutboundTransport(conf func() config.Outbound) *outboundTransport {

@@ -76,7 +76,13 @@ func (c *Client) list(ctx context.Context, path string) ([]Named, error) {
 // FindFolder finds a requirement folder by id, name or path ("A/B" or
 // "A / B"); "" when there is none.
 func (c *Client) FindFolder(ctx context.Context, projectID, ref string) (string, error) {
-	fs, err := c.list(ctx, "/projects/"+url.PathEscape(projectID)+"/folders?kind=requirement")
+	return c.FindFolderOf(ctx, projectID, "requirement", ref)
+}
+
+// FindFolderOf finds a folder of kind (requirement or test) by id, name
+// or path; "" when there is none.
+func (c *Client) FindFolderOf(ctx context.Context, projectID, kind, ref string) (string, error) {
+	fs, err := c.list(ctx, "/projects/"+url.PathEscape(projectID)+"/folders?kind="+url.QueryEscape(kind))
 	if err != nil {
 		return "", err
 	}

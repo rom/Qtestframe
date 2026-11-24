@@ -14,6 +14,7 @@ Sidan fungerar som [kravsidan](requirements.md#kravsidan): mappträd, filterfäl
 |---|---|
 | **Titel** | Ett kort namn (obligatoriskt). |
 | **Exekveringstyp** | **Manuellt** eller **Automatiserat**. |
+| **Format** | **Steg** (förutsättningar och steg) eller **Gherkin** (en egenskap med scenarier, se [Gherkin-testfall](#gherkin-testfall-bdd)). |
 | **Beskrivning** | Vad testfallet handlar om. |
 | **Förutsättningar** | Vad som måste gälla innan testet börjar, till exempel *ett kundkonto finns*. Visas för testaren i exekveringsvyn. |
 | **Status** | Utkast, Klart, Granskning eller Utfasat. |
@@ -95,6 +96,63 @@ När testfallet läggs till i en körning blir varje rad en **iteration** av exe
 **Delade steg och parametrar:** steg som anropas från ett annat testfall ([delade steg](#delade-steg)) fylls i med parametrarna i det **anropande** testfallet, så ett delat *Logga in som {{username}}* fungerar med varje rad i alla testfall som anropar det. Det anropade testfallets egen testdata används inte när det anropas; den gäller bara när testfallet självt exekveras. Platshållare som det anropande testfallet inte definierar lämnas oförändrade.
 
 Testdatan ingår i testfallets versionshistorik och i exporten (**Exportera → Testdata**: en rad per datarad och parameter).
+
+## Gherkin-testfall (BDD)
+
+Ett testfall kan skrivas som en **Gherkin**-egenskap i stället för förutsättningar och steg, på det sätt som beteendedriven utveckling (BDD) och Cucumber beskriver beteende: *Givet* ett sammanhang, *När* något händer, *Så* ett utfall. Välj format med **Steg** / **Gherkin** bredvid exekveringstypen i testfallsredigeraren.
+
+```gherkin
+# language: sv
+@kassa @REQ-12
+Egenskap: Kassan
+  Bakgrund:
+    Givet en kund med ett sparat kort
+
+  @rök
+  Scenario: Betala med det sparade kortet
+    När kunden betalar 25 kr
+    Så är ordern "betald"
+
+  Scenariomall: Betala <belopp>
+    När kunden betalar <belopp> kr
+    Så visar kvittot <belopp> kr
+
+    Exempel:
+      | belopp |
+      | 5      |
+      | 10     |
+```
+
+En egenskap har ett namn och en beskrivning, en valfri **Bakgrund** (steg som körs före varje scenario), **Scenarier** och **Scenariomallar** med **Exempel**-tabeller (ett scenario per rad; `<belopp>` ersätts med radens värde), **Regler** som grupperar scenarier, **taggar** (`@rök`) på egenskaper, regler, scenarier och exempel, **dokumentsträngar** (text mellan rader med `"""` eller ```` ``` ````) och **datatabeller** under ett steg. Både svenska och engelska nyckelord fungerar i alla testfall: *Egenskap/Feature*, *Bakgrund/Background*, *Scenario*, *Scenariomall/Abstrakt scenario/Scenario Outline*, *Exempel/Examples*, *Regel/Rule*, *Givet/Given*, *När/When*, *Så/Then*, *Och/And*, *Men/But*. En första rad `# language: sv` markerar en svensk egenskap (språket känns också igen på nyckelorden).
+
+**Redigeraren** färgmarkerar nyckelord, taggar, strängar, tal, platshållare, tabeller, dokumentsträngar och kommentarer och kontrollerar texten medan du skriver: en rad med fel stryks under och listas under redigeraren med sitt radnummer (välj det för att gå till raden), och steg som inget steg i [stegbiblioteket](#stegbiblioteket) matchar markeras som *odefinierade*. Ett testfall vars Gherkin-text har fel kan inte sparas. Tangentbord:
+
+| Tangenter | Gör |
+|---|---|
+| **Ctrl+Mellanslag** | Föreslår nyckelord i början av en rad och steg ur stegbiblioteket efter ett stegnyckelord (förslag visas också medan du skriver). **↑**/**↓** väljer, **Retur** eller **Tabb** infogar, **Esc** stänger. Ett infogat steg markerar sin första parameter, till exempel `{int}`, så att du kan skriva över den. |
+| **Retur** | En ny rad med samma indrag, en nivå djupare efter en rubrik som *Scenario:*. |
+| **Alt+Skift+F** | Justerar kolumnerna i alla tabeller (även **Justera tabeller**). Inget annat ändras. |
+| **Tabb** | Lämnar redigeraren (när inget förslag är öppet), som i alla andra fält. Gör indrag med mellanslag. |
+
+**Konvertera:** när ett befintligt testfall byter från **Steg** till **Gherkin** skrivs förutsättningarna som *Givet*-steg, varje åtgärd som ett *När*-steg, varje förväntat resultat som ett *Så*-steg, stegdata som en dokumentsträng och testdata som en *Scenariomall* med *Exempel*. Byter du tillbaka skrivs *Bakgrund* och de första *Givet*-stegen som förutsättningar, varje *När*-steg som ett steg med de följande *Så*-stegen som förväntat resultat, och den första *Exempel*-tabellen som testdata. **Konvertera från stegen** och **Konvertera från Gherkin** gör om konverteringen (de ersätter det som finns). Konverteringen görs så gott det går: regler, flera *Exempel*-tabeller och anropade testfall förenklas, och redigeraren säger till.
+
+**Köra ett Gherkin-testfall:** i en körning är varje scenario, och varje *Exempel*-rad i en scenariomall, en [iteration](runs.md#datadrivna-testfall-iterationer) av exekveringen, med scenariots namn (en mall får radens värden i namnet). Stegen är *Bakgrund*-stegen följda av scenariots steg, med dokumentsträngar och tabeller vid steget, och testaren anger ett utfall per steg som vanligt. Utfallen förs tillbaka till raderna i egenskapen: redigeraren visar det senaste utfallet för varje steg i marginalen (grönt godkänt, rött underkänt) och listar dem under **Senaste utfall per steg**.
+
+**Cucumber**-stubbarna från [Generera testkod](ci-cd.md#generera-testkod) för ett Gherkin-testfall är själva egenskapen, taggad med testfallets nyckel och `@qtestframe-stub`, så att scenarierna som teamet skrev är de scenarier som Cucumber kör. Frågefältet `format` hittar testfall efter format: `format:gherkin`.
+
+### Stegbiblioteket
+
+**Stegbibliotek** (i redigeraren och i menyn **Importera** på testfallssidan) innehåller projektets återanvändbara steg. Varje steg är ett **Cucumber-uttryck** som `kunden betalar {int} kr` eller `jag loggar in som {string}` (parametrarna `{int}`, `{float}`, `{word}`, `{string}` och `{}`; `artikel(n)` för valfri text; `in/på` för alternativ; ett omvänt snedstreck skyddar `{`, `(` och `/`) eller, med typen **Reguljärt uttryck**, ett mönster som `^jag betalar (\d+) kr$`. Ett steg kan ha ett nyckelord (*Givet*, *När* eller *Så*: föreslås först efter det nyckelordet) och en beskrivning, som visas i förslagen.
+
+Listan visar hur ofta varje steg används och, under **Var det används**, testfallen och raderna. **Odefinierade steg** listar stegen i Gherkin-testfallen som ingen definition matchar, med ett föreslaget uttryck (text inom citattecken blir `{string}`, tal `{int}` eller `{float}`); **Lägg till i biblioteket** fyller i formuläret med det. Samma erbjudande finns under redigeraren för det öppna testfallets odefinierade steg.
+
+**Byt namn i alla testfall** ändrar ett stegs uttryck och skriver om varje steg som använde det i alla Gherkin-testfall i projektet, med parametrarna kvar: byter du `kunden betalar {int} kr` till `kunden betalar {int} kronor` blir *kunden betalar 25 kr* till *kunden betalar 25 kronor*. Det nya uttrycket måste ha lika många parametrar som det gamla. Varje ändrat testfall får en ny version, så ändringen syns i dess historik. Tar du bort ett steg ur biblioteket lämnas testfallen som de är; deras steg blir odefinierade. Att läsa biblioteket kräver **Läsare**, att ändra det **Testare**.
+
+### Import och export av feature-filer
+
+**Importera → Importera .feature-filer** på testfallssidan skapar Gherkin-testfall av `.feature`-filer: välj **Ett testfall per scenario** (vart och ett med egenskapens *Bakgrund*; en scenariomall behåller sina *Exempel*) eller **Ett testfall per feature-fil**. Förhandsvisningen listar testfallen som skapas och filerna som har fel (med raden), som hoppas över. Taggar blir testfallens taggar, utom taggar som namnger ett krav i projektet, som i stället länkar testfallet till kravet: `@SHOP-REQ-12`, `@req:SHOP-REQ-12` eller `@REQ-12` utan projektnyckeln.
+
+**Importera → Exportera som .feature-filer** laddar ned en zip-fil med en `.feature`-fil per testfall i listan (eller i urvalet): ett Gherkin-testfall som det är skrivet, ett testfall i stegformat konverterat, vart och ett taggat med sin nyckel och nycklarna till kraven det verifierar.
 
 ## Kategorier
 
