@@ -629,6 +629,58 @@ var keyDocs = map[string]text{
 		"Optional price per million output tokens.",
 		"Valfritt pris per miljon utdata-token.",
 	},
+	"backup.enabled": {
+		"Take scheduled backups: the server writes the archive of `qtestframe backup` into `directory` on the `schedule`. With several servers on one database one of them takes each backup (a lock row in the database).",
+		"Ta schemalagda säkerhetskopior: servern skriver arkivet från `qtestframe backup` till `directory` enligt `schedule`. Med flera servrar mot samma databas tar en av dem varje säkerhetskopia (en låsrad i databasen).",
+	},
+	"backup.schedule": {
+		"When backups run, in UTC: `daily HH:MM`, `weekly DAY HH:MM` (`mon`–`sun`) or `every DURATION` (`15m` to `720h`, e.g. `every 6h`). A slot missed while no server ran is taken once at the next start.",
+		"När säkerhetskopiorna tas, i UTC: `daily HH:MM`, `weekly DAG HH:MM` (`mon`–`sun`) eller `every TIDSLÄNGD` (`15m` till `720h`, t.ex. `every 6h`). En tidpunkt som missades medan ingen server körde tas en gång vid nästa start.",
+	},
+	"backup.directory": {
+		"Absolute path of the directory the backup files are written to (created with mode 0700, writable under Landlock). Required for scheduled backups and *Run backup now*. Files are named `qtestframe-backup-YYYYMMDD-HHMMSS.zip` (`.zip.enc` when encrypted).",
+		"Absolut sökväg till katalogen som säkerhetskopiorna skrivs till (skapas med läget 0700, skrivbar under Landlock). Krävs för schemalagda säkerhetskopior och *Säkerhetskopiera nu*. Filerna heter `qtestframe-backup-ÅÅÅÅMMDD-TTMMSS.zip` (`.zip.enc` när de är krypterade).",
+	},
+	"backup.keep_last": {
+		"Keep the newest N backup files in `directory` and delete older ones (`0` = no limit). Only files named like scheduled backups are deleted.",
+		"Behåll de N nyaste säkerhetskopiorna i `directory` och ta bort äldre (`0` = ingen gräns). Bara filer som heter som schemalagda säkerhetskopior tas bort.",
+	},
+	"backup.keep_days": {
+		"Delete backup files older than N days (`0` = never). With `keep_last` a file goes when either rule says so; the newest file is always kept.",
+		"Ta bort säkerhetskopior som är äldre än N dagar (`0` = aldrig). Tillsammans med `keep_last` tas en fil bort när någon av reglerna säger det; den nyaste filen behålls alltid.",
+	},
+	"backup.passphrase_file": {
+		"File holding the passphrase that encrypts scheduled backups (AES-256-GCM with a key derived by scrypt). A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The passphrase can also be set in the system settings; without one, backups are not encrypted.",
+		"Fil med lösenfrasen som krypterar schemalagda säkerhetskopior (AES-256-GCM med en nyckel som härleds med scrypt). En relativ sökväg slås upp i `$CREDENTIALS_DIRECTORY`. Lösenfrasen kan också anges i systeminställningarna; utan den krypteras säkerhetskopiorna inte.",
+	},
+	"backup.s3.enabled": {
+		"Upload every scheduled backup to S3-compatible object storage (Amazon S3, MinIO, Ceph, Garage …) after writing it. A failed upload fails the run; the local file is kept.",
+		"Ladda upp varje schemalagd säkerhetskopia till S3-kompatibel objektlagring (Amazon S3, MinIO, Ceph, Garage …) när den har skrivits. En misslyckad uppladdning gör att körningen misslyckas; den lokala filen behålls.",
+	},
+	"backup.s3.endpoint": {
+		"Base URL of the storage, e.g. `https://s3.eu-north-1.amazonaws.com` or `https://minio.example.com:9000` (path-style requests: `ENDPOINT/BUCKET/KEY`). The upload follows the `outbound` settings.",
+		"Bas-URL till lagringen, t.ex. `https://s3.eu-north-1.amazonaws.com` eller `https://minio.example.com:9000` (sökvägsadressering: `ENDPOINT/BUCKET/NYCKEL`). Uppladdningen följer inställningarna under `outbound`.",
+	},
+	"backup.s3.region": {
+		"Region of the signature (AWS Signature Version 4); `us-east-1` for most S3-compatible servers.",
+		"Region för signaturen (AWS Signature Version 4); `us-east-1` för de flesta S3-kompatibla servrar.",
+	},
+	"backup.s3.bucket": {
+		"Bucket the backups are uploaded to. Delete old objects with a lifecycle rule of the bucket: the retention rules apply to the local directory only.",
+		"Bucket som säkerhetskopiorna laddas upp till. Ta bort gamla objekt med en livscykelregel för bucketen: gallringsreglerna gäller bara den lokala katalogen.",
+	},
+	"backup.s3.prefix": {
+		"Prefix of the object keys, e.g. `qtestframe/` (empty = the top of the bucket).",
+		"Prefix för objektnycklarna, t.ex. `qtestframe/` (tomt = högst upp i bucketen).",
+	},
+	"backup.s3.access_key_id": {
+		"Access key ID of the credentials allowed to `PutObject` in the bucket.",
+		"Åtkomstnyckel-ID för de inloggningsuppgifter som får göra `PutObject` i bucketen.",
+	},
+	"backup.s3.secret_access_key_file": {
+		"File holding the secret access key. A relative path is looked up in `$CREDENTIALS_DIRECTORY`. The key can also be set in the system settings (write-only).",
+		"Fil med den hemliga åtkomstnyckeln. En relativ sökväg slås upp i `$CREDENTIALS_DIRECTORY`. Nyckeln kan också anges i systeminställningarna (kan bara skrivas).",
+	},
 	"system_settings.locked": {
 		"Settings that cannot be changed in **Administration → System settings**: keys (`logging.level`), prefixes ending in `.*` (`email.*`) or `*`. Their stored overrides are ignored.",
 		"Inställningar som inte kan ändras under **Administration → Systeminställningar**: nycklar (`logging.level`), prefix som slutar med `.*` (`email.*`) eller `*`. Deras sparade värden ignoreras.",
@@ -747,5 +799,6 @@ var extraEnv = []struct {
 	{"QTF_OIDC_<NAME>_CLIENT_SECRET", text{"client secret of the OIDC provider `<name>` (upper case); wins over `client_secret_file` and a secret stored in the web client", "klienthemligheten för OIDC-leverantören `<namn>` (versaler); vinner över `client_secret_file` och en hemlighet sparad i webbklienten"}},
 	{"CREDENTIALS_DIRECTORY", text{"set by systemd (`LoadCredential=`): relative `*_file` paths are resolved in it, and it is readable after the lock-down", "sätts av systemd (`LoadCredential=`): relativa `*_file`-sökvägar slås upp där, och den är läsbar efter låsningen"}},
 	{"STATE_DIRECTORY", text{"set by systemd (`StateDirectory=`): default place of the key file when the database is not SQLite", "sätts av systemd (`StateDirectory=`): standardplats för nyckelfilen när databasen inte är SQLite"}},
+	{"QTF_BACKUP_PASSPHRASE", text{"the passphrase of `qtestframe backup --encrypt`, `backup verify` and `restore` when `--passphrase-file` is not given (the server reads `backup.passphrase` instead)", "lösenfrasen för `qtestframe backup --encrypt`, `backup verify` och `restore` när `--passphrase-file` inte anges (servern läser `backup.passphrase` i stället)"}},
 	{"QTF_URL, QTF_TOKEN, QTF_CONFIGURATION", text{"defaults of `--url`, `--token` and `--configuration` of `qtestframe report`", "standardvärden för `--url`, `--token` och `--configuration` i `qtestframe report`"}},
 }

@@ -17,7 +17,7 @@ The people who *use* Qtestframe – including organisation administrators who ma
 9. [E-mail, webhooks and integrations](integrations.md) – SMTP, notifications, webhooks, Jira, GitHub and GitLab, the script and web test runner.
 10. [Connecting other tools](connecting-tools.md) – OSLC connections with IBM DOORS Next and ETM, Polarion and Codebeamer, dialogs in frames, ReqIF.
 11. [Logging and monitoring](logging-and-monitoring.md) – log formats, syslog, health endpoints.
-12. [Backup, restore and migration](backup-and-migration.md) – what a backup contains, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
+12. [Backup, restore and migration](backup-and-migration.md) – what a backup contains, scheduled and encrypted backups, verification, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
 13. [Operations runbook](runbook.md) – routine tasks, capacity, troubleshooting, log messages.
 14. [Command line reference](cli-reference.md) – every `qtestframe` command and flag.
 15. [Features added later](features-added-later.md) – administration notes of newer features.

@@ -11571,7 +11571,7 @@ paths:
       summary: Restore
       operationId: postAdminRestore
       description: |-
-        multipart `backup` (ZIP) + field `confirm=RESTORE`; the schema version must match; replaces **all** data in one transaction and signs everyone out → `{"restored": {table: rows}}`
+        multipart `backup` (ZIP, or an encrypted backup) + field `confirm=RESTORE` + optional `passphrase` for an encrypted backup (default: the passphrase of the scheduled backups); the schema version must match; replaces **all** data in one transaction and signs everyone out → `{"restored": {table: rows}}`
 
         **Permission:** any authenticated user; the handler checks: super admin.
       x-permission: authenticated
@@ -11593,6 +11593,133 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/backups:
+    get:
+      tags:
+      - Administration
+      summary: Scheduled backups and their history
+      operationId: getAdminBackups
+      description: |-
+        The settings of the scheduled backups (section `backup` of the system settings, without secrets: `encrypted` says whether a passphrase is set) with the next scheduled backup, and the latest runs, newest first → `{"settings": {enabled, schedule, schedule_error?, directory, keep_last, keep_days, encrypted, s3_enabled, s3_target?, next_run_at?}, "running": bool, "runs": [BackupRun]}`; BackupRun = `{id, kind: schedule|manual, status: running|succeeded|failed, started_by, started_at, finished_at?, file_name, size, sha256, encrypted, remote_key, rows, schema_version, error, pruned_at?, verified_at?, verify_error}`. Query `limit` (default 100).
+
+        **Permission:** any authenticated user; the handler checks: super admin.
+      x-permission: authenticated
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/backups/run:
+    post:
+      tags:
+      - Administration
+      summary: Run backup now
+      operationId: postAdminBackupsRun
+      description: |-
+        Starts a backup into `backup.directory` with the settings of the scheduled backups (encryption, upload, retention) in the background → 202 with the BackupRun (status `running`). 400 when no directory is set, 409 while a backup runs (on any server: the backup lock). Audited as `admin.backup.run`; the outcome as `admin.backup.completed` or `admin.backup.failed`.
+
+        **Permission:** any authenticated user; the handler checks: super admin.
+      x-permission: authenticated
+      responses:
+        '202':
+          description: Started
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/backups/{id}/download:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      tags:
+      - Administration
+      summary: Download a backup file
+      operationId: getAdminBackupsByIdDownload
+      description: |-
+        The file of a backup run from the backup directory (`application/zip`, or `application/octet-stream` when encrypted). 404 when the run has no file or it is missing, 410 when the retention rules deleted it. Audited as `admin.backup.download`.
+
+        **Permission:** any authenticated user; the handler checks: super admin.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: The backup file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/backups/{id}/verify:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Administration
+      summary: Verify a backup file
+      operationId: postAdminBackupsByIdVerify
+      description: |-
+        Opens the file of a backup run and checks it: its SHA-256 against the one recorded when it was written, the decryption (with `backup.passphrase`), the ZIP structure and checksums, the manifest and the row counts → `{ok, error?, sha256, sha256_ok, encrypted, manifest?}`. The outcome is recorded with the run (`verified_at`, `verify_error`) and audited as `admin.backup.verify`.
+
+        **Permission:** any authenticated user; the handler checks: super admin.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Error'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/roles:

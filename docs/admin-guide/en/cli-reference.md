@@ -80,21 +80,32 @@ Adds the demo projects to an organisation (default `bootstrap.tenant_slug`, crea
 
 ### `qtestframe backup`
 
-Writes a logical backup of all data (every organisation) to a ZIP file, through a temporary file that is renamed when complete. Audited as `admin.backup`.
+Writes a logical backup of all data (every organisation) to a ZIP file, through a temporary file that is renamed when complete, and prints its SHA-256. `--encrypt` encrypts it with a passphrase (AES-256-GCM, key derived with scrypt) read from `--passphrase-file`, `QTF_BACKUP_PASSPHRASE` or one line of standard input. Audited as `admin.backup`.
 
 | Flag | Value | Meaning |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--encrypt` | — | encrypt the backup with a passphrase (AES-256-GCM, key derived with scrypt) |
 | `--out` | `string` | backup file to write (ZIP) |
+| `--passphrase-file` | `string` | file holding the passphrase of --encrypt (default $QTF_BACKUP_PASSPHRASE, else standard input) |
+
+### `qtestframe backup verify`
+
+Checks a backup file without a database: decrypts an encrypted one (passphrase as for `backup --encrypt`), checks the ZIP structure and the checksum of every entry, the manifest, that every row is a JSON object and that the row counts match the manifest. Prints the SHA-256, the manifest and `intact`; exit `1` for a damaged file or a wrong passphrase. Flags come before the file.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 
 ### `qtestframe restore`
 
-Replaces **all** data with a backup, in one transaction, and signs everyone out. Needs `--yes`. Audited as `admin.restore`.
+Replaces **all** data with a backup, in one transaction, and signs everyone out. An encrypted backup is decrypted into a temporary file first (passphrase as for `backup --encrypt`). Needs `--yes`. Audited as `admin.restore`.
 
 | Flag | Value | Meaning |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
-| `--in` | `string` | backup file to restore (ZIP) |
+| `--in` | `string` | backup file to restore (ZIP, or encrypted) |
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 | `--yes` | — | confirm that ALL existing data is replaced |
 
 ### `qtestframe secrets`

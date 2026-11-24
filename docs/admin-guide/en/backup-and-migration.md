@@ -20,7 +20,7 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 **In a backup** (115 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
 
-**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Not in a backup:** `backup_locks`, `backup_runs`, `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -55,6 +55,75 @@ WantedBy=timers.target
 
 The directory must exist and be writable by `qtestframe`. Copy the files off-host (restic, borg) and delete old ones.
 
+## Scheduled backups
+
+Instead of a timer, the server can take the backups itself. Turn them on under **Administration → System settings → Scheduled backups** (or in the `backup` section of the configuration file):
+
+| Setting | Meaning |
+|---|---|
+| `backup.enabled` | take scheduled backups |
+| `backup.schedule` | when, in UTC: `daily 02:00`, `weekly sun 03:30` or `every 6h` (15 minutes to 30 days) |
+| `backup.directory` | absolute path of the directory the files are written to, e.g. `/var/backups/qtestframe`; it applies **after a restart**, because the server opens it for writing before the process is locked down (Landlock) |
+| `backup.keep_last`, `backup.keep_days` | retention: keep the newest N files, delete files older than N days |
+| `backup.passphrase` | encrypt the files (see below); write-only |
+| `backup.s3.*` | also upload them to S3-compatible storage (see below) |
+
+```yaml
+backup:
+  enabled: true
+  schedule: daily 02:00
+  directory: /var/backups/qtestframe
+  keep_last: 14
+  keep_days: 30
+  passphrase_file: backup-passphrase   # in $CREDENTIALS_DIRECTORY
+```
+
+What happens:
+
+- A goroutine of the server checks the schedule every minute. A backup writes the same archive as `qtestframe backup` to a temporary file in the directory, renames it to `qtestframe-backup-YYYYMMDD-HHMMSS.zip` (`.zip.enc` when encrypted) and records its size and **SHA-256**.
+- **Several servers** on one PostgreSQL database: each backup takes a lock row in the database (`backup_locks`) with a lease of five minutes that the server renews while it writes, so exactly one server takes each backup; the lock of a server that crashed expires. Give every server the same directory only if it is shared storage; otherwise the files are spread over the servers.
+- A slot missed while no server ran (an upgrade at 02:00) is taken once, at the next check. A failed backup is not retried every minute but at the next slot; use **Run backup now** to retry at once.
+- After a successful backup the **retention rules** delete old files: `keep_last` keeps the newest N, `keep_days` deletes files older than N days, and with both a file goes when either rule says so. The newest file is always kept, and only files named like scheduled backups are ever deleted. `0` turns a rule off; with both at `0` nothing is deleted.
+- Every run is recorded (table `backup_runs`: started, finished, file, size, SHA-256, encryption, upload, status, error) and audited: `admin.backup.completed` or `admin.backup.failed` (system entries), `admin.backup.run` when a super administrator starts one. A failed backup is also **e-mailed to every super administrator** when e-mail is set up. A backup still running when the server stops is recorded as failed (`interrupted`) by the next one.
+
+**Administration → Backup** shows the schedule, the next backup and the history, with **Run backup now** (`POST /api/v1/admin/backups/run`, also without a schedule once the directory is set), **download** of a file (`GET /api/v1/admin/backups/{id}/download`, audited as `admin.backup.download`) and **verify** (below). The history and the lock are not part of a backup; the files are outside the database, so copy the directory off-host or use the upload.
+
+## Encrypted backups
+
+With a passphrase the archive is encrypted: AES-256-GCM in chunks of 1 MiB with a key derived from the passphrase with scrypt (N = 2^15, r = 8, p = 1, random salt). Every chunk is authenticated, so a changed, truncated or reordered file is detected; a wrong passphrase and a damaged file give the same error. The encrypted file starts with `QTFENC01`.
+
+- Scheduled backups: set `backup.passphrase` in the system settings (at least 12 characters; stored encrypted with the key of the stored secrets, never shown) or `backup.passphrase_file` in the configuration file.
+- Command line: `qtestframe backup --out FILE.zip.enc --encrypt` reads the passphrase from `--passphrase-file FILE`, else `QTF_BACKUP_PASSPHRASE`, else one line of standard input. Leading and trailing spaces are ignored.
+- Restore: `qtestframe restore --in FILE.zip.enc --yes` recognises an encrypted file and asks for the passphrase the same way; it decrypts into a temporary file next to the backup (or in `$TMPDIR`), which is removed afterwards. Under **Administration → Backup** type the passphrase into the restore form, or leave it empty to use the passphrase of the scheduled backups.
+
+Keep the passphrase somewhere else than the backups – a password manager or a sealed envelope. Without it an encrypted backup cannot be restored by anyone. The passphrase protects the whole archive; the stored secrets inside it are additionally encrypted with the server's key as before.
+
+## Verifying a backup
+
+```sh
+qtestframe backup verify /var/backups/qtestframe/qtestframe-backup-20261124-020000.zip.enc
+```
+
+The check needs no database: it decrypts an encrypted file (passphrase as above), opens the ZIP archive and reads every entry to its end (which checks its CRC-32), checks the manifest (format version, a file for every table it lists and no other) and that every row is a JSON object, and compares the row counts with the manifest. It prints the SHA-256, the creation time, version, driver and schema version of the backup and exits with `1` when anything is wrong. Flags come before the file. It does not check that the schema version fits a database – a restore does.
+
+**Verify** in the history does the same on the server and also compares the SHA-256 of the file with the one recorded when it was written (`POST /api/v1/admin/backups/{id}/verify`, audited as `admin.backup.verify`; the outcome is shown in the history). Verify a backup now and then, and restore one into a test installation once in a while: only a restore proves a backup.
+
+## Upload to S3-compatible storage
+
+Scheduled backups can also be uploaded to Amazon S3 or any S3-compatible object storage (MinIO, Ceph, Garage, …). Qtestframe sends one `PUT` per file with plain HTTPS, signed with AWS Signature Version 4 – no SDK, no multipart upload, so a file can be at most 5 GiB. The request carries the SHA-256 of the file as its payload hash, so the storage rejects a corrupted upload.
+
+| Setting | Example |
+|---|---|
+| `backup.s3.enabled` | `true` |
+| `backup.s3.endpoint` | `https://s3.eu-north-1.amazonaws.com`, `https://minio.example.com:9000` |
+| `backup.s3.region` | `eu-north-1` (`us-east-1` for most S3-compatible servers) |
+| `backup.s3.bucket` | `qtf-backups` |
+| `backup.s3.prefix` | `qtestframe/` |
+| `backup.s3.access_key_id` | the access key ID |
+| `backup.s3.secret_access_key` | write-only; or `backup.s3.secret_access_key_file` in the configuration file |
+
+Requests use path-style addressing (`ENDPOINT/BUCKET/KEY`) and go through the outgoing connection settings (proxy, allowed and denied hosts). The credentials only need `s3:PutObject` on the prefix. A failed upload fails the run (and is e-mailed); the local file is kept. The retention rules apply to the directory only: delete old objects with a **lifecycle rule** of the bucket, and consider object lock (WORM) so that a compromised server cannot delete its backups.
+
 ## Restore
 
 A restore **replaces all data** of the installation with the backup, in **one transaction**: every table is emptied and refilled, so either everything is restored or nothing changes.
@@ -65,7 +134,7 @@ sudo -u qtestframe qtestframe restore --config /etc/qtestframe/config.yaml --in 
 sudo systemctl start qtestframe
 ```
 
-The command prints the rows per table and is audited (`admin.restore`). Super administrators can also restore under **Administration → Backup** (`POST /api/v1/admin/restore`, confirmed by typing `RESTORE`); the upload is bounded by `server.read_timeout`, so use the command line for large backups. Stop the server for a command-line restore: a running server keeps its keys and caches of the old data.
+The command prints the rows per table and is audited (`admin.restore`). An encrypted backup (`.zip.enc`) is decrypted first, see [Encrypted backups](#encrypted-backups). Super administrators can also restore under **Administration → Backup** (`POST /api/v1/admin/restore`, confirmed by typing `RESTORE`); the upload is bounded by `server.read_timeout`, so use the command line for large backups. Stop the server for a command-line restore: a running server keeps its keys and caches of the old data.
 
 A restore is refused, and nothing is changed, when:
 
@@ -164,6 +233,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 62 | `0062_project_logo.sql` |
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
+| 65 | `0065_backup_schedule.sql` |
 
 <!-- END GENERATED: migrations -->
 

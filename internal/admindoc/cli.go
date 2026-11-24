@@ -46,12 +46,16 @@ var commands = []command{
 		"Lägger till demoprojekten i en organisation (standard `bootstrap.tenant_slug`, skapas om den saknas), med demoanvändare. Inte för produktion.",
 	}},
 	{[]string{"backup"}, text{
-		"Writes a logical backup of all data (every organisation) to a ZIP file, through a temporary file that is renamed when complete. Audited as `admin.backup`.",
-		"Skriver en logisk säkerhetskopia av alla data (alla organisationer) till en ZIP-fil, via en tillfällig fil som byter namn när den är klar. Granskas som `admin.backup`.",
+		"Writes a logical backup of all data (every organisation) to a ZIP file, through a temporary file that is renamed when complete, and prints its SHA-256. `--encrypt` encrypts it with a passphrase (AES-256-GCM, key derived with scrypt) read from `--passphrase-file`, `QTF_BACKUP_PASSPHRASE` or one line of standard input. Audited as `admin.backup`.",
+		"Skriver en logisk säkerhetskopia av alla data (alla organisationer) till en ZIP-fil, via en tillfällig fil som byter namn när den är klar, och skriver ut dess SHA-256. `--encrypt` krypterar den med en lösenfras (AES-256-GCM, nyckeln härleds med scrypt) som läses från `--passphrase-file`, `QTF_BACKUP_PASSPHRASE` eller en rad på standard input. Granskas som `admin.backup`.",
+	}},
+	{[]string{"backup", "verify"}, text{
+		"Checks a backup file without a database: decrypts an encrypted one (passphrase as for `backup --encrypt`), checks the ZIP structure and the checksum of every entry, the manifest, that every row is a JSON object and that the row counts match the manifest. Prints the SHA-256, the manifest and `intact`; exit `1` for a damaged file or a wrong passphrase. Flags come before the file.",
+		"Kontrollerar en säkerhetskopia utan databas: dekrypterar en krypterad (lösenfras som för `backup --encrypt`), kontrollerar ZIP-strukturen och kontrollsumman för varje post, manifestet, att varje rad är ett JSON-objekt och att antalet rader stämmer med manifestet. Skriver ut SHA-256, manifestet och `intact`; slutstatus `1` för en skadad fil eller fel lösenfras. Flaggorna står före filen.",
 	}},
 	{[]string{"restore"}, text{
-		"Replaces **all** data with a backup, in one transaction, and signs everyone out. Needs `--yes`. Audited as `admin.restore`.",
-		"Ersätter **alla** data med en säkerhetskopia, i en transaktion, och loggar ut alla. Kräver `--yes`. Granskas som `admin.restore`.",
+		"Replaces **all** data with a backup, in one transaction, and signs everyone out. An encrypted backup is decrypted into a temporary file first (passphrase as for `backup --encrypt`). Needs `--yes`. Audited as `admin.restore`.",
+		"Ersätter **alla** data med en säkerhetskopia, i en transaktion, och loggar ut alla. En krypterad säkerhetskopia dekrypteras först till en tillfällig fil (lösenfras som för `backup --encrypt`). Kräver `--yes`. Granskas som `admin.restore`.",
 	}},
 	{[]string{"secrets", "status"}, text{
 		"Shows the key provider, its key fingerprint, the data-encryption keys and how many stored secrets are encrypted. Changes nothing (creates no key file).",

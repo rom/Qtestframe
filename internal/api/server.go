@@ -101,6 +101,8 @@ type Server struct {
 	sys sysState
 	// erec caches the electronic-records settings per tenant (erecords.go)
 	erec erecCache
+	// bk is the state of the scheduled backups (backups.go)
+	bk backupState
 }
 
 // New creates a server and its identity providers. cfg is the

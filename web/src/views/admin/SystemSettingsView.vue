@@ -567,6 +567,10 @@ function resetProviders() {
           <p v-if="current === 'runner' || current === 'live' || current === 'server'" class="small"><i class="pi pi-refresh" aria-hidden="true" /> {{ t(`sysSettings.restartNote.${current}`) }}</p>
           <p v-if="current === 'email'" class="small muted">{{ t('sysSettings.emailTestTo', { email: auth.me?.user?.email ?? '' }) }}</p>
           <p v-if="current === 'tokens'" class="small muted">{{ t('sysSettings.tokensNote') }}</p>
+          <div v-if="current === 'backup'" class="row" style="gap: 8px; flex-wrap: wrap; align-items: center">
+            <span class="small muted">{{ t('sysSettings.backupNote') }}</span>
+            <RouterLink :to="{ name: 'backup' }" class="p-button p-button-outlined p-button-sm"><i class="pi pi-history" aria-hidden="true" />&nbsp;{{ t('sysSettings.retention.openBackup') }}</RouterLink>
+          </div>
           <!-- encryption of stored secrets: read-only, set in the file -->
           <div v-if="current === 'server' && data.secrets" class="sys-secrets" role="group" aria-labelledby="h-sys-secrets">
             <h3 id="h-sys-secrets" class="plain-heading"><i class="pi pi-lock" aria-hidden="true" /> {{ t('sysSettings.secrets.title') }}</h3>

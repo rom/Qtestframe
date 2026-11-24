@@ -80,21 +80,32 @@ Lägger till demoprojekten i en organisation (standard `bootstrap.tenant_slug`, 
 
 ### `qtestframe backup`
 
-Skriver en logisk säkerhetskopia av alla data (alla organisationer) till en ZIP-fil, via en tillfällig fil som byter namn när den är klar. Granskas som `admin.backup`.
+Skriver en logisk säkerhetskopia av alla data (alla organisationer) till en ZIP-fil, via en tillfällig fil som byter namn när den är klar, och skriver ut dess SHA-256. `--encrypt` krypterar den med en lösenfras (AES-256-GCM, nyckeln härleds med scrypt) som läses från `--passphrase-file`, `QTF_BACKUP_PASSPHRASE` eller en rad på standard input. Granskas som `admin.backup`.
 
 | Flagga | Värde | Betydelse |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--encrypt` | — | encrypt the backup with a passphrase (AES-256-GCM, key derived with scrypt) |
 | `--out` | `string` | backup file to write (ZIP) |
+| `--passphrase-file` | `string` | file holding the passphrase of --encrypt (default $QTF_BACKUP_PASSPHRASE, else standard input) |
+
+### `qtestframe backup verify`
+
+Kontrollerar en säkerhetskopia utan databas: dekrypterar en krypterad (lösenfras som för `backup --encrypt`), kontrollerar ZIP-strukturen och kontrollsumman för varje post, manifestet, att varje rad är ett JSON-objekt och att antalet rader stämmer med manifestet. Skriver ut SHA-256, manifestet och `intact`; slutstatus `1` för en skadad fil eller fel lösenfras. Flaggorna står före filen.
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 
 ### `qtestframe restore`
 
-Ersätter **alla** data med en säkerhetskopia, i en transaktion, och loggar ut alla. Kräver `--yes`. Granskas som `admin.restore`.
+Ersätter **alla** data med en säkerhetskopia, i en transaktion, och loggar ut alla. En krypterad säkerhetskopia dekrypteras först till en tillfällig fil (lösenfras som för `backup --encrypt`). Kräver `--yes`. Granskas som `admin.restore`.
 
 | Flagga | Värde | Betydelse |
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
-| `--in` | `string` | backup file to restore (ZIP) |
+| `--in` | `string` | backup file to restore (ZIP, or encrypted) |
+| `--passphrase-file` | `string` | file holding the passphrase of an encrypted backup (default $QTF_BACKUP_PASSPHRASE, else standard input) |
 | `--yes` | — | confirm that ALL existing data is replaced |
 
 ### `qtestframe secrets`

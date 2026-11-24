@@ -360,6 +360,8 @@ var nonProjectResources = map[string]bool{
 	"catalog/requirements": true, "catalog/tests": true, "catalog/risks": true,
 	// the organisation's field sets and templates per project type
 	"field-sets/fields": true, "template-sets/templates": true,
+	// scheduled backups of the whole installation (super administrators)
+	"admin/backups": true,
 }
 
 // resourceOf returns the resource of a route pattern with {id} ("" for

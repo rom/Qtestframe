@@ -342,6 +342,24 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `outbound.denied_hosts` | lista | — | — | Värdar som utgående anrop aldrig når, t.ex. `metadata.google.internal` eller `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Neka utgående anrop till loopback-, privata, länklokala och andra icke-publika adresser (kontrolleras på adressen som faktiskt ansluts), om inte värden finns i `allowed_hosts`. Slå på den när servern nås från internet och användarna inte ska nå ert interna nät genom den. |
 
+### `backup`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `backup.enabled` | bool | `false` | — | Ta schemalagda säkerhetskopior: servern skriver arkivet från `qtestframe backup` till `directory` enligt `schedule`. Med flera servrar mot samma databas tar en av dem varje säkerhetskopia (en låsrad i databasen). |
+| `backup.schedule` | text | `daily 02:00` | — | När säkerhetskopiorna tas, i UTC: `daily HH:MM`, `weekly DAG HH:MM` (`mon`–`sun`) eller `every TIDSLÄNGD` (`15m` till `720h`, t.ex. `every 6h`). En tidpunkt som missades medan ingen server körde tas en gång vid nästa start. |
+| `backup.directory` | text | — | — | Absolut sökväg till katalogen som säkerhetskopiorna skrivs till (skapas med läget 0700, skrivbar under Landlock). Krävs för schemalagda säkerhetskopior och *Säkerhetskopiera nu*. Filerna heter `qtestframe-backup-ÅÅÅÅMMDD-TTMMSS.zip` (`.zip.enc` när de är krypterade). |
+| `backup.keep_last` | heltal | `7` | — | Behåll de N nyaste säkerhetskopiorna i `directory` och ta bort äldre (`0` = ingen gräns). Bara filer som heter som schemalagda säkerhetskopior tas bort. |
+| `backup.keep_days` | heltal | `0` | — | Ta bort säkerhetskopior som är äldre än N dagar (`0` = aldrig). Tillsammans med `keep_last` tas en fil bort när någon av reglerna säger det; den nyaste filen behålls alltid. |
+| `backup.passphrase_file` | text | — | — | Fil med lösenfrasen som krypterar schemalagda säkerhetskopior (AES-256-GCM med en nyckel som härleds med scrypt). En relativ sökväg slås upp i `$CREDENTIALS_DIRECTORY`. Lösenfrasen kan också anges i systeminställningarna; utan den krypteras säkerhetskopiorna inte. |
+| `backup.s3.enabled` | bool | `false` | — | Ladda upp varje schemalagd säkerhetskopia till S3-kompatibel objektlagring (Amazon S3, MinIO, Ceph, Garage …) när den har skrivits. En misslyckad uppladdning gör att körningen misslyckas; den lokala filen behålls. |
+| `backup.s3.endpoint` | text | — | — | Bas-URL till lagringen, t.ex. `https://s3.eu-north-1.amazonaws.com` eller `https://minio.example.com:9000` (sökvägsadressering: `ENDPOINT/BUCKET/NYCKEL`). Uppladdningen följer inställningarna under `outbound`. |
+| `backup.s3.region` | text | `us-east-1` | — | Region för signaturen (AWS Signature Version 4); `us-east-1` för de flesta S3-kompatibla servrar. |
+| `backup.s3.bucket` | text | — | — | Bucket som säkerhetskopiorna laddas upp till. Ta bort gamla objekt med en livscykelregel för bucketen: gallringsreglerna gäller bara den lokala katalogen. |
+| `backup.s3.prefix` | text | — | — | Prefix för objektnycklarna, t.ex. `qtestframe/` (tomt = högst upp i bucketen). |
+| `backup.s3.access_key_id` | text | — | — | Åtkomstnyckel-ID för de inloggningsuppgifter som får göra `PutObject` i bucketen. |
+| `backup.s3.secret_access_key_file` | text | — | — | Fil med den hemliga åtkomstnyckeln. En relativ sökväg slås upp i `$CREDENTIALS_DIRECTORY`. Nyckeln kan också anges i systeminställningarna (kan bara skrivas). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler
@@ -382,6 +400,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_OIDC_<NAME>_CLIENT_SECRET` | klienthemligheten för OIDC-leverantören `<namn>` (versaler); vinner över `client_secret_file` och en hemlighet sparad i webbklienten |
 | `CREDENTIALS_DIRECTORY` | sätts av systemd (`LoadCredential=`): relativa `*_file`-sökvägar slås upp där, och den är läsbar efter låsningen |
 | `STATE_DIRECTORY` | sätts av systemd (`StateDirectory=`): standardplats för nyckelfilen när databasen inte är SQLite |
+| `QTF_BACKUP_PASSPHRASE` | lösenfrasen för `qtestframe backup --encrypt`, `backup verify` och `restore` när `--passphrase-file` inte anges (servern läser `backup.passphrase` i stället) |
 | `QTF_URL`, `QTF_TOKEN`, `QTF_CONFIGURATION` | standardvärden för `--url`, `--token` och `--configuration` i `qtestframe report` |
 
 <!-- END GENERATED: environment -->

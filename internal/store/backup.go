@@ -100,7 +100,10 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "
 	// vectors of the embeddings service: a cache, computed again
 	"similarity_embeddings": true,
 	// single-use signing tickets, minutes long (0055)
-	"esign_tickets": true}
+	"esign_tickets": true,
+	// the log of scheduled backups and the lock of the instance taking one
+	// (0065; the backup files are outside the database)
+	"backup_runs": true, "backup_locks": true}
 
 // NotBackedUpTables returns the tables that exist but are deliberately not
 // part of a backup, sorted (for the administrator guide, see
@@ -599,6 +602,90 @@ func readManifest(f *zip.File) (*BackupManifest, error) {
 		return nil, Invalidf("manifest.json lists no tables")
 	}
 	return &m, nil
+}
+
+// VerifyBackup checks the integrity of a backup archive without a
+// database: the ZIP structure and the checksum of every entry, the
+// manifest (format version, a file for every table it lists and no other),
+// that every line of a table file is a JSON object and that the row counts
+// match the manifest. It does not check that the archive's schema version
+// fits a database (a restore does). Damaged archives return ErrInvalid.
+func VerifyBackup(r io.ReaderAt, size int64) (*BackupManifest, error) {
+	zr, err := zip.NewReader(r, size)
+	if err != nil {
+		return nil, Invalidf("backup is not a valid ZIP archive: %v", err)
+	}
+	files, err := backupEntries(zr)
+	if err != nil {
+		return nil, err
+	}
+	mf, ok := files["manifest.json"]
+	if !ok {
+		return nil, Invalidf("backup has no manifest.json")
+	}
+	m, err := readManifest(mf)
+	if err != nil {
+		return nil, err
+	}
+	for t := range m.Tables {
+		if _, ok := files[t+".jsonl"]; !ok {
+			return nil, Invalidf("backup is incomplete: the manifest lists table %s, which is missing", t)
+		}
+	}
+	budget := &budgetReader{left: MaxRestoreSize}
+	for _, t := range BackupTables {
+		f, ok := files[t+".jsonl"]
+		if !ok {
+			continue
+		}
+		want, listed := m.Tables[t]
+		if !listed {
+			return nil, Invalidf("backup contains %s, which the manifest does not list", f.Name)
+		}
+		n, err := verifyTable(f, budget)
+		if err != nil {
+			return nil, err
+		}
+		if n != want {
+			return nil, Invalidf("table %s has %d rows, the manifest says %d", t, n, want)
+		}
+	}
+	return m, nil
+}
+
+// verifyTable reads a table file to its end (which checks its CRC-32) and
+// counts its JSON objects.
+func verifyTable(f *zip.File, budget *budgetReader) (int, error) {
+	rc, err := f.Open()
+	if err != nil {
+		return 0, Invalidf("%s: %v", f.Name, err)
+	}
+	defer rc.Close()
+	budget.r = rc
+	sc := bufio.NewScanner(budget)
+	sc.Buffer(make([]byte, 0, min(64<<10, MaxRestoreLine)), MaxRestoreLine)
+	n, line := 0, 0
+	for sc.Scan() {
+		line++
+		b := bytes.TrimSpace(sc.Bytes())
+		if len(b) == 0 {
+			continue
+		}
+		if b[0] != '{' || !json.Valid(b) {
+			return n, Invalidf("%s line %d: invalid JSON object", f.Name, line)
+		}
+		n++
+	}
+	if err := sc.Err(); err != nil {
+		switch {
+		case errors.Is(err, bufio.ErrTooLong):
+			return n, Invalidf("%s line %d: row exceeds %d bytes", f.Name, line+1, MaxRestoreLine)
+		case errors.Is(err, errBudget):
+			return n, Invalidf("backup is too large (more than %d bytes uncompressed)", MaxRestoreSize)
+		}
+		return n, Invalidf("%s: %v", f.Name, err)
+	}
+	return n, nil
 }
 
 // budgetReader limits the total number of bytes read across all entries
