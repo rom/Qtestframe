@@ -112,6 +112,10 @@ Kolumnen **MFA** visar vem som använder tvåstegsverifiering: **På**, *Av*, el
 
 *(Administratör)* När någon har tappat bort både telefonen och återställningskoderna väljer du **Återställ MFA** (skölden) på hens rad och bekräftar. Autentiseringsappen, återställningskoderna och ihågkomna enheter tas bort, personen loggas ut överallt och får en notis och ett e-postmeddelande. Därefter loggar hen in med bara lösenordet, eller, om MFA krävs för hen, konfigurerar en ny autentiseringsapp vid nästa inloggning. Försäkra dig om att begäran verkligen kommer från personen innan du återställer. Precis som för lösenord kan administratörer bara återställa personer som enbart tillhör deras organisation; superadministratörer kan återställa vem som helst, även under [Användare](#användare). Varje återställning registreras i [händelseloggen](#händelselogg).
 
+### Återkalla lösennycklar
+
+Kolumnen **Lösennycklar** visar hur många [lösennycklar](getting-started.md#lösennycklar) varje medlem har. *(Administratör)* När någon har tappat bort en enhet med en lösennyckel, eller en lösennyckel kan ha hamnat i fel händer, väljer du **Återkalla lösennycklar** (den överkryssade cirkeln) på hens rad och bekräftar: alla hens lösennycklar tas bort och hen loggas ut överallt. Därefter loggar hen in med sitt lösenord (och kan lägga till nya lösennycklar). Samma begränsningar som för att återställa MFA gäller; superadministratörer kan också göra det under [Användare](#användare). Det registreras i [händelseloggen](#händelselogg).
+
 ## Tvåstegsverifiering
 
 **Administration → Tvåstegsverifiering** bestämmer vem som måste använda en andra faktor (en autentiseringsapp, se [din profil](getting-started.md#tvåstegsverifiering)) vid inloggning med lösenord. Sidan visar hur många medlemmar som redan använder den.

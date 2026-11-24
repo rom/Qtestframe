@@ -88,6 +88,11 @@ The settings the page offers, generated from `internal/settings`:
 | Sign-in and passwords | `auth.login_max_attempts` | 1–1000 | at once |
 | Sign-in and passwords | `auth.login_lockout` | 1m–24h | at once |
 | Sign-in and passwords | `auth.cookie_secure` | on/off | shown only (file) |
+| Sign-in and passwords | `auth.passkeys.enabled` | on/off | at once |
+| Sign-in and passwords | `auth.passkeys.passwordless` | on/off | at once |
+| Sign-in and passwords | `auth.passkeys.require_for_admins` | on/off | at once |
+| Sign-in and passwords | `auth.passkeys.rp_id` | text | at once |
+| Sign-in and passwords | `auth.passkeys.origins` | list | at once |
 | API tokens | `auth.token_max_days` | 0–3650 | at once |
 | API tokens | `auth.token_require_expiry` | on/off | at once |
 | Single sign-on | `auth.oidc` | list of providers | at once |

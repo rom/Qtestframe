@@ -5,6 +5,7 @@ import { useProjectStore } from '@/stores/project'
 import type { Me } from '@/lib/types'
 import { isChallenge, type MfaChallenge } from '@/lib/mfa'
 import { clearSuggestCache } from '@/lib/suggest'
+import type { AssertionJSON } from '@/lib/passkeys'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({ me: null as Me | null, loaded: false }),
@@ -49,6 +50,18 @@ export const useAuthStore = defineStore('auth', {
     /** The second factor of a pending sign-in (authenticator or recovery code). */
     async verifyMfa(code: string, remember: boolean) {
       const me = await api.post<Me>('/auth/mfa/verify', { code, remember }, { noAuthRedirect: true })
+      this.set(me)
+      return me
+    },
+    /** Passwordless sign-in with a passkey assertion (POST /auth/passkeys/login). */
+    async loginPasskey(credential: AssertionJSON, tenant?: string): Promise<Me> {
+      const me = await api.post<Me>('/auth/passkeys/login', { credential, tenant: tenant || undefined }, { noAuthRedirect: true })
+      this.set(me)
+      return me
+    },
+    /** A passkey as the second factor of a pending sign-in. */
+    async verifyMfaPasskey(credential: AssertionJSON, remember: boolean): Promise<Me> {
+      const me = await api.post<Me>('/auth/mfa/passkey', { credential, remember }, { noAuthRedirect: true })
       this.set(me)
       return me
     },

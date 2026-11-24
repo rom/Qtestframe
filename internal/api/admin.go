@@ -188,8 +188,14 @@ func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, err)
 		return
 	}
+	pks, err := s.Store.PasskeyCounts(r.Context())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	for i := range us {
 		us[i].MFAEnabled = on[us[i].ID]
+		us[i].Passkeys = pks[us[i].ID]
 	}
 	writeJSON(w, http.StatusOK, listOf(us))
 }

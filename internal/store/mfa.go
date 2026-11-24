@@ -246,7 +246,7 @@ func (s *Store) DeleteTrustedDevices(ctx context.Context, userID string) (int, e
 // PurgeExpiredMFA deletes expired pending sign-ins and remembered devices.
 func (s *Store) PurgeExpiredMFA(ctx context.Context) (int64, error) {
 	var total int64
-	for _, t := range []string{"mfa_challenges", "mfa_trusted_devices"} {
+	for _, t := range []string{"mfa_challenges", "mfa_trusted_devices", "webauthn_challenges"} {
 		res, err := s.c(ctx).exec(ctx, `DELETE FROM `+t+` WHERE expires_at <= ?`, s.now())
 		if err != nil {
 			return total, err

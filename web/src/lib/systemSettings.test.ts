@@ -70,6 +70,7 @@ const SERVER_KEYS = [
   'hardening.no_new_privs', 'hardening.landlock', 'hardening.seccomp', 'hardening.drop_capabilities', 'hardening.read_only_paths', 'hardening.read_write_paths', 'secrets.provider',
   'auth.local', 'auth.session_ttl', 'auth.session_idle_timeout', 'auth.password_min_length', 'auth.password_min_classes', 'auth.password_history', 'auth.password_max_age_days',
   'auth.login_max_attempts', 'auth.login_lockout', 'auth.cookie_secure', 'auth.token_max_days', 'auth.token_require_expiry',
+  'auth.passkeys.enabled', 'auth.passkeys.passwordless', 'auth.passkeys.require_for_admins', 'auth.passkeys.rp_id', 'auth.passkeys.origins',
   'logging.level', 'logging.format', 'logging.syslog.enabled', 'logging.syslog.network', 'logging.syslog.address', 'logging.syslog.format', 'logging.syslog.facility', 'logging.syslog.tag', 'logging.syslog.ca_file', 'logging.syslog.cert_file', 'logging.syslog.key_file',
   'email.enabled', 'email.host', 'email.port', 'email.tls', 'email.username', 'email.password', 'email.from', 'email.from_name', 'email.reply_to', 'email.timeout', 'email.digest_hour',
   'outbound.proxy', 'outbound.no_proxy', 'outbound.allowed_hosts', 'outbound.denied_hosts', 'outbound.block_private',

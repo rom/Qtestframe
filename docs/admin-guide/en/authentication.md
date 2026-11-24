@@ -5,7 +5,8 @@ Qtestframe knows these ways to prove who someone is:
 | Method | For | Configured in |
 |---|---|---|
 | Local password | people | `auth.local`, password policy |
-| Second factor (TOTP authenticator app, recovery codes) | people with a local password, optionally after OIDC | MFA policy in the web client; `local_mfa` per OIDC provider |
+| Second factor (TOTP authenticator app, recovery codes, passkeys) | people with a local password, optionally after OIDC | MFA policy in the web client; `local_mfa` per OIDC provider |
+| Passkey (WebAuthn), passwordless | people with a local account | `auth.passkeys` (file or system settings) |
 | OpenID Connect | people | `auth.oidc` (file or system settings) |
 | SAML 2.0 | people | `auth.saml` (file only) |
 | E-mail invitation | a person's first sign-in | needs e-mail |
@@ -41,7 +42,37 @@ Guessing is limited three ways: every code counts against the sign-in limit abov
 
 **Lost phone and recovery codes:** an organisation admin uses **Reset MFA** in **Members** (for members of only that organisation), a super administrator under **Users**. It removes the authenticator, recovery codes and remembered devices, signs the user out and tells them by notification and e-mail. Verify the request out of band first.
 
-The TOTP secrets are stored encrypted (see [Security](security.md#encryption-of-stored-secrets)). API tokens and SCIM tokens are not affected by MFA; protect them like passwords. WebAuthn and passkeys are not implemented.
+The TOTP secrets are stored encrypted (see [Security](security.md#encryption-of-stored-secrets)). API tokens and SCIM tokens are not affected by MFA; protect them like passwords. [Passkeys](#passkeys) are a second factor too.
+
+## Passkeys
+
+A **passkey** is a WebAuthn credential: a key pair kept by the user's device (platform authenticator with fingerprint, face or PIN, a password manager that syncs it, or a security key). Qtestframe stores only the public key. Passkeys are used three ways:
+
+- **Passwordless sign-in** – **Sign in with a passkey** on the sign-in page, and passkey suggestions in the e-mail field where the browser supports them (conditional mediation). It uses *discoverable* credentials and requires **user verification** (UV flag: PIN or biometrics), so it counts as multi-factor on its own: no TOTP code is asked for. Only **local accounts** can sign in this way; accounts of an identity provider sign in there (Qtestframe does not let a passkey bypass the provider).
+- **Second factor** – after the password (and after OIDC with `local_mfa`) a user with passkeys can confirm with one instead of a TOTP code. User verification is preferred but not required (user presence is). A passkey counts as a second factor for every MFA policy, so a user can have passkeys, an authenticator app or both.
+- **Re-authentication** – adding and deleting passkeys needs a sign-in less than 10 minutes ago; otherwise the user confirms their identity again with their password, a TOTP or recovery code, or a passkey (`POST /api/v1/auth/reauth`).
+
+Users manage their passkeys in their profile (several per account, at most 25, each with a name, the date added and the last use; rename and delete). Deleting the last second factor of an account that a policy requires MFA of is refused.
+
+**Settings** (System settings → Sign-in and passwords, or the configuration file):
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `auth.passkeys.enabled` | on | Users can register and use passkeys. Off keeps registered passkeys but they cannot be used, also not as a second factor. |
+| `auth.passkeys.passwordless` | on | The passwordless sign-in is offered (also needs `auth.local`). Off: passkeys are a second factor only. |
+| `auth.passkeys.require_for_admins` | off | Super administrators and organisation administrators must have a passkey or an authenticator app, without a grace period: their next sign-in must set one up first. |
+| `auth.passkeys.rp_id` | host of `server.base_url` | The WebAuthn relying party ID, the domain the passkeys are scoped to (`example.com` lets `qtf.example.com` and other subdomains use them). |
+| `auth.passkeys.origins` | origin of `server.base_url` | The web origins that may use the passkeys. Each must be `https` (`http` only for `localhost`) and lie within the RP ID. |
+
+Passkeys need an **https** `server.base_url` (or the two settings above): browsers offer WebAuthn only in a secure context, and the RP ID binds every passkey to the domain. Without one, users see that passkeys are not set up. **Choose the RP ID before users register passkeys**: changing it, or moving the server to another domain, makes all registered passkeys unusable (users then sign in with their password and register new ones).
+
+**What the server checks.** Challenges are 32 random bytes, stored on the server, valid for 5 minutes and deleted when answered (single use). They are bound to the browser session, to the pending second-factor sign-in or, for the passwordless sign-in, to a short-lived `qtf_passkey` cookie of the browser that asked for it. For every ceremony the server checks the client data type, challenge and origin (no cross-origin frames), the SHA-256 of the RP ID in the authenticator data, the user-present flag and, where required, the user-verified flag, and the signature. Registrations accept the attestation formats `none` (what Qtestframe asks for) and `packed` (self attestation, or an x5c certificate whose signature is checked but which is not chained to a trust anchor: Qtestframe does not decide by authenticator model), with the algorithms ES256, EdDSA (Ed25519) and RS256 (at least 2048 bits). The **signature counter** must increase for authenticators that have one: if it does not, the sign-in goes ahead, but a warning is logged and the event `passkey.counter_regressed` is audited, because it can mean a cloned authenticator. Synced passkeys report no counter. The implementation uses only the Go standard library (a small, bounded CBOR decoder for the attestation objects); it does not add a WebAuthn dependency.
+
+**Limits.** The passwordless sign-in counts against the sign-in limit of the client address; its options are limited to 60 per 5 minutes per address. A passkey as second factor counts like a code (10 attempts per 15 minutes per account, 5 per pending sign-in).
+
+**Administrators** see the number of passkeys per user in **Members** (column *Passkeys*) and **Users**, and can **Revoke passkeys** (a lost or compromised device): all passkeys of the user are deleted and the user is signed out everywhere. As for MFA resets, organisation administrators can do this for members who belong only to their organisation.
+
+**Audit log:** `passkey.register`, `passkey.rename`, `passkey.delete`, `user.reauth`, `member.revoke_passkeys`, `user.revoke_passkeys`, `passkey.counter_regressed`, and the sign-ins as `login` with the method `passkey` (passwordless) or `mfa=passkey` (second factor), with the passkey's name. Failed passkey sign-ins are recorded in the sign-in history with the method *passkey*.
 
 ## OpenID Connect
 

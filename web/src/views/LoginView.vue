@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
@@ -10,6 +10,7 @@ import Checkbox from 'primevue/checkbox'
 import MfaCodeInput from '@/components/MfaCodeInput.vue'
 import { codeComplete, isChallenge, mfaErrorKind, normalizeCode, type MfaChallenge } from '@/lib/mfa'
 import { api, errorMessage } from '@/lib/api'
+import { conditionalAvailable, getPasskey, passkeyErrorKind, passkeySupport, type RequestOptionsJSON } from '@/lib/passkeys'
 import type { AuthProvider, Providers } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
@@ -32,6 +33,47 @@ const error = ref('')
 const busy = ref(false)
 const providers = ref<Providers>({ local: true, oidc: [], saml: [] })
 const sso = ref<(AuthProvider & { kind: string })[]>([])
+
+// ---------- passkeys ----------
+const support = passkeySupport()
+const passkeyBusy = ref(false)
+let conditional: AbortController | null = null
+function passkeyError(e: unknown): string {
+  const kind = passkeyErrorKind(e)
+  return kind ? t(`passkeys.error.${kind}`) : errorMessage(e)
+}
+function stopConditional() {
+  conditional?.abort()
+  conditional = null
+}
+/** Passwordless sign-in: modal (button) or as suggestions of the e-mail field (conditional). */
+async function passkeySignIn(mode: 'modal' | 'conditional') {
+  if (support !== 'ok') {
+    if (mode === 'modal') error.value = t(`passkeys.error.${support}`)
+    return
+  }
+  stopConditional()
+  const ctl = new AbortController()
+  if (mode === 'conditional') conditional = ctl
+  else {
+    error.value = ''
+    passkeyBusy.value = true
+  }
+  try {
+    const opts = await api.post<RequestOptionsJSON>('/auth/passkeys/login/options', undefined, { noAuthRedirect: true })
+    const credential = await getPasskey(opts, { conditional: mode === 'conditional', signal: ctl.signal })
+    passkeyBusy.value = true
+    await auth.loginPasskey(credential, tenant.value.trim())
+    done()
+  } catch (e) {
+    // a cancelled or replaced suggestion request is no error
+    if (!(mode === 'conditional' && (ctl.signal.aborted || passkeyErrorKind(e) === 'cancelled'))) error.value = passkeyError(e)
+  } finally {
+    if (conditional === ctl) conditional = null
+    passkeyBusy.value = false
+  }
+}
+onBeforeUnmount(stopConditional)
 
 // ---------- second factor ----------
 const challenge = ref<MfaChallenge | null>(null)
@@ -84,6 +126,32 @@ async function switchMethod() {
   await nextTick()
   codeInput.value?.focus()
 }
+const hasCode = () => !!challenge.value?.methods.includes('totp')
+const hasPasskey = () => !!challenge.value?.methods.includes('passkey')
+async function passkeySecondFactor() {
+  codeError.value = ''
+  if (support !== 'ok') {
+    codeError.value = t(`passkeys.error.${support}`)
+    return
+  }
+  passkeyBusy.value = true
+  try {
+    const opts = await api.post<RequestOptionsJSON>('/auth/mfa/passkey/options', undefined, { noAuthRedirect: true })
+    const credential = await getPasskey(opts)
+    await auth.verifyMfaPasskey(credential, remember.value)
+    done()
+  } catch (e) {
+    if (mfaErrorKind(e) === 'expired') {
+      challenge.value = null
+      password.value = ''
+      error.value = mfaError(e)
+      return
+    }
+    codeError.value = passkeyError(e)
+  } finally {
+    passkeyBusy.value = false
+  }
+}
 async function cancelSecondFactor() {
   // drops the pending sign-in on the server
   await api.post('/auth/logout', undefined, { noAuthRedirect: true }).catch(() => undefined)
@@ -117,10 +185,13 @@ onMounted(async () => {
   } catch {
     /* keep local login */
   }
+  // passkey suggestions in the e-mail field (conditional mediation)
+  if (providers.value.passkeys && !challenge.value && (await conditionalAvailable())) void passkeySignIn('conditional')
 })
 
 async function submit() {
   error.value = ''
+  stopConditional()
   busy.value = true
   try {
     const res = await auth.login(email.value.trim(), password.value, tenant.value.trim())
@@ -176,15 +247,19 @@ async function submit() {
         </div>
         <template v-if="challenge">
           <h1 id="mfa-heading" tabindex="-1" style="margin: 0 0 4px; font-size: 1.5em">{{ t('mfa.loginTitle') }}</h1>
-          <p class="muted" style="margin: 0 0 20px">{{ useRecovery ? t('mfa.loginRecoveryText') : t('mfa.loginText') }}</p>
+          <p class="muted" style="margin: 0 0 20px">{{ !hasCode() ? t('passkeys.mfaText') : useRecovery ? t('mfa.loginRecoveryText') : t('mfa.loginText') }}</p>
           <form class="grid mfa-login" style="gap: 14px" @submit.prevent="submitCode">
-            <MfaCodeInput id="mfa-code" ref="codeInput" v-model="code" :recovery="useRecovery" :error="codeError" autofocus />
+            <MfaCodeInput v-if="hasCode()" id="mfa-code" ref="codeInput" v-model="code" :recovery="useRecovery" :error="codeError" autofocus />
+            <Message v-else-if="codeError" id="mfa-passkey-error" severity="error" :closable="false">{{ codeError }}</Message>
             <div v-if="challenge.remember_days > 0" class="row nowrap small">
               <Checkbox v-model="remember" input-id="mfa-remember" binary />
               <label for="mfa-remember">{{ t('mfa.remember', { n: challenge.remember_days }, challenge.remember_days) }}</label>
             </div>
-            <Button type="submit" :label="t('mfa.verify')" icon="pi pi-sign-in" :loading="busy" :disabled="!code.trim()" />
-            <button type="button" class="link-button small login-link" @click="switchMethod">{{ useRecovery ? t('mfa.useApp') : t('mfa.useRecovery') }}</button>
+            <template v-if="hasCode()">
+              <Button type="submit" :label="t('mfa.verify')" icon="pi pi-sign-in" :loading="busy" :disabled="!code.trim()" />
+              <button type="button" class="link-button small login-link" @click="switchMethod">{{ useRecovery ? t('mfa.useApp') : t('mfa.useRecovery') }}</button>
+            </template>
+            <Button v-if="hasPasskey()" type="button" :label="t('passkeys.use')" icon="pi pi-key" :severity="hasCode() ? 'secondary' : undefined" :outlined="hasCode()" :loading="passkeyBusy" @click="passkeySecondFactor" />
             <button type="button" class="link-button small login-link" @click="cancelSecondFactor">{{ t('mfa.cancelSignIn') }}</button>
           </form>
         </template>
@@ -195,7 +270,7 @@ async function submit() {
         <form v-if="providers.local !== false" class="grid" style="gap: 14px" @submit.prevent="submit">
           <div v-field class="field">
             <label for="email">{{ t('auth.email') }}</label>
-            <InputText id="email" v-model="email" type="email" autocomplete="username" required autofocus :invalid="!!error" :aria-describedby="error ? 'login-error' : undefined" />
+            <InputText id="email" v-model="email" type="email" :autocomplete="providers.passkeys ? 'username webauthn' : 'username'" required autofocus :invalid="!!error" :aria-describedby="error ? 'login-error' : undefined" />
           </div>
           <div v-field class="field">
             <label for="pw">{{ t('auth.password') }}</label>
@@ -208,6 +283,20 @@ async function submit() {
           <button v-else type="button" class="link-button small login-link" @click="showTenant = true">{{ t('auth.signInToTenant') }}</button>
           <Button type="submit" :label="t('auth.signIn')" icon="pi pi-sign-in" :loading="busy" :disabled="!email || !password" />
         </form>
+        <div v-if="providers.passkeys" class="grid" style="gap: 6px; margin-top: 10px">
+          <Button
+            type="button"
+            :label="t('passkeys.signIn')"
+            icon="pi pi-key"
+            severity="secondary"
+            outlined
+            class="w-full"
+            :loading="passkeyBusy"
+            :aria-describedby="support !== 'ok' ? 'passkey-support' : undefined"
+            @click="passkeySignIn('modal')"
+          />
+          <span v-if="support !== 'ok'" id="passkey-support" class="small muted">{{ t(`passkeys.error.${support}`) }}</span>
+        </div>
         <template v-if="sso.length">
           <Divider align="center"><span class="muted small">{{ t('auth.orContinueWith') }}</span></Divider>
           <div class="grid" style="gap: 8px">

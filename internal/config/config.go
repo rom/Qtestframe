@@ -585,6 +585,26 @@ type Auth struct {
 	TokenRequireExpiry bool   `yaml:"token_require_expiry"`
 	OIDC               []OIDC `yaml:"oidc"`
 	SAML               []SAML `yaml:"saml"`
+	// Passkeys configures WebAuthn passkeys.
+	Passkeys Passkeys `yaml:"passkeys"`
+}
+
+// Passkeys configures WebAuthn passkeys: a passwordless sign-in and a
+// second factor next to TOTP.
+type Passkeys struct {
+	// Enabled lets users register and use passkeys.
+	Enabled bool `yaml:"enabled"`
+	// Passwordless allows signing in with a passkey alone (local accounts,
+	// with user verification); otherwise passkeys are a second factor only.
+	Passwordless bool `yaml:"passwordless"`
+	// RequireForAdmins: super administrators and organisation
+	// administrators must have a passkey or an authenticator app.
+	RequireForAdmins bool `yaml:"require_for_admins"`
+	// RPID is the WebAuthn relying party id ("" = the host of
+	// server.base_url); Origins the allowed origins ("" = the origin of
+	// server.base_url).
+	RPID    string   `yaml:"rp_id"`
+	Origins []string `yaml:"origins"`
 }
 
 // Provisioning holds settings shared by external identity providers.
@@ -777,7 +797,8 @@ func Default() Config {
 			Network: "udp", Tag: "qtestframe", Facility: "local0", Format: "rfc5424",
 		}},
 		Auth: Auth{Local: true, SessionTTL: 12 * time.Hour, CookieSecure: true,
-			PasswordMinLength: 10, LoginMaxAttempts: 10, LoginLockout: 5 * time.Minute},
+			PasswordMinLength: 10, LoginMaxAttempts: 10, LoginLockout: 5 * time.Minute,
+			Passkeys: Passkeys{Enabled: true, Passwordless: true}},
 		Runner: Runner{
 			Timeout:        60 * time.Second,
 			WorkDir:        filepath.Join(os.TempDir(), "qtestframe-runner"),
@@ -1152,6 +1173,14 @@ func (c *Config) Validate() error {
 	if c.Auth.TokenMaxDays < 0 || c.Auth.TokenMaxDays > 3650 {
 		errs = append(errs, errors.New("auth.token_max_days must be between 0 and 3650"))
 	}
+	if id := c.Auth.Passkeys.RPID; id != "" && !ValidRPID(id) {
+		errs = append(errs, fmt.Errorf("auth.passkeys.rp_id %q must be a domain name such as example.com", id))
+	}
+	for _, o := range c.Auth.Passkeys.Origins {
+		if !ValidOrigin(o) {
+			errs = append(errs, fmt.Errorf("auth.passkeys.origins: %q is not an origin such as https://qtf.example.com", o))
+		}
+	}
 	if _, err := ParseLevel(c.Logging.Level); err != nil {
 		errs = append(errs, fmt.Errorf("logging.level %q must be debug, info, warn or error", c.Logging.Level))
 	}
@@ -1303,6 +1332,20 @@ func (p Provisioning) DomainAllowed(email string) bool {
 	}
 	_, domain, ok := strings.Cut(strings.TrimSpace(email), "@")
 	return ok && MatchHost(domain, p.AllowedDomains)
+}
+
+// ValidRPID reports whether s can be a WebAuthn RP ID: a lower-case
+// domain name (no scheme, port or path).
+func ValidRPID(s string) bool {
+	if s == "" || len(s) > 253 || strings.HasPrefix(s, ".") || strings.HasSuffix(s, ".") || strings.Contains(s, "..") {
+		return false
+	}
+	for _, r := range s {
+		if !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '.') {
+			return false
+		}
+	}
+	return true
 }
 
 // ValidOrigin reports whether s is an origin: http(s)://host[:port]

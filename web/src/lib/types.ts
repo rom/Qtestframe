@@ -29,6 +29,8 @@ export interface User {
   must_change_password?: boolean
   /** has a confirmed second factor (user lists, /auth/me) */
   mfa_enabled?: boolean
+  /** number of registered passkeys (user lists) */
+  passkeys?: number
   /** when the local password was last set */
   password_changed_at?: string
 }
@@ -89,6 +91,8 @@ export interface Membership {
   scim?: boolean
   /** has a confirmed second factor (members lists) */
   mfa_enabled?: boolean
+  /** number of registered passkeys (members lists) */
+  passkeys?: number
   /** the MFA policy requires a second factor for this member's role here */
   mfa_required?: boolean
   /** open e-mail invitation (members list of the tenant) */
@@ -236,6 +240,8 @@ export interface Providers {
   saml: AuthProvider[] | null
   password_min_length?: number
   password_min_classes?: number
+  /** the passwordless sign-in with a passkey is offered */
+  passkeys?: boolean
 }
 
 export interface APIToken {

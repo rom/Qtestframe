@@ -14,6 +14,7 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import AvatarPicker from '@/components/AvatarPicker.vue'
 import ThemePicker from '@/components/ThemePicker.vue'
 import MfaSettings from '@/components/MfaSettings.vue'
+import PasskeySettings from '@/components/PasskeySettings.vue'
 import { isThemeId, type ThemeId } from '@/themes/registry'
 import { useConfirm } from 'primevue/useconfirm'
 import { api, asItems, errorMessage } from '@/lib/api'
@@ -385,7 +386,7 @@ onMounted(() => {
   // the link in notification e-mails (/profile#email)
   if (route.hash === '#email') requestAnimationFrame(() => document.getElementById('email')?.scrollIntoView({ block: 'start' }))
   // the link in MFA security e-mails (/profile#mfa)
-  if (route.hash === '#mfa') setTimeout(() => document.getElementById('mfa')?.scrollIntoView({ block: 'start' }), 300)
+  if (route.hash === '#mfa' || route.hash === '#passkeys') setTimeout(() => document.getElementById(route.hash.slice(1))?.scrollIntoView({ block: 'start' }), 300)
   loadProjects()
   loadRbac()
   loadSessions()
@@ -570,6 +571,7 @@ onMounted(() => {
 
     <!-- multi-factor authentication -->
     <MfaSettings />
+    <PasskeySettings />
 
     <!-- security -->
     <section class="card" aria-labelledby="h-security" style="grid-column: 1 / -1">

@@ -161,6 +161,26 @@ var keyDocs = map[string]text{
 		"Refuse new API tokens without an expiry date.",
 		"Neka nya API-tokens utan utgångsdatum.",
 	},
+	"auth.passkeys.enabled": {
+		"Users can register passkeys and use them. When off, registered passkeys are kept but cannot be used, also not as a second factor.",
+		"Användare kan registrera lösennycklar (passkeys) och använda dem. När det är av sparas registrerade lösennycklar men kan inte användas, inte heller som andra faktor.",
+	},
+	"auth.passkeys.passwordless": {
+		"Users of local accounts can sign in with a passkey alone (\"Sign in with a passkey\"; the authenticator must verify the user with a PIN or biometrics). When off, passkeys are only a second factor. Accounts of an identity provider always sign in there.",
+		"Användare med lokala konton kan logga in med bara en lösennyckel (\"Logga in med lösennyckel\"; autentiseraren måste verifiera användaren med PIN eller biometri). När det är av är lösennycklar bara en andra faktor. Konton från en identitetsleverantör loggar alltid in där.",
+	},
+	"auth.passkeys.require_for_admins": {
+		"Super administrators and organisation administrators must have a passkey or an authenticator app: without one their next sign-in must set one up first.",
+		"Superadministratörer och organisationsadministratörer måste ha en lösennyckel eller en autentiseringsapp: utan någon måste nästa inloggning först konfigurera en.",
+	},
+	"auth.passkeys.rp_id": {
+		"The WebAuthn relying party ID: the domain passkeys belong to, e.g. `example.com` (empty = the host of `server.base_url`). Changing it later makes the registered passkeys unusable.",
+		"WebAuthn-id för den förlitande parten: domänen som lösennycklarna hör till, t.ex. `example.com` (tomt = värden i `server.base_url`). Om det ändras senare blir registrerade lösennycklar oanvändbara.",
+	},
+	"auth.passkeys.origins": {
+		"Origins the browser may use passkeys from, e.g. `https://qtf.example.com` (empty = the origin of `server.base_url`). Each must use https (http only for localhost) and lie within `rp_id`.",
+		"Ursprung som webbläsaren får använda lösennycklar från, t.ex. `https://qtf.example.com` (tomt = ursprunget i `server.base_url`). Varje ursprung måste använda https (http bara för localhost) och ligga inom `rp_id`.",
+	},
 	"auth.oidc": {
 		"OpenID Connect providers, each shown as a button on the sign-in page. Can be replaced in **Administration → System settings**.",
 		"OpenID Connect-leverantörer, var och en som en knapp på inloggningssidan. Kan ersättas under **Administration → Systeminställningar**.",

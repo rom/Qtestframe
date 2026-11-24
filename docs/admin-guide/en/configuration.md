@@ -185,6 +185,16 @@ Every key of the file, its type, its default and the environment variable that s
 | `auth.saml[].role_mapping` | map | — | — | As for OIDC. |
 | `auth.saml[].allowed_domains` | list | — | — | E-mail domains that may sign in through the provider, as for OIDC. Empty = any. |
 
+### `auth`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `auth.passkeys.enabled` | bool | `true` | — | Users can register passkeys and use them. When off, registered passkeys are kept but cannot be used, also not as a second factor. |
+| `auth.passkeys.passwordless` | bool | `true` | — | Users of local accounts can sign in with a passkey alone ("Sign in with a passkey"; the authenticator must verify the user with a PIN or biometrics). When off, passkeys are only a second factor. Accounts of an identity provider always sign in there. |
+| `auth.passkeys.require_for_admins` | bool | `false` | — | Super administrators and organisation administrators must have a passkey or an authenticator app: without one their next sign-in must set one up first. |
+| `auth.passkeys.rp_id` | string | — | — | The WebAuthn relying party ID: the domain passkeys belong to, e.g. `example.com` (empty = the host of `server.base_url`). Changing it later makes the registered passkeys unusable. |
+| `auth.passkeys.origins` | list | — | — | Origins the browser may use passkeys from, e.g. `https://qtf.example.com` (empty = the origin of `server.base_url`). Each must use https (http only for localhost) and lie within `rp_id`. |
+
 ### `runner`
 
 | Key | Type | Default | Environment | Description |

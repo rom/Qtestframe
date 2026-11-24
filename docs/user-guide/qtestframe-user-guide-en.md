@@ -81,8 +81,9 @@ Open the address your administrator gave you (for a local trial installation `ht
 
 1. Enter your **E-mail** and **Password** and select **Sign in**.
 2. If you belong to several organisations and want to start in a particular one, select **Sign in to a specific organisation…** and enter its short name (slug), for example `acme`. Without it you start in your default organisation (see [Preferences](#preferences)) or the one you used last.
-3. If your organisation uses single sign-on, the page shows a button per provider below **or continue with**. Select it and sign in at your identity provider; you return to Qtestframe automatically.
-4. If you use [multi-factor authentication](#multi-factor-authentication), the page then asks for the **Authentication code**: open your authenticator app, enter the 6-digit code it shows for Qtestframe and select **Verify**. Each code works once; if one is refused, wait for the next. Without your phone, select **Use a recovery code instead** and enter one of your recovery codes. If your organisation allows it, **Remember this device** skips the code on this browser for a number of days.
+3. With a [passkey](#passkeys) select **Sign in with a passkey** (or pick your passkey among the suggestions of the **E-mail** field) and confirm with your fingerprint, face, PIN or security key: you need no password and no code. If the browser cannot use passkeys, the page says so below the button; sign in with your password instead.
+4. If your organisation uses single sign-on, the page shows a button per provider below **or continue with**. Select it and sign in at your identity provider; you return to Qtestframe automatically.
+5. If you use [multi-factor authentication](#multi-factor-authentication), the page then asks for the second factor. With a passkey, select **Use a passkey** and confirm on your device. Otherwise enter the **Authentication code**: open your authenticator app, enter the 6-digit code it shows for Qtestframe and select **Verify**. Each code works once; if one is refused, wait for the next. Without your phone, select **Use a recovery code instead** and enter one of your recovery codes. If your organisation allows it, **Remember this device** skips the code on this browser for a number of days.
 
 The language buttons at the top of the sign-in page switch between English and Swedish before you sign in. After sign-in, the language in your preferences wins.
 
@@ -231,6 +232,22 @@ From then on, every sign-in with your password asks for a code. API tokens are n
 - **New phone or lost phone**: with a recovery code you can still sign in; turn MFA off and set it up again with the new phone. Without phone and recovery codes, ask an administrator to [reset your multi-factor authentication](#reset-multi-factor-authentication).
 
 If you sign in with single sign-on, your identity provider usually asks for the second factor; Qtestframe asks for its own code only if the server is configured to do so.
+
+### Passkeys
+
+A **passkey** signs you in with the screen lock of your device (fingerprint, face or PIN), a password manager that keeps it, or a security key, instead of a password. It cannot be phished or guessed, and it also counts as your second factor: with a passkey you do not need an authenticator app. Passkeys need a current browser (Chrome, Edge, Firefox or Safari) and a server with an https address; otherwise the profile tells you why they are not available.
+
+**Add a passkey**
+
+1. In your profile, under **Passkeys**, select **Add a passkey**.
+2. Give it a name you will recognise later (it suggests your device and browser, for example *Mac · Safari*) and select **Add a passkey**.
+3. Follow the browser: choose where to keep the passkey (this device, your phone, a password manager or a security key) and confirm with your fingerprint, face, PIN or security key.
+
+If you signed in more than 10 minutes ago, Qtestframe first asks you to **Confirm it is you**: enter your password, a code of your authenticator app, or confirm with an existing passkey.
+
+**Sign in with it**: on the sign-in page select **Sign in with a passkey**, or pick it among the suggestions of the **E-mail** field. If your account signs in through single sign-on, use your identity provider; there the passkey can be your second factor. When the administrator has turned off the passwordless sign-in, a passkey is your second factor after the password.
+
+**Later**: the list shows each passkey with its name, when it was added and when it was last used (*Synced* means it is backed up in a password manager or cloud account and works on your other devices too). **Rename** (the pencil) changes its name; **Delete** (the bin) removes it from your account – remove it from the device or password manager too. Deleting needs a recent sign-in like adding. If your organisation requires multi-factor authentication, you cannot delete your last second factor. If you lose a device, delete its passkey from another device, or ask an administrator to [revoke your passkeys](#revoke-passkeys).
 
 ## Next steps
 
@@ -4412,6 +4429,10 @@ The **MFA** column shows who uses multi-factor authentication: **On**, *Off*, or
 
 *(Admin)* When someone has lost both their phone and their recovery codes, select **Reset MFA** (the shield) in their row and confirm. Their authenticator app, recovery codes and remembered devices are removed, they are signed out everywhere and told by a notification and an e-mail. They then sign in with their password alone, or, if MFA is required for them, set up a new authenticator app at the next sign-in. Make sure the request really comes from that person before you reset. As for passwords, admins can only reset people who belong to their organisation alone; super admins can reset anyone, also under [Users](#users). Every reset is recorded in the [audit log](#audit-log).
 
+### Revoke passkeys
+
+The **Passkeys** column shows how many [passkeys](#passkeys) each member has. *(Admin)* When someone has lost a device with a passkey, or a passkey may be in the wrong hands, select **Revoke passkeys** (the crossed circle) in their row and confirm: all their passkeys are deleted and they are signed out everywhere. They then sign in with their password (and can add new passkeys). The same limits as for resetting MFA apply; super admins can also do it under [Users](#users). It is recorded in the [audit log](#audit-log).
+
 ## Multi-factor authentication
 
 **Administration → Multi-factor authentication** decides who must use a second factor (an authenticator app, see [your profile](#multi-factor-authentication)) when signing in with a password. The page shows how many members already use it.
@@ -5314,7 +5335,7 @@ For requirement wording RFC 2119 and RFC 8174 (and SIS usage in Swedish); for do
 
 ### Does Qtestframe support passkeys or security keys?
 
-Not for signing in to Qtestframe: it uses passwords or single sign-on, with TOTP as the second factor. With single sign-on, your identity provider can require passkeys or security keys. The catalogue has requirements and tests that cite WebAuthn for your own products. See [WebAuthn and FIDO2](#webauthn-and-fido2).
+Yes. Add a passkey in your profile (see [Passkeys](#passkeys)): it signs you in without a password, and it is a second factor after your password, next to an authenticator app. Accounts of single sign-on sign in at the identity provider, which can also require passkeys or security keys. The catalogue also has requirements and tests that cite WebAuthn for your own products. See [WebAuthn and FIDO2](#webauthn-and-fido2).
 
 ### Where does the MITRE ATT&CK data come from?
 
@@ -6756,7 +6777,7 @@ An automated test that drives a real browser through a web application.
 
 The W3C Web Authentication API and the FIDO2 standards: sign-in with a security key or a passkey, based on a key pair bound to the website, which resists phishing.
 
-**In Qtestframe:** not a sign-in method of Qtestframe itself (it uses passwords, single sign-on and TOTP), but the catalogue has requirements and tests for passkeys and security keys that cite WebAuthn.
+**In Qtestframe:** you can sign in with a passkey instead of a password, or use one as your second factor (see [Passkeys](#passkeys)). The catalogue also has requirements and tests for passkeys and security keys that cite WebAuthn.
 
 **See also:** [Multi-factor authentication](#multi-factor-authentication-2), [TOTP](#totp), [Catalogue](#catalogue-1)
 

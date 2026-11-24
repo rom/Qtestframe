@@ -194,6 +194,9 @@ type User struct {
 	// MFAEnabled: the user has a confirmed second factor (filled by the
 	// user lists and /auth/me, not stored in the users table).
 	MFAEnabled bool `json:"mfa_enabled"`
+	// Passkeys is the number of registered passkeys (filled by the user
+	// lists, not stored in the users table).
+	Passkeys int `json:"passkeys"`
 	// PasswordChangedAt is when the local password was last set (nil =
 	// before this was recorded).
 	PasswordChangedAt *time.Time `json:"password_changed_at,omitempty"`
@@ -404,6 +407,8 @@ type Membership struct {
 	SCIM bool `json:"scim,omitempty"`
 	// MFAEnabled: the member has a confirmed second factor (member lists).
 	MFAEnabled bool `json:"mfa_enabled"`
+	// Passkeys is the number of the member's passkeys (member lists).
+	Passkeys int `json:"passkeys"`
 }
 
 // Session is a server-side login session.
@@ -420,6 +425,18 @@ type Session struct {
 	// MFAEnrolRequired: the MFA policy requires a second factor the user
 	// has not set up; the session can only reach /api/v1/auth/ until then.
 	MFAEnrolRequired bool
+	// ReauthAt is when the user last confirmed their identity in this
+	// session (nil = only at sign-in, CreatedAt).
+	ReauthAt *time.Time
+}
+
+// AuthenticatedAt is the last time the user proved their identity in the
+// session: the sign-in or a later re-authentication.
+func (s *Session) AuthenticatedAt() time.Time {
+	if s.ReauthAt != nil && s.ReauthAt.After(s.CreatedAt) {
+		return *s.ReauthAt
+	}
+	return s.CreatedAt
 }
 
 // APIToken allows non-interactive (CI) access.
@@ -1799,6 +1816,46 @@ func (p *MFAPolicy) RequiresAny(roles []string) bool {
 		}
 	}
 	return false
+}
+
+// Passkey is a registered WebAuthn credential of a user.
+type Passkey struct {
+	ID     string `json:"id"`
+	UserID string `json:"-"`
+	// CredentialID is the base64url credential id.
+	CredentialID string `json:"credential_id"`
+	// PublicKey is the base64url COSE key; Alg its COSE algorithm.
+	PublicKey      string     `json:"-"`
+	Alg            int64      `json:"alg"`
+	SignCount      uint32     `json:"-"`
+	AAGUID         string     `json:"aaguid"`
+	Transports     []string   `json:"transports"`
+	Attestation    string     `json:"attestation"`
+	Name           string     `json:"name"`
+	UserVerified   bool       `json:"user_verified"`
+	BackupEligible bool       `json:"backup_eligible"`
+	BackedUp       bool       `json:"backed_up"`
+	CreatedAt      time.Time  `json:"created_at"`
+	LastUsedAt     *time.Time `json:"last_used_at"`
+}
+
+// WebAuthn challenge purposes.
+const (
+	PasskeyRegister = "register"
+	PasskeyLogin    = "login"
+	PasskeyMFA      = "mfa"
+	PasskeyReauth   = "reauth"
+)
+
+// WebAuthnChallenge is an issued, not yet answered WebAuthn challenge.
+type WebAuthnChallenge struct {
+	ID               string // SHA-256 of the challenge
+	Purpose          string
+	UserID           string
+	Binding          string
+	UserVerification string
+	CreatedAt        time.Time
+	ExpiresAt        time.Time
 }
 
 // UserMFA is a user's TOTP enrolment.
