@@ -4227,7 +4227,7 @@ Qtestframe fungerar tillsammans med krav- och ALM-verktyg som IBM DOORS och DOOR
 - **ReqIF-filer** flyttar hela specifikationer mellan verktyg: krav, testfall, mappar, relationer, spårlänkar och bilagor. Du exporterar en fil här och importerar den där, eller tvärtom, så ofta du vill.
 - **OSLC** kopplar ihop verktygen direkt: ett annat verktyg hittar Qtestframes krav och testfall, länkar sina egna poster till dem och kan skapa och ändra dem utan någon fil.
 
-Den här sidan förklarar båda. Excel fram och tillbaka och de andra exportformaten beskrivs i [Rapporter och export](#utbyta-data-med-andra-verktyg); din administratör kopplar ihop verktygen enligt administratörshandboken (*Koppla ihop med andra verktyg*).
+Den här sidan förklarar båda, och hur du [importerar testfall från andra testverktyg](#importera-testfall-från-andra-verktyg) som TestRail, Xray, Zephyr, qTest och Azure Test Plans. Excel fram och tillbaka och de andra exportformaten beskrivs i [Rapporter och export](#utbyta-data-med-andra-verktyg); din administratör kopplar ihop verktygen enligt administratörshandboken (*Koppla ihop med andra verktyg*).
 
 ## ReqIF-export
 
@@ -4289,6 +4289,36 @@ Urvals- och skapafönstren använder din session i Qtestframe i webbläsaren. Om
 
 Varje verktyg ansluter med en [API-nyckel](#api-nycklar) för en person eller ett tjänstekonto; verktyget kan göra det som nyckelns roll tillåter och ser bara projekt som den personen får se.
 
+## Importera testfall från andra verktyg
+
+Byter ni från ett annat testverktyg? Importera dess testfall till ett projekt: öppna **Import och utbyte** under **Testfall** och välj **Testfall från TestRail, Xray, Zephyr, qTest eller Azure …** (behörighet *test.write*).
+
+1. **Välj verktyget** som filen kommer från och **exportfilen**. Dialogen förklarar hur du exporterar från det valda verktyget.
+2. **Granska förhandsvisningen.** Ingenting sparas ännu. Varje testfall markeras *Nytt*, *Uppdatera* (importerat tidigare, ändrat i filen), *Oförändrat*, *Konflikt* (importerat tidigare, ändrat i filen *och* i Qtestframe sedan dess) eller *Fel* (kan inte importeras, till exempel utan titel). Varningarna anger vad som utelämnas och vilka referenser som inte matchar något krav.
+3. **Justera mappningen.** Det andra verktygets prioriteter och statusar mappas till Qtestframes (till exempel *Highest*, *Urgent* och *1* → *Kritisk*; *Approved* → *Klart*; *Obsolete* och *Closed* → *Utfasat*); okända värden blir *Medel* och *Utkast*. Fält som Qtestframe saknar plats för erbjuds projektets [egna fält](#egna-fält) för testfall: ett fält med samma namn som ett eget fält är förvalt. Varje ändring visar en ny förhandsvisning.
+4. **Välj placeringen** (en testmapp att importera till, om mappar ska skapas för sektioner, sviter, moduler eller områdessökvägar), om testfallen ska **länkas till krav** och om **tidigare resultat** ska importeras, och **Spara**. Importen är en transaktion: allt eller inget.
+
+| Verktyg | Export | Vad som importeras |
+|---|---|---|
+| **TestRail** | Testsvit → *Export* → CSV (alla fält; separata steg eller i en cell) eller XML. CSV-exporten av en testkörning tar med dess resultat. | Sektioner (och sviter, när filen har flera) → mappar; separata steg eller textmallens steg och förväntade resultat; förutsättningar; prioritet; typ; uppskattning; *References* → kravlänkar; övriga fält (*Automation Type*, era egna fält) → egna fält; med en körningsexport resultaten som körningar. |
+| **Xray (Jira)** | Test Repository eller ärendesökning → CSV; eller JSON från Xrays REST-export | *Manual*-testfall med sina steg (åtgärd, data, förväntat resultat); *Cucumber*-testfall med Gherkin-scenariot (sparas i beskrivningen och blir steg: *Given*/*When* → åtgärder, *Then* → förväntade resultat); *Generic*-testfall som automatiserade testfall med sin definition; förutsättningar; mappen i testarkivet (annars den första testmängden) → mapp; testmängder och etiketter → taggar; länkade krav via ärendenyckel; i JSON testkörningarna som körningar. |
+| **Zephyr Scale / Squad** | Zephyr Scale: *Tests* → *Export* → CSV eller XML; Zephyr Squad: testärendena med deras steg som CSV | Mapp; steg-för-steg-, fritext- och BDD-skript; mål, förutsättning, status, prioritet, etiketter, ägare, uppskattad tid; *Coverage (Issues)* → kravlänkar; egna fält. |
+| **qTest** | *Test Design* → *Export* → *Test Cases* (Excel, eller sparad som CSV) | Moduler → mappar; steg med förväntade resultat; beskrivning, förutsättning, prioritet, status, typ, tilldelad; länkade krav; övriga kolumner → egna fält. |
+| **Azure Test Plans** | Testsvit → *Export test cases to CSV*, eller en arbetsobjektsfråga med testfall och kolumnen *Steps* | Områdessökväg → mappar (utan projektets rotområde); stegen (egna rader, eller Azure DevOps steg-XML i en cell, delade steg som ett steg som namnger dem); tillstånd, prioritet, taggar, tilldelad; arbetsobjekt i en *Tests*-kolumn → kravlänkar. Andra typer av arbetsobjekt utelämnas. |
+
+**En ny import uppdaterar.** Varje testfall minns verktyget och sitt id där, så du kan importera en nyare export så fort det andra verktyget ändras under en migrering: ändrade testfall uppdateras, oförändrade lämnas orörda och ingenting dubbleras. Ett testfall som du ändrat i Qtestframe sedan dess är en *Konflikt* och skrivs bara över när du kryssar i *Uppdatera även … testfall som ändrats i Qtestframe*. Tidigare resultat importeras en gång: varje körning i det andra verktyget blir en avslutad körning med samma namn (*TestRail: Release 2.4 regression*), med resultatet, vem som utförde det, när och kommentaren (behörighet *run.write*). Testfall utan id i filen skapas på nytt vid varje import.
+
+**Kravlänkar.** En referens i filen (en ärendenyckel som *SHOP-101*, ett arbetsobjekts-id eller en TestRail-referens) länkar testfallet till det krav vars nyckel den är, vars nyckel sparades när det [importerades från Jira eller Azure DevOps](#jira-och-azure-devops) eller [ReqIF](#reqif-import), eller vars *Källa* anger *ID: SHOP-101*. Importera kraven först; referenser som inte matchar något visas i förhandsvisningen, och en ny import av testfallen när kraven finns lägger till de länkar som saknas. Länkar läggs bara till, de tas aldrig bort.
+
+Samma import går att köra på kommandoraden med en [API-nyckel](#api-nycklar), till exempel i ett migreringsskript:
+
+```
+qtestframe import-tests --from testrail suite.csv --project SHOP --dry-run
+qtestframe import-tests --from xray tests.json --project SHOP --folder "Legacy/Xray"
+```
+
+`--dry-run` skriver bara ut förhandsvisningen; `--overwrite`, `--no-history`, `--no-links` och `--no-folders` motsvarar dialogens val (se administratörshandboken, *Kommandoradsreferens*).
+
 ## Vilket ska jag välja?
 
 | Du vill … | Använd |
@@ -4298,6 +4328,7 @@ Varje verktyg ansluter med en [API-nyckel](#api-nycklar) för en person eller et
 | Kopiera ett projekt med testfall till ett annat Qtestframe | ReqIF med testfall (eller [Spara och läs in projekt](#spara-och-läs-in-projekt)) |
 | Frysa det som lämnades över | ReqIF-export av en baslinje |
 | Länka poster i ett ALM-verktyg till krav och testfall medan du arbetar | OSLC |
+| Flytta testfall och deras resultat från TestRail, Xray, Zephyr, qTest eller Azure Test Plans | [Importera testfall från andra verktyg](#importera-testfall-från-andra-verktyg) |
 
 # Dokument
 

@@ -1,0 +1,42 @@
+[
+  {
+    "key": "SHOP-T1",
+    "testtype": "Manual",
+    "fields": {
+      "summary": "Search finds a product by name",
+      "description": "Search is the main entry point.",
+      "priority": { "name": "High" },
+      "labels": ["search", "smoke"],
+      "status": { "name": "Ready" },
+      "Channel": { "value": "Web" }
+    },
+    "xray_test_repository_folder": "/Catalogue/Search",
+    "preconditions": [{ "key": "SHOP-P1", "definition": "The catalogue holds the demo products." }],
+    "steps": [
+      { "action": "Enter \"lamp\" in the search field", "data": "lamp", "result": "Suggestions are shown" },
+      { "action": "Press Enter", "data": "", "result": "The result list shows \"Desk lamp\"" }
+    ],
+    "requirementKeys": ["SHOP-110"],
+    "testSets": ["SHOP-50"],
+    "testRuns": [
+      { "testExecKey": "SHOP-E7", "status": "PASSED", "executedBy": "ada@example.com", "finishedOn": "2026-10-01T09:12:00Z" },
+      { "testExecKey": "SHOP-E9", "status": "FAILED", "executedBy": "ada@example.com", "finishedOn": "2026-10-08T14:30:00Z", "comment": "No suggestions for umlauts" }
+    ]
+  },
+  {
+    "key": "SHOP-T2",
+    "testtype": "Cucumber",
+    "fields": { "summary": "Guest checkout", "priority": { "name": "Medium" }, "labels": ["checkout"], "status": { "name": "In Review" } },
+    "gherkin_def": "Scenario: A guest buys a lamp\n  Given the cart holds a desk lamp\n  When the guest checks out with a card\n  Then an order number is shown",
+    "xray_test_repository_folder": "/Checkout",
+    "requirementKeys": ["SHOP-120", "SHOP-121"],
+    "testRuns": [{ "testExecKey": "SHOP-E9", "status": "TODO" }]
+  },
+  {
+    "key": "SHOP-T3",
+    "testtype": "Generic",
+    "fields": { "summary": "API returns the price list", "priority": { "name": "Low" }, "labels": ["api"] },
+    "unstructured_def": "tests/api/test_prices.py::test_price_list",
+    "requirementKeys": ["SHOP-130"]
+  }
+]

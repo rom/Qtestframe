@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <projectId>10001</projectId>
+  <projectKey>SHOP</projectKey>
+  <exportDate>2026-11-02 08:15:00 UTC</exportDate>
+  <folders>
+    <folder fullPath="Accounts/Addresses" index="0"/>
+  </folders>
+  <testCases>
+    <testCase id="301" key="SHOP-T10">
+      <attachments/>
+      <confluencePageLinks/>
+      <createdBy>ada</createdBy>
+      <createdOn>2026-08-01 10:00:00 UTC</createdOn>
+      <customFields>
+        <customField name="Browser" type="SINGLE_CHOICE_SELECT_LIST"><value><![CDATA[Firefox]]></value></customField>
+        <customField name="Reviewed" type="CHECKBOX"><value><![CDATA[true]]></value></customField>
+      </customFields>
+      <estimatedTime>600000</estimatedTime>
+      <folder><![CDATA[Accounts/Addresses]]></folder>
+      <issues><issue><key>SHOP-140</key><summary><![CDATA[Customers manage their addresses]]></summary></issue></issues>
+      <labels><label><![CDATA[addresses]]></label></labels>
+      <name><![CDATA[Change the delivery address]]></name>
+      <objective><![CDATA[<p>The customer can change where the order goes.</p>]]></objective>
+      <owner>ada@example.com</owner>
+      <precondition><![CDATA[The customer is signed in.]]></precondition>
+      <priority><![CDATA[High]]></priority>
+      <status><![CDATA[Approved]]></status>
+      <testScript type="STEP_BY_STEP">
+        <steps>
+          <step index="0"><description><![CDATA[Open <b>My addresses</b>]]></description><expectedResult><![CDATA[The saved addresses are listed]]></expectedResult><testData/></step>
+          <step index="1"><description><![CDATA[Edit the first address]]></description><expectedResult><![CDATA[The new address is saved]]></expectedResult><testData><![CDATA[Street: Storgatan 1]]></testData></step>
+        </steps>
+      </testScript>
+    </testCase>
+    <testCase id="302" key="SHOP-T12">
+      <folder><![CDATA[Orders]]></folder>
+      <name><![CDATA[Return an order]]></name>
+      <priority><![CDATA[Low]]></priority>
+      <status><![CDATA[Deprecated]]></status>
+      <testScript type="BDD"><text><![CDATA[Given a delivered order
+When the customer returns it
+Then a refund is issued]]></text></testScript>
+    </testCase>
+  </testCases>
+</project>

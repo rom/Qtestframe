@@ -22606,6 +22606,83 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/import/preview:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Preview a test import from another tool
+      operationId: postProjectsByPidTestsImportPreview
+      description: |-
+        Parses the test case export of another test management tool and shows what an import would do; nothing is stored (`qtestframe import-tests --dry-run`, the *Import from a test tool* dialog of the tests list). Form fields: `file`, `source` (`testrail` CSV/XML, `xray` CSV/JSON, `zephyr` CSV/XML, `qtest` XLSX/CSV, `azure` CSV), `format` (csv, xml, json, xlsx; default from the file name), `folder_id` (the test folder to import into), `priorities`, `statuses` (JSON objects source value → priority or test status, overriding the guesses) and `fields` (JSON object source field → custom field key of tests, `""` to leave it out). → `{source, source_name, format, file, target_folder, total, summary: {new, update, unchanged, conflict, error}, rows: [{index, location, external_id, title, folder, type, priority, status, steps, action, id?, key?, links, unresolved, executions, warnings, errors}], priorities: [{value, count, target, guessed}], statuses, fields: [{name, count, sample, target, guessed}], custom_fields: [{key, label, type}], priority_options, status_options, history: {runs, executions, known}, unresolved_links, previous, warnings, errors}`. A row is `update` when the test was imported before (same source and external ID) and the file changed it, `unchanged` when the file did not, `conflict` when it was also changed in Qtestframe since.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestImportUpload'
+      responses:
+        '200':
+          description: What the import would do; nothing is stored
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/import/apply:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Import tests from another tool
+      operationId: postProjectsByPidTestsImportApply
+      description: |-
+        Imports the file of the preview in one transaction (after the impact gate, `?dry_run=impact`): new tests are created, tests imported before are updated (conflicts only with `overwrite_conflicts=true`), folders are created for sections, suites, modules or area paths (`create_folders`, default true), tests are linked to the requirements whose key, imported external ID or `ID:` in the source matches a reference (`link_requirements`, default true; links are only added) and past results become completed runs, one per run of the source (`history`, default true; needs `run.write`). Further fields: those of the preview, `create` (default true: create new tests), `exclude` (JSON array of row indexes). Importing again neither duplicates tests nor results. → `{created, updated, unchanged, skipped, folders_created, links_added, runs_created, results_imported, unresolved_links, items: [{index, id, key, title, action}], skipped_rows: [{index, location, title, reason}], warnings}`. Audited as `test.import`.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestImportUpload'
+      responses:
+        '200':
+          description: Imported
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/tests/stubs:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -25952,6 +26029,46 @@ components:
         exclude:
           type: string
           description: JSON array of candidate indexes
+    TestImportUpload:
+      type: object
+      required:
+      - file
+      - source
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The export of the other tool (CSV, XML, JSON or XLSX), at most 20 MB
+        source:
+          type: string
+          enum: [testrail, xray, zephyr, qtest, azure]
+        format:
+          type: string
+          enum: [csv, xml, json, xlsx]
+        folder_id:
+          type: string
+        priorities:
+          type: string
+          description: JSON object source priority → critical, high, medium or low
+        statuses:
+          type: string
+          description: JSON object source status → draft, ready, review or deprecated
+        fields:
+          type: string
+          description: JSON object source field → custom field key ("" leaves it out)
+        create_folders:
+          type: boolean
+        link_requirements:
+          type: boolean
+        history:
+          type: boolean
+        overwrite_conflicts:
+          type: boolean
+        create:
+          type: boolean
+        exclude:
+          type: string
+          description: JSON array of row indexes
     Tenant:
       type: object
       properties:

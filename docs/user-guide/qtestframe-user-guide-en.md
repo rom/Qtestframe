@@ -4198,7 +4198,7 @@ Qtestframe works together with requirements and ALM tools such as IBM DOORS and 
 - **ReqIF files** move whole specifications between tools: requirements, test cases, folders, relations, trace links and attachments. You export a file here and import it there, or the other way round, as often as you like.
 - **OSLC** connects the tools live: another tool finds Qtestframe's requirements and test cases, links its own items to them, and can create and change them without a file.
 
-This page explains both. For the Excel round-trip and the other export formats see [Reports and export](#exchanging-data-with-other-tools); your administrator connects the tools as described in the administrator guide (*Connecting other tools*).
+This page explains both, and how to [import tests from other test management tools](#import-tests-from-other-tools) such as TestRail, Xray, Zephyr, qTest and Azure Test Plans. For the Excel round-trip and the other export formats see [Reports and export](#exchanging-data-with-other-tools); your administrator connects the tools as described in the administrator guide (*Connecting other tools*).
 
 ## ReqIF export
 
@@ -4260,6 +4260,36 @@ The selection and creation windows use your Qtestframe session in the browser. I
 
 Each tool connects with an [API token](#api-tokens) of a person or a service account; the tool can do what the token's role allows and sees only the projects that person may see.
 
+## Import tests from other tools
+
+Moving from another test management tool? Import its test cases into a project: on **Tests**, open **Import and exchange** and choose **Tests from TestRail, Xray, Zephyr, qTest or Azure …** (permission *test.write*).
+
+1. **Choose the tool** the file comes from and the **export file**. The dialog explains how to export from the chosen tool.
+2. **Check the preview.** Nothing is saved yet. Each test is marked *New*, *Update* (imported before, changed in the file), *Unchanged* or *Conflict* (imported before, changed in the file *and* in Qtestframe since), or *Error* (it cannot be imported, for example without a title). Warnings name what is left out, and the references that match no requirement.
+3. **Adjust the mapping.** The priorities and statuses of the other tool are mapped to Qtestframe's (for example *Highest*, *Urgent* and *1* → *Critical*; *Approved* → *Ready*; *Obsolete* and *Closed* → *Deprecated*); unknown values become *Medium* and *Draft*. Fields Qtestframe has no place for are offered for the project's [custom fields](#custom-fields) of tests: a field named like a custom field is preselected. Every change shows a new preview.
+4. **Choose the placement** (a test folder to import into, whether to create folders for the sections, suites, modules or area paths), whether to **link the tests to requirements** and whether to **import past results**, and **Save**. The import is one transaction: all or nothing.
+
+| Tool | Export | What is imported |
+|---|---|---|
+| **TestRail** | Test suite → *Export* → CSV (all fields; steps separated or in one cell) or XML. The CSV export of a test run adds its results. | Sections (and suites, when the file has several) → folders; separated steps or the text template's steps and expected result; preconditions; priority; type; estimate; *References* → requirement links; other fields (*Automation Type*, your own fields) → custom fields; with a run export, the results as runs. |
+| **Xray (Jira)** | Test Repository or issue search → CSV; or JSON from the Xray REST export | *Manual* tests with their steps (action, data, expected result); *Cucumber* tests with the Gherkin scenario (kept in the description and turned into steps: *Given*/*When* → actions, *Then* → expected results); *Generic* tests as automated tests with their definition; preconditions; the repository folder (else the first test set) → folder; test sets and labels → tags; linked requirements by issue key; in JSON, the test runs as runs. |
+| **Zephyr Scale / Squad** | Zephyr Scale: *Tests* → *Export* → CSV or XML; Zephyr Squad: the test issues with their steps as CSV | Folder; step-by-step, plain text and BDD scripts; objective, precondition, status, priority, labels, owner, estimated time; *Coverage (Issues)* → requirement links; custom fields. |
+| **qTest** | *Test Design* → *Export* → *Test Cases* (Excel, or saved as CSV) | Modules → folders; steps with expected results; description, precondition, priority, status, type, assignee; linked requirements; other columns → custom fields. |
+| **Azure Test Plans** | Test suite → *Export test cases to CSV*, or a work item query of test cases with the *Steps* column | Area path → folders (without the project's root area); the steps (rows of their own, or Azure DevOps' steps XML in one cell, shared steps as one step naming them); state, priority, tags, assigned to; work items in a *Tests* column → requirement links. Other work item types are left out. |
+
+**Importing again updates.** Each test remembers the tool and its ID there, so you can import a newer export whenever the other tool changes during a migration: changed tests are updated, unchanged ones left alone and nothing is duplicated. A test you edited in Qtestframe since is a *Conflict* and only overwritten when you tick *Also update … tests changed in Qtestframe*. Past results are imported once: each run of the other tool becomes one completed run named after it (*TestRail: Release 2.4 regression*), with the result, who executed it, when and the comment (permission *run.write*). Tests without an ID in the file are created again by each import.
+
+**Requirement links.** A reference in the file (an issue key such as *SHOP-101*, a work item ID or a TestRail reference) links the test to the requirement whose key it is, whose key was recorded when it was [imported from Jira or Azure DevOps](#jira-and-azure-devops) or [ReqIF](#reqif-import), or whose *Source* says *ID: SHOP-101*. Import the requirements first; references that match nothing are listed in the preview, and importing the tests again once the requirements are there adds the missing links. Links are only added, never removed.
+
+The same import runs on the command line with an [API token](#api-tokens), for example in a migration script:
+
+```
+qtestframe import-tests --from testrail suite.csv --project SHOP --dry-run
+qtestframe import-tests --from xray tests.json --project SHOP --folder "Legacy/Xray"
+```
+
+`--dry-run` only prints the preview; `--overwrite`, `--no-history`, `--no-links` and `--no-folders` match the options of the dialog (see the administrator guide, *Command line reference*).
+
 ## Which one to use?
 
 | You want to … | Use |
@@ -4269,6 +4299,7 @@ Each tool connects with an [API token](#api-tokens) of a person or a service acc
 | Copy a project with its tests to another Qtestframe | ReqIF with test cases (or [Save and load projects](#save-and-load-projects)) |
 | Freeze what was handed over | ReqIF export of a baseline |
 | Link items of an ALM tool to requirements and tests while you work | OSLC |
+| Move test cases and their results from TestRail, Xray, Zephyr, qTest or Azure Test Plans | [Import tests from other tools](#import-tests-from-other-tools) |
 
 # Documents
 

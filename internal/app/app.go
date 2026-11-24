@@ -111,7 +111,12 @@ Usage:
                                                   build a prompt for an AI assistant (with the project's
                                                   solution preamble) and print it, or write one .md file
                                                   per part; nothing is sent to an AI service
-                         report, gate, select, stubs and prompt read QTF_URL, QTF_TOKEN and QTF_PROJECT, and the
+  qtestframe import-tests --from testrail|xray|zephyr|qtest|azure FILE --project KEY [--dry-run]
+                         [--format csv|xml|json|xlsx] [--folder PATH] [--overwrite] [--no-history]
+                         [--no-links] [--no-folders]
+                                                  import the test cases (and past results) of another
+                                                  test management tool; importing again updates them
+                         report, gate, select, stubs, prompt and import-tests read QTF_URL, QTF_TOKEN and QTF_PROJECT, and the
                          GitLab CI / GitHub Actions variables; tokens for posting: QTF_GITLAB_TOKEN,
                          QTF_GITHUB_TOKEN
   qtestframe version
@@ -166,6 +171,8 @@ func Run(args []string, env Env) int {
 		err = cmdStubs(args[1:], env)
 	case "prompt":
 		err = cmdPrompt(args[1:], env)
+	case "import-tests":
+		err = cmdImportTests(args[1:], env)
 	case "sandbox-exec":
 		var c *runner.SandboxConfig
 		if c, err = runner.ParseSandboxArgs(args[1:], env.Stderr); err == nil {
