@@ -67,6 +67,7 @@ const guideSv: GuideMessages = {
     test_steps: "Stegen i ett manuellt testfall: en åtgärd, förväntat resultat och eventuell testdata. Testaren anger ett utfall per steg i exekveringsvyn.",
     test_expected: "Testfallets samlade förväntade resultat, för testfall utan steg eller som sammanfattning.",
     test_calls: "Steg som lånas från andra testfall (delade steg). En ändring i det anropade testfallet gäller alla testfall som anropar det, i körningar som skapas därefter.",
+    test_gherkin: "Skriv testfallet som en Gherkin-egenskap (Givet, När, Så) i stället för steg. Både svenska och engelska nyckelord fungerar. En körning visar varje scenario, och varje exempelrad i en scenariomall, som en iteration med sina steg.",
     test_data: "Parametrar och datarader för ett datadrivet testfall. Stegen använder en parameter med dess namn inom dubbla klammerparenteser; en körning exekverar testfallet en gång per rad, som en iteration.",
     run_configurations: "De konfigurationer som körningen gäller, till exempel webbläsare eller operativsystem. Varje testfall exekveras en gång per konfiguration, och utfall och täckning visas per konfiguration.",
     runner_iterations: "En iteration per datarad. Varje iteration har egna stegutfall och anteckningar; det samlade utfallet följer iterationerna: underkänd före blockerad före godkänd.",

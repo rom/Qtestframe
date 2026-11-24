@@ -188,7 +188,7 @@ export interface BaselineImpact {
 /** The fields whose change makes links suspect and results stale (store.RequirementContentFields / TestContentFields). */
 export const CONTENT_FIELDS: Record<string, readonly string[]> = {
   requirement: ['title', 'description', 'obligation', 'criteria'],
-  test: ['title', 'description', 'preconditions', 'steps', 'expected_result', 'script', 'execution_type'],
+  test: ['title', 'description', 'preconditions', 'steps', 'expected_result', 'script', 'execution_type', 'format', 'gherkin'],
 }
 
 /** Normalises a field value for comparing (criteria and steps without ids and positions). */

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/gherkin"
 	"github.com/rom/qtestframe/internal/model"
 )
 
@@ -120,8 +121,8 @@ func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, 
 	added := 0
 	for _, tid := range uniq(testIDs) {
 		var exists int
-		var params, rowsJSON string
-		err := c.row(ctx, `SELECT parameters, data_rows FROM test_cases WHERE id = ? AND tenant_id = ? AND project_id = ?`, tid, tenantID, projectID).Scan(&params, &rowsJSON)
+		var params, rowsJSON, format, gherkinSrc string
+		err := c.row(ctx, `SELECT parameters, data_rows, format, gherkin FROM test_cases WHERE id = ? AND tenant_id = ? AND project_id = ?`, tid, tenantID, projectID).Scan(&params, &rowsJSON, &format, &gherkinSrc)
 		if err == sql.ErrNoRows {
 			return added, Invalidf("test %s not found in project", tid)
 		}
@@ -137,6 +138,15 @@ func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, 
 			rowsJSON = setRows
 		}
 		dataRows := decodeRows(rowsJSON)
+		// a Gherkin test: one iteration per scenario and Examples row
+		var scenarios []gherkin.Instance
+		isGherkin := format == model.FormatGherkin
+		if isGherkin {
+			if scenarios, err = gherkinInstances(gherkinSrc); err != nil {
+				return added, err
+			}
+			fromSet = false
+		}
 		usageNoted := false
 		var steps []model.TestStep
 		stepsLoaded := false
@@ -152,7 +162,7 @@ func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, 
 			if exists > 0 {
 				continue
 			}
-			if !stepsLoaded {
+			if !stepsLoaded && !isGherkin {
 				// snapshot the steps, expanding shared (call) steps in place
 				if steps, err = expandSteps(ctx, c, tid, "", 0, map[string]bool{tid: true}); err != nil {
 					return added, err
@@ -163,7 +173,23 @@ func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, 
 			if _, err := c.exec(ctx, `INSERT INTO test_executions (id, tenant_id, run_id, test_case_id, status, position, configuration_id) VALUES (?, ?, ?, ?, 'not_run', ?, ?)`, eid, tenantID, runID, tid, next, nullStr(cfg)); err != nil {
 				return added, err
 			}
-			if len(dataRows) == 0 {
+			if isGherkin {
+				for i, sc := range scenarios {
+					iid := newID()
+					values := sc.Values
+					if values == nil {
+						values = map[string]string{}
+					}
+					if _, err := c.exec(ctx, `INSERT INTO execution_iterations (id, execution_id, position, name, data_values, status, notes) VALUES (?, ?, ?, ?, ?, 'not_run', '')`,
+						iid, eid, i, truncate(sc.Name, 500), encodeJSON(values)); err != nil {
+						return added, err
+					}
+					if err := insertStepResults(ctx, c, eid, &iid, instanceSteps(sc), nil); err != nil {
+						return added, err
+					}
+				}
+				dataRows = nil
+			} else if len(dataRows) == 0 {
 				if err := insertStepResults(ctx, c, eid, nil, steps, nil); err != nil {
 					return added, err
 				}

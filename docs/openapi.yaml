@@ -118,6 +118,8 @@ tags:
   description: Test environments, their components, health checks and bookings
 - name: Test data
   description: Shared test data sets, their links, usage and refresh requests
+- name: BDD
+  description: Gherkin tests, the step library of a project, .feature import and export
 paths:
   /api/v1/change-requests/{id}:
     parameters:
@@ -24072,6 +24074,390 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/gherkin/check:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - BDD
+      summary: Check Gherkin
+      operationId: postProjectsByPidGherkinCheck
+      description: |-
+        Parses a feature `{source}` (English or Swedish keywords: Feature/Egenskap, Background/Bakgrund, Scenario, Scenario Outline/Abstrakt scenario/Scenariomall, Examples/Exempel, Rule/Regel, Given/Givet, When/När, Then/Så, And/Och, But/Men) and matches its steps against the project's step library; what the Gherkin editor shows as you type. Always 200: `{valid, errors: [{line, column, message}], language, feature, steps: [{line, keyword, text, defined, definition, suggestion}], scenarios: [{name, line, steps}], undefined}` (`scenarios`: one per scenario and Examples row, only when valid)
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/gherkin/convert:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - BDD
+      summary: Convert a test between steps and Gherkin
+      operationId: postProjectsByPidGherkinConvert
+      description: |-
+        Best-effort conversion; nothing is saved. `{to: "gherkin", language: "en" or "sv", title, description, preconditions, steps, parameters, data_rows, tags}` returns `{gherkin, warnings}`: preconditions become Given steps, actions When steps, expected results Then steps, step data doc strings, data rows a Scenario Outline with Examples. `{to: "steps", gherkin}` returns `{preconditions, steps, parameters, data_rows, warnings}`: the Background and leading Given steps become preconditions, each When a step with the following Then steps as its expected result, the first Examples table the test data; several scenarios are written one after the other. 400 when the Gherkin does not parse
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/step-definitions:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - BDD
+      summary: The step library
+      operationId: getProjectsByPidStepDefinitions
+      description: |-
+        `{items: [step definitions with usage_count], uses: {definition id: [{test_id, test_key, test_title, line, keyword, text}]}, undefined: [{text, keyword, suggestion, uses}], unparsed: {test id: error}}`: the reusable steps of the project's Gherkin tests, where each is used, and the steps no definition matches (with a suggested Cucumber expression)
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - BDD
+      summary: Add a step to the library
+      operationId: postProjectsByPidStepDefinitions
+      description: |-
+        `{pattern, kind, keyword, description}`: `pattern` is a Cucumber expression (`{int}`, `{float}`, `{word}`, `{string}`, `{}`, optional `(text)`, `a/b` alternatives, backslash escapes) or, with `kind: "regex"`, a regular expression; `keyword` (`given`, `when`, `then` or empty) only orders autocompletion. 409 when the project already has the pattern. Audited as `step.create`
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/step-definitions/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - BDD
+      summary: Change a library step
+      operationId: patchStepDefinitionsById
+      description: |-
+        Changes `pattern`, `kind`, `keyword` or `description` of a step; the tests are not changed (see rename). Audited as `step.update`
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - BDD
+      summary: Remove a library step
+      operationId: deleteStepDefinitionsById
+      description: |-
+        Removes the step from the library; the tests keep their steps, which become undefined. Audited as `step.delete`
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/step-definitions/{id}/rename:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - BDD
+      summary: Rename a step in every test
+      operationId: postStepDefinitionsByIdRename
+      description: |-
+        `{pattern}`: a Cucumber expression with as many parameters as the current pattern. Every step of the project's Gherkin tests that matched the old pattern is rewritten to the new one, keeping its parameters (a test with errors is left alone); each changed test gets a new version. Returns `{item, tests: [{id, key, steps, version}], steps}`. Audited as `step.rename` and `test.update`
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/features/import:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - BDD
+      summary: Import .feature files
+      operationId: postProjectsByPidTestsFeaturesImport
+      description: |-
+        `{files: [{name, content}], mode: "scenario" or "feature", folder_id, dry_run}`: Gherkin tests, one per scenario (with the Background; an outline keeps its Examples) or one per feature file. Tags become tags; tags naming a requirement of the project (`@SHOP-REQ-12`, `@req:SHOP-REQ-12`, or `@REQ-12` without the project key) become trace links instead. Files with errors are skipped and listed. Returns `{tests: [{id, key, title, file, tags, requirements}], links, errors: [{file, line, message}], dry_run}`; 201 (200 for a dry run). At most 200 files and 2000 tests
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/features:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - BDD
+      summary: Export tests as .feature files
+      operationId: getProjectsByPidTestsFeatures
+      description: |-
+        A zip with a `.feature` file per test of `q` (or `query`) and `ids`: a Gherkin test as written, a test in the step format converted (in `language`, en or sv), each tagged with its key and the keys of the requirements it verifies. At most 2000 tests
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: ids
+        in: query
+        schema:
+          type: string
+      - name: language
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/features/export:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - BDD
+      summary: Export tests as .feature files (POST)
+      operationId: postProjectsByPidTestsFeaturesExport
+      description: |-
+        The same as GET with a body `{query, ids: [...], language}`
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/gherkin-results:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - BDD
+      summary: Latest result of each Gherkin step
+      operationId: getTestsByIdGherkinResults
+      description: |-
+        `{execution_id, steps: [{line, status, results}]}`: the step results of the latest execution of a Gherkin test that has any result, by the line of the step (a run snapshots a step with the id `gherkin:<line>`); a step run in several scenarios (Background, Examples rows) combines their results, failed first
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -26074,6 +26460,15 @@ components:
           - javascript
         script:
           type: string
+        format:
+          type: string
+          enum:
+          - steps
+          - gherkin
+          description: '"steps" (preconditions and steps, the default) or "gherkin": the test is the feature in gherkin.'
+        gherkin:
+          type: string
+          description: The Gherkin feature of a test in the gherkin format (English or Swedish keywords).
         expected_result:
           type: string
         priority:

@@ -698,6 +698,31 @@ type TestStep struct {
 	CallTestTitle string  `json:"call_test_title,omitempty"`
 }
 
+// Test formats.
+const (
+	FormatSteps   = "steps"
+	FormatGherkin = "gherkin"
+)
+
+// StepDefinition is a reusable step of a project's step library: a
+// Cucumber expression ({int}, {string} ...) or a regular expression that
+// Gherkin steps are matched against.
+type StepDefinition struct {
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
+	// Keyword: "given", "when", "then" or "" (any); a hint for autocompletion.
+	Keyword string `json:"keyword"`
+	Pattern string `json:"pattern"`
+	// Kind: "cucumber" (the default) or "regex".
+	Kind        string    `json:"kind"`
+	Description string    `json:"description"`
+	CreatedBy   string    `json:"created_by"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	// Derived: the steps of Gherkin tests that match it.
+	UsageCount int `json:"usage_count"`
+}
+
 // TestRef is a short reference to a test case.
 type TestRef struct {
 	ID    string `json:"id"`
@@ -734,6 +759,10 @@ type TestCase struct {
 	Position    int        `json:"position"`
 	CategoryIDs []string   `json:"category_ids"`
 	Steps       []TestStep `json:"steps"`
+	// Format is "steps" (Preconditions and Steps) or "gherkin": the test is
+	// the Gherkin feature in Gherkin (see internal/gherkin); "" is "steps".
+	Format  string `json:"format"`
+	Gherkin string `json:"gherkin"`
 	// Parameters and DataRows make the test data-driven: it is executed
 	// once per row (an iteration), with {{name}} placeholders in step texts
 	// replaced by the row's values.

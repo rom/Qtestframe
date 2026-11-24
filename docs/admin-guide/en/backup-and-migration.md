@@ -165,6 +165,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
 | 67 | `0067_passkeys.sql` |
+| 70 | `0070_gherkin.sql` |
 
 <!-- END GENERATED: migrations -->
 

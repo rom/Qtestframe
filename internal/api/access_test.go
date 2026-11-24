@@ -78,6 +78,7 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	a.m("POST", "/api/v1/environments/"+env+"/bookings", map[string]any{"starts_at": "2030-01-01T08:00:00Z", "ends_at": "2030-01-01T12:00:00Z", "purpose": "Secret booking"}, 201)
 	ds := a.m("POST", pp+"/test-data-sets", map[string]any{"name": "Secret data", "parameters": []string{"user"}, "data_rows": []any{map[string]any{"values": map[string]string{"user": "a"}}}}, 201)["id"].(string)
 	a.m("POST", "/api/v1/test-data-sets/"+ds+"/refresh-requests", map[string]any{"reason": "Secret refresh"}, 201)
+	a.m("POST", pp+"/step-definitions", map[string]any{"pattern": "a secret step"}, 201)
 	a.m("PUT", pp+"/access", map[string]any{"access": "restricted"}, 200)
 	// an id of each resource, read from the database
 	q := map[string]string{
@@ -106,6 +107,7 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"environments": `SELECT id FROM environments WHERE project_id = ?`, "bookings": `SELECT id FROM environment_bookings WHERE project_id = ?`,
 		"test-data-sets":             `SELECT id FROM test_data_sets WHERE project_id = ?`,
 		"test-data-refresh-requests": `SELECT q.id FROM test_data_refresh_requests q JOIN test_data_sets d ON d.id = q.data_set_id WHERE d.project_id = ?`,
+		"step-definitions":           `SELECT id FROM step_definitions WHERE project_id = ?`,
 	}
 	for res, sql := range q {
 		var id string

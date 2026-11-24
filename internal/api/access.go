@@ -350,6 +350,7 @@ var resourceProjects = map[string]string{
 	"environments":               `SELECT COALESCE(project_id, '') FROM environments WHERE id = ? AND tenant_id = ?`,
 	"bookings":                   `SELECT COALESCE(e.project_id, '') FROM environment_bookings b JOIN environments e ON e.id = b.environment_id WHERE b.id = ? AND b.tenant_id = ?`,
 	"test-data-sets":             `SELECT project_id FROM test_data_sets WHERE id = ? AND tenant_id = ?`,
+	"step-definitions":           `SELECT project_id FROM step_definitions WHERE id = ? AND tenant_id = ?`,
 	"test-data-refresh-requests": `SELECT d.project_id FROM test_data_refresh_requests q JOIN test_data_sets d ON d.id = q.data_set_id WHERE q.id = ? AND q.tenant_id = ?`,
 }
 

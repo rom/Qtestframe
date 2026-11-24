@@ -499,6 +499,9 @@ export interface TestCase {
   position: number
   category_ids: string[] | null
   steps: TestStep[] | null
+  /** "steps" (preconditions and steps) or "gherkin": the test is the feature in gherkin */
+  format?: 'steps' | 'gherkin'
+  gherkin?: string
   version?: number
   created_by: string
   created_at: string

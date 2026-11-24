@@ -983,6 +983,7 @@ The page works like the [requirements page](#the-requirements-page): folder tree
 |---|---|
 | **Title** | A short name (required). |
 | **Execution type** | **Manual** or **Automated**. |
+| **Format** | **Steps** (preconditions and steps) or **Gherkin** (a feature with scenarios, see [Gherkin tests](#gherkin-tests-bdd)). |
 | **Description** | What the test is about. |
 | **Preconditions** | What must be true before the test starts, for example *a customer account exists*. Shown to the tester in the runner. |
 | **Status** | Draft, Ready, Review or Deprecated. |
@@ -1065,6 +1066,62 @@ When the test is added to a run, every row becomes an **iteration** of the execu
 
 The test data is part of the test's version history and of the export (**Export → Test data**: one line per row and parameter).
 
+## Gherkin tests (BDD)
+
+A test can be written as a **Gherkin** feature instead of preconditions and steps, the way behaviour-driven development (BDD) and Cucumber describe behaviour: *Given* a context, *When* something happens, *Then* an outcome. Choose the format with **Steps** / **Gherkin** next to the execution type in the test editor.
+
+```gherkin
+@checkout @REQ-12
+Feature: Checkout
+  Background:
+    Given a customer with a saved card
+
+  @smoke
+  Scenario: Pay with the saved card
+    When the customer pays 25 EUR
+    Then the order is "paid"
+
+  Scenario Outline: Pay <amount>
+    When the customer pays <amount> EUR
+    Then the receipt shows <amount> EUR
+
+    Examples:
+      | amount |
+      | 5      |
+      | 10     |
+```
+
+A feature has a name and a description, an optional **Background** (steps run before every scenario), **Scenarios** and **Scenario Outlines** with **Examples** tables (one scenario per row; `<amount>` is replaced by the row's value), **Rules** that group scenarios, **tags** (`@smoke`) on features, rules, scenarios and examples, **doc strings** (text between `"""` or ```` ``` ```` lines) and **data tables** under a step. English and Swedish keywords both work in any test: *Feature/Egenskap*, *Background/Bakgrund*, *Scenario*, *Scenario Outline/Abstrakt scenario/Scenariomall*, *Examples/Exempel*, *Rule/Regel*, *Given/Givet*, *When/När*, *Then/Så*, *And/Och*, *But/Men*. A first line `# language: sv` marks a Swedish feature (it is detected from the keywords as well).
+
+**The editor** highlights keywords, tags, strings, numbers, outline placeholders, tables, doc strings and comments, and checks the text as you type: a line with an error is underlined and listed below the editor with its line number (select it to go to the line), and steps that no step of the [step library](#the-step-library) matches are marked as *undefined*. A test whose Gherkin has errors cannot be saved. Keyboard:
+
+| Keys | Does |
+|---|---|
+| **Ctrl+Space** | Suggests keywords at the start of a line and steps from the step library after a step keyword (suggestions also appear while you type). **↑**/**↓** choose, **Enter** or **Tab** inserts, **Esc** closes. An inserted step selects its first parameter, such as `{int}`, for you to type over. |
+| **Enter** | A new line with the same indentation, one level deeper after a header such as *Scenario:*. |
+| **Alt+Shift+F** | Aligns the columns of every table (also **Align tables**). Nothing else is changed. |
+| **Tab** | Leaves the editor (with no suggestion open), like any other field. Indent with spaces. |
+
+**Converting:** switching an existing test from **Steps** to **Gherkin** writes its preconditions as *Given* steps, each action as a *When* step, each expected result as a *Then* step, step data as a doc string and test data as a *Scenario Outline* with *Examples*. Switching back writes the *Background* and the first *Given* steps as preconditions, each *When* step as a step with the following *Then* steps as its expected result, and the first *Examples* table as test data. **Convert from the steps** and **Convert from the Gherkin** run the conversion again (they replace what is there). Conversions are best effort: rules, several *Examples* tables and called tests are simplified, and the editor says so.
+
+**Running a Gherkin test:** in a run, every scenario, and every *Examples* row of an outline, is an [iteration](runs.md#data-driven-tests-iterations) of the execution, named after the scenario (an outline's name with the row's values). Its steps are the *Background* steps followed by the scenario's steps, with doc strings and tables shown with the step, and the tester records a result per step as usual. The results map back to the lines of the feature: the editor shows the latest result of each step in the margin (green passed, red failed) and lists them under **Latest results per step**.
+
+The **Cucumber** stubs of [Generate test code](ci-cd.md#generate-test-code) for a Gherkin test are the feature itself, tagged with the test's key and `@qtestframe-stub`, so the scenarios your team wrote are the scenarios Cucumber runs. The query field `format` finds tests by format: `format:gherkin`.
+
+### The step library
+
+**Step library** (in the editor, and in the **Import** menu of the tests page) holds the reusable steps of the project. Each step is a **Cucumber expression** such as `the customer pays {int} EUR` or `I log in as {string}` (parameters `{int}`, `{float}`, `{word}`, `{string}` and `{}`; `cucumber(s)` for optional text; `in/on` for alternatives; a backslash escapes `{`, `(` and `/`) or, with the kind **Regular expression**, a pattern such as `^I pay (\d+) EUR$`. A step can have a keyword (*Given*, *When* or *Then*: suggested first after that keyword) and a description, which the suggestions show.
+
+The list shows how often each step is used and, under **Where used**, the tests and lines. **Undefined steps** lists the steps of the Gherkin tests that no definition matches, with a suggested expression (quoted text becomes `{string}`, numbers `{int}` or `{float}`); **Add to library** fills in the form with it. The same offer is under the editor for the undefined steps of the open test.
+
+**Rename in every test** changes a step's expression and rewrites every step that used it in all Gherkin tests of the project, keeping their parameters: renaming `the customer pays {int} EUR` to `the customer pays {int} euro(s)` turns *the customer pays 25 EUR* into *the customer pays 25 euros*. The new expression must have as many parameters as the old one. Each changed test gets a new version, so the change is in its history. Removing a step from the library leaves the tests as they are; their steps become undefined. Reading the library needs **Viewer**, changing it **Tester**.
+
+### Import and export feature files
+
+**Import → Import .feature files** on the tests page creates Gherkin tests from `.feature` files: choose **One test per scenario** (each with the feature's *Background*; an outline keeps its *Examples*) or **One test per feature file**. The preview lists the tests to be created and the files that have errors (with the line), which are skipped. Tags become the tests' tags, except tags that name a requirement of the project, which link the test to it instead: `@SHOP-REQ-12`, `@req:SHOP-REQ-12`, or `@REQ-12` without the project key.
+
+**Import → Export as .feature files** downloads a zip with a `.feature` file per test of the list (or of the selection): a Gherkin test as it is written, a test in the step format converted, each tagged with its key and the keys of the requirements it verifies.
+
 ## Categories
 
 Categories classify tests and requirements along **dimensions**. New projects get these defaults:
@@ -1080,7 +1137,7 @@ Categories classify tests and requirements along **dimensions**. New projects ge
 
 An item can have any number of category values, also several of the same dimension. Manage them in **Categories & settings**:
 
-![The Categories & settings page with requirement and test category dimensions and their colours](images/en-settings-categories.png)
+![The Categories & settings page with requirement and test category dimensions and their colours](../images/en-settings-categories.png)
 
 - **New dimension** creates a dimension with its first value; **Add value** adds values to it.
 - Select a colour swatch to recolour a value; it is shown in that colour everywhere.
@@ -1090,17 +1147,17 @@ An item can have any number of category values, also several of the same dimensi
 
 In queries, `category:Negative` matches the value name and `dimension:Polarity/Negative` the full form.
 
-The same page holds the project's **Name**, **Description**, the **Defect tracker URL template** (see [Defects](#defects)), the [Save and load](#save-and-load-projects) section (**Save project**, **Duplicate project**, **Load project**) and, for admins, **Delete project**. Editing categories needs **Manager** (or the write permission of their scope, Tester for test categories).
+The same page holds the project's **Name**, **Description**, the **Defect tracker URL template** (see [Defects](runs.md#defects)), the [Save and load](reports-and-export.md#save-and-load-projects) section (**Save project**, **Duplicate project**, **Load project**) and, for admins, **Delete project**. Editing categories needs **Manager** (or the write permission of their scope, Tester for test categories).
 
 ## Mark many tests ready at once
 
-Holders of `test.review` can mark many tests *Ready* in one step: tick the tests and choose **Mark ready…**, or choose **Bulk review** above the list with nothing ticked. As for requirements (see [Approve many requirements at once](#approve-many-requirements-at-once)), you choose the tests (selected, shown in the list, or all), the statuses they may come from (by default *Review*; add *Draft* to include drafts) and an optional comment, and a preview shows what changes.
+Holders of `test.review` can mark many tests *Ready* in one step: tick the tests and choose **Mark ready…**, or choose **Bulk review** above the list with nothing ticked. As for requirements (see [Approve many requirements at once](requirements.md#approve-many-requirements-at-once)), you choose the tests (selected, shown in the list, or all), the statuses they may come from (by default *Review*; add *Draft* to include drafts) and an optional comment, and a preview shows what changes.
 
 Besides the checks for requirements (the latest review asked for changes, open review requests, suspect links), a test is skipped when it cannot be run as written: a **manual test without steps** or an **automated test without a script**. Choose the check under **Include anyway, despite** to mark them ready anyway.
 
 ## Spreadsheet view
 
-Choose **Spreadsheet** to edit tests like in a spreadsheet; it works as for [requirements](#spreadsheet-view) (keyboard, copy and paste from Excel, fill down, new rows, saving, conflicts, undo and **Export view**). The columns are **Key**, **Title**, **Description**, **Priority**, **Status**, **Execution**, **Preconditions**, **Expected result**, **Estimate (min)**, **Categories**, **Tags**, **Folder** and the read-only **Steps** (the number of steps), **Last result**, **Requirements**, **Created by** and **Version**. Steps, scripts and test data are edited in the editor (double-click the key or press **Ctrl+Enter**). Setting a test to *Ready* is a review decision and needs `test.review`, in the sheet as in the editor.
+Choose **Spreadsheet** to edit tests like in a spreadsheet; it works as for [requirements](requirements.md#spreadsheet-view) (keyboard, copy and paste from Excel, fill down, new rows, saving, conflicts, undo and **Export view**). The columns are **Key**, **Title**, **Description**, **Priority**, **Status**, **Execution**, **Preconditions**, **Expected result**, **Estimate (min)**, **Categories**, **Tags**, **Folder** and the read-only **Steps** (the number of steps), **Last result**, **Requirements**, **Created by** and **Version**. Steps, scripts and test data are edited in the editor (double-click the key or press **Ctrl+Enter**). Setting a test to *Ready* is a review decision and needs `test.review`, in the sheet as in the editor.
 
 ## Copy a test
 
@@ -1118,7 +1175,7 @@ A test can **depend on** other tests: they are its prerequisites and must have p
 
 In the test editor, the section **Depends on** lists the prerequisites with their latest result. Select **Add prerequisite** to pick tests of the same project, and **×** to remove one *(Tester)*. **Required by** lists the tests that wait for this one. A test cannot depend on itself, and dependencies may not form a cycle.
 
-When the test is executed, each prerequisite counts as passed when its execution in the same run has passed; when the prerequisite is not part of the run, its latest result counts. Until then the runner shows why the test cannot start, unless the [test execution settings](#test-execution-settings) allow it. The **Relations** column of the test list shows *depends on* and *required by*, the [dependency graph](#dependency-graphs) draws them, and the filter `depends_on:SHOP-TC-1` (or `depends:`) finds the tests that depend on SHOP-TC-1.
+When the test is executed, each prerequisite counts as passed when its execution in the same run has passed; when the prerequisite is not part of the run, its latest result counts. Until then the runner shows why the test cannot start, unless the [test execution settings](administration.md#test-execution-settings) allow it. The **Relations** column of the test list shows *depends on* and *required by*, the [dependency graph](traceability-and-coverage.md#dependency-graphs) draws them, and the filter `depends_on:SHOP-TC-1` (or `depends:`) finds the tests that depend on SHOP-TC-1.
 
 ## Test flow
 
@@ -1138,9 +1195,9 @@ When the test is executed, each prerequisite counts as passed when its execution
 
 The **Executions** tab lists every execution of the test in all runs, newest first, with the run, its environment and build, the result, who executed it, when, the duration and any defects. Use it to see whether a test is flaky or when it started to fail.
 
-![The executions tab of a test with results across runs](images/en-tests-executions.png)
+![The executions tab of a test with results across runs](../images/en-tests-executions.png)
 
-In runs with [configurations](#configurations-in-a-run) the configuration of each execution is shown below the run, and a data-driven execution links to its iterations in the runner.
+In runs with [configurations](runs.md#configurations-in-a-run) the configuration of each execution is shown below the run, and a data-driven execution links to its iterations in the runner.
 
 The table column **Last result** shows the most recent result (in any configuration). In queries, `last_result:failed` finds tests whose latest result failed, and `defect:SHOP-*` tests with such a defect.
 
@@ -3721,7 +3778,7 @@ Keywords and field names are case-insensitive. Values with spaces need quotes: `
 
 ### Tests
 
-`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `open_discussions` (`open-discussion`: unresolved threads, `has:open-discussion`), `mention` (@handles in the texts and steps, and the people mentioned in its discussion; `mentions:me` for yourself), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from), `variant` (`variants`: the variants it applies to), `applicability` (`all` or `selected`).
+`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps, and the Gherkin of a Gherkin test), `format` (`steps` or `gherkin`: `format:gherkin`), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `open_discussions` (`open-discussion`: unresolved threads, `has:open-discussion`), `mention` (@handles in the texts and steps, and the people mentioned in its discussion; `mentions:me` for yourself), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from), `variant` (`variants`: the variants it applies to), `applicability` (`all` or `selected`).
 
 ### Owners and assignees
 

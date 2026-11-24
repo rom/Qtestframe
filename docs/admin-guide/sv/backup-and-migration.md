@@ -165,6 +165,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
 | 67 | `0067_passkeys.sql` |
+| 70 | `0070_gherkin.sql` |
 
 <!-- END GENERATED: migrations -->
 
