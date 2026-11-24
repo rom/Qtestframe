@@ -586,6 +586,25 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `outbound.denied_hosts` | lista | — | — | Värdar som utgående anrop aldrig når, t.ex. `metadata.google.internal` eller `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Neka utgående anrop till loopback-, privata, länklokala och andra icke-publika adresser (kontrolleras på adressen som faktiskt ansluts), om inte värden finns i `allowed_hosts`. Slå på den när servern nås från internet och användarna inte ska nå ert interna nät genom den. |
 
+### `metrics`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `metrics.enabled` | bool | `false` | `QTF_METRICS_ENABLED` | Visa Prometheus-mätvärden på `/metrics` (förfrågningar, svarstider, databaspoolen, Go-körtiden, bakgrundsjobb, inloggningar, liveanslutningar och antalet projekt, krav, tester och körningar). Av som standard. |
+| `metrics.listen` | text | — | — | En separat `värd:port` för `/metrics` (t.ex. `127.0.0.1:9090`) som öppnas vid start; huvudlyssnaren svarar då 404 på `/metrics`. Tom: huvudlyssnaren visar den. |
+| `metrics.token_file` | text | — | — | Fil med den bearer-token som en insamlare måste skicka (`Authorization: Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Token kan också sparas, krypterad, i systeminställningarna; den visas aldrig igen. `QTF_METRICS_TOKEN` vinner över båda. |
+| `metrics.allowed_ips` | lista | — | — | Adresser eller CIDR-intervall som får hämta `/metrics` (klientens adress, från `X-Forwarded-For` bara bakom `trusted_proxies`). Med en token också måste båda stämma; utan någon av dem får bara loopback-adressen hämta. |
+
+### `tracing`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `tracing.enabled` | bool | `false` | `QTF_TRACING_ENABLED` | Exportera OpenTelemetry-spår av HTTP-förfrågningar, databasfrågor och utgående anrop till `endpoint`. Av som standard. |
+| `tracing.endpoint` | text | — | `QTF_TRACING_ENDPOINT` | OTLP/HTTP-adress till insamlaren, t.ex. `http://otel-collector:4318`; `/v1/traces` läggs till en adress utan sökväg. Spann skickas som JSON i omgångar (var 5:e sekund eller 512 spann). |
+| `tracing.headers_file` | text | — | — | Fil med rubriker som skickas med varje export, `nyckel=värde`-par åtskilda med komma (t.ex. `Authorization=Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Kan också sparas, krypterade, i systeminställningarna. `QTF_TRACING_HEADERS` vinner över båda. |
+| `tracing.sample_ratio` | text | `1` | — | Andel nya spår som spelas in, 0–1 (`0.1` = vart tionde). En förfrågan med en `traceparent`-rubrik följer anroparens beslut. |
+| `tracing.service_name` | text | `qtestframe` | — | `service.name` för de exporterade spannen. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler
@@ -608,6 +627,8 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_LIVE_ENABLED` | `live.enabled` (`1` eller `true` = på, allt annat = av) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
+| `QTF_METRICS_ENABLED` | `metrics.enabled` (`true` eller `1`) |
+| `QTF_METRICS_TOKEN` | bearer-token för `/metrics`; vinner över `metrics.token_file` och en token sparad i webbklienten |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` eller `true` = på) |
 | `QTF_RUNNER_WEB_BROWSERS_PATH` | `runner.web.browsers_path` |
 | `QTF_RUNNER_WEB_ENABLED` | `runner.web.enabled` (`1` eller `true` = på) |
@@ -623,6 +644,9 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_SERVER_BASE_URL` | `server.base_url` |
 | `QTF_SERVER_LISTEN` | `server.listen` |
 | `QTF_SERVER_PORT` | porten i `server.listen` (värden behålls) |
+| `QTF_TRACING_ENABLED` | `tracing.enabled` (`true` eller `1`) |
+| `QTF_TRACING_ENDPOINT` | `tracing.endpoint` |
+| `QTF_TRACING_HEADERS` | rubrikerna för spårexporten; vinner över `tracing.headers_file` och rubriker sparade i webbklienten |
 | `QTF_OIDC_<NAME>_CLIENT_SECRET` | klienthemligheten för OIDC-leverantören `<namn>` (versaler); vinner över `client_secret_file` och en hemlighet sparad i webbklienten |
 | `CREDENTIALS_DIRECTORY` | sätts av systemd (`LoadCredential=`): relativa `*_file`-sökvägar slås upp där, och den är läsbar efter låsningen |
 | `STATE_DIRECTORY` | sätts av systemd (`StateDirectory=`): standardplats för nyckelfilen när databasen inte är SQLite |
@@ -1047,6 +1071,7 @@ Använd miljövariabler eller lås för det som inte får ändras från webbklie
 | Allmänt, Inloggning och lösenord, API-tokens, Enkel inloggning, Loggning och syslog, E-post (SMTP), Utgående anslutningar, Likhet, AI-assistans | **direkt** – e-postavsändaren, OIDC-leverantörerna (oförändrade leverantörer behålls, så pågående inloggningar fortsätter), loggningen, inloggningsgränserna och den utgående HTTP-klienten följer de nya värdena |
 | Liveuppdateringar | brytaren och pulsen **direkt** (nya anslutningar); anslutningsgränserna, repriskbufferten och tidsgränsen för närvaro **efter en omstart** |
 | Server och databas | HTTP-tidsgränserna för läsning och skrivning **efter en omstart**; allt annat anges i filen och visas med sin källa (lyssningsadress, TLS-filer, databas, första start, härdning, nyckelleverantör) |
+| Mätvärden och spårning | **direkt** – brytarna, token, adresslistan och spårexporten; den separata adressen för mätvärden (`metrics.listen`) **efter en omstart**. Avsnittet visar också läget: var `/metrics` visas, hur den skyddas, och antalet exporterade, misslyckade och kastade spann med senaste export och senaste fel |
 | Körning av skript och webbtester | **efter en omstart** – körningen och dess sandlåda sätts upp innan processen låses (Landlocks körbara sökvägar, arbetskatalogen); värdet sparas direkt och sidan visar värdet som används tills dess |
 | Gallring och säkerhetskopior, Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem (papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast) |
 
@@ -1110,6 +1135,15 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Loggning och syslog | `logging.syslog.ca_file` | text | visas bara (filen) |
 | Loggning och syslog | `logging.syslog.cert_file` | text | visas bara (filen) |
 | Loggning och syslog | `logging.syslog.key_file` | text | visas bara (filen) |
+| Mätvärden och spårning | `metrics.enabled` | på/av | direkt |
+| Mätvärden och spårning | `metrics.listen` | text | efter omstart |
+| Mätvärden och spårning | `metrics.token` | hemlighet (skrivskyddad läsning) | direkt |
+| Mätvärden och spårning | `metrics.allowed_ips` | lista | direkt |
+| Mätvärden och spårning | `tracing.enabled` | på/av | direkt |
+| Mätvärden och spårning | `tracing.endpoint` | text | direkt |
+| Mätvärden och spårning | `tracing.headers` | hemlighet (skrivskyddad läsning) | direkt |
+| Mätvärden och spårning | `tracing.sample_ratio` | text | direkt |
+| Mätvärden och spårning | `tracing.service_name` | text | direkt |
 | E-post (SMTP) | `email.enabled` | på/av | direkt |
 | E-post (SMTP) | `email.host` | text | direkt |
 | E-post (SMTP) | `email.port` | 1–65535 | direkt |
@@ -1924,10 +1958,12 @@ Servern skriver strukturerade loggposter (Go `log/slog`) till **standard error**
 
 Det här loggas:
 
-- **Varje begäran** utom `/healthz` och `/readyz`: metod, sökväg (utan frågesträng), status, byte, tid och klientadress (från `X-Forwarded-For` bara för `trusted_proxies`). Begäranden som besvaras med 5xx loggas på nivån ERROR, övriga på INFO.
+- **Varje begäran** utom `/healthz`, `/readyz` och `/metrics`: metod, sökväg (utan frågesträng), status, byte, tid och klientadress (från `X-Forwarded-For` bara för `trusted_proxies`). Begäranden som besvaras med 5xx loggas på nivån ERROR, övriga på INFO.
 - **Granskningsposter** (`msg=audit`, INFO) med organisation, användare, åtgärd, objekt och id, en för varje post i händelseloggen.
 - **Säkerhetshändelser**: `login failed` och `second factor failed` (WARN, med e-post och klientadress), problem med konfiguration och nycklar vid start, raden `hardening`.
 - **Bakgrundsarbete**: migreringar, rensade sessioner och papperskorgsposter, mätpunkter, fel vid e-post och webhooks, återställda jobb.
+
+När en begäran hör till ett spår (en inkommande `traceparent`-rubrik, eller spårning på) får dess poster `trace_id`, och `span_id` för den här serverns spann, så att en loggrad kan hittas från ett spår och tvärtom.
 
 Lösenord, token, kakor och `Authorization`-huvuden loggas aldrig. Oväntade fel besvaras bara med "internal server error"; detaljerna finns i loggraden `request failed` (sökväg och fel).
 
@@ -1964,17 +2000,94 @@ Exempel på mottagare för rsyslog (`imtcp` med `gtls`) och syslog-ng (`network(
 | Adress | Svarar | Användning |
 |---|---|---|
 | `GET /healthz` | `200 {"status":"ok","version":"…"}` så länge processen besvarar begäranden | liveness-kontroll |
-| `GET /readyz` | `200 {"status":"ready"}`, eller `503` när databasen inte svarar inom 2 sekunder | readiness-kontroll, lastbalanserare |
+| `GET /readyz` | `200 {"status":"ready","checks":{"database":"ok","migrations":"ok"}}`, eller `503` när databasen inte svarar inom 2 sekunder eller migreringar inte är gjorda (en annan process migrerar fortfarande) | readiness-kontroll, lastbalanserare |
 
 Båda kräver ingen inloggning och skrivs inte i begärandeloggen. `qtestframe healthcheck` kontrollerar `/healthz` på den lokala servern för hälsokontroller i containrar.
 
-Det finns **ingen adress för mätvärden** (ingen Prometheus-exporter). *Trenderna* på översiktspanelen är projektdata (dagliga mätpunkter), inte servermätvärden.
+## Prometheus-mätvärden
+
+`GET /metrics` visar mätvärden i Prometheus textformat. Den är **av som standard**; slå på den med `metrics.enabled` (eller `QTF_METRICS_ENABLED=true`, eller **Administration → Systeminställningar → Mätvärden och spårning**). *Trenderna* på översiktspanelen är projektdata (dagliga mätpunkter), inte servermätvärden.
+
+| Mätvärde | Typ | Etiketter | Betydelse |
+|---|---|---|---|
+| `qtf_http_requests_total` | counter | `route`, `method`, `status` | förfrågningar per vägmall (`/api/v1/tests/{id}`, aldrig själva id:t), metod och statusklass (`2xx` … `5xx`) |
+| `qtf_http_request_duration_seconds` | histogram | `route`, `method` | förfrågningarnas svarstid (utan händelseströmmar) |
+| `qtf_http_requests_in_flight` | gauge | | förfrågningar som besvaras just nu (utan händelseströmmar) |
+| `qtf_live_connections` | gauge | | öppna strömmar för liveuppdateringar (Server-Sent Events) |
+| `qtf_db_connections` | gauge | `state` (`in_use`, `idle`) | anslutningar i databaspoolen |
+| `qtf_db_max_open_connections` | gauge | | poolens gräns |
+| `qtf_db_wait_total`, `qtf_db_wait_duration_seconds_total` | counter | | frågor som väntade på en ledig anslutning, och hur länge |
+| `qtf_db_closed_connections_total` | counter | `reason` | anslutningar som poolen stängt |
+| `qtf_jobs_total` | counter | `kind` (`script_job`, `req_sync`, `report_mail`), `result` | avslutade bakgrundsjobb: automatiserade tester (`passed`, `failed`, `skipped`, `cancelled`, `error`, `interrupted`), kravsynkningar (`ok`, `partial`, `error`) och schemalagda rapporter (`ok`, `error`) |
+| `qtf_script_jobs_running` | gauge | | automatiserade tester som körs i den här processen |
+| `qtf_logins_total` | counter | `method` (`local`, `oidc`, `saml`, `mfa`, `invitation`, `external`, `other`), `result` (`success`, `failure`) | inloggningsförsök |
+| `qtf_tenants`, `qtf_users`, `qtf_projects`, `qtf_requirements`, `qtf_tests`, `qtf_runs` | gauge | | installationens storlek, räknas högst en gång i minuten |
+| `qtf_tracing_spans_total` | counter | `outcome` (`exported`, `failed`, `dropped`) | spann i spårexporten |
+| `qtf_build_info` | gauge | `version`, `goversion` | alltid 1 |
+| `process_start_time_seconds` | gauge | | när processen startade (Unix-tid) |
+| `go_goroutines`, `go_memstats_alloc_bytes`, `go_memstats_heap_inuse_bytes`, `go_memstats_heap_objects`, `go_memstats_sys_bytes`, `go_gc_next_bytes` | gauge | | Go-körtiden |
+| `go_gc_cycles_total`, `go_gc_pause_seconds_total` | counter | | skräpsamling |
+
+Slutpunkten skyddas av det som är konfigurerat, och en förfrågan måste klara **varje** konfigurerad kontroll:
+
+- **`metrics.token`** – insamlaren skickar `Authorization: Bearer <token>`. Token är en hemlighet: kan bara skrivas i systeminställningarna (sparas krypterad), eller kommer från `metrics.token_file` eller `QTF_METRICS_TOKEN`. En saknad eller fel token ger `401`.
+- **`metrics.allowed_ips`** – adresser eller CIDR-intervall (`10.0.0.0/8`). Klientens adress tas från `X-Forwarded-For` bara bakom `server.trusted_proxies`. Andra adresser får `403`.
+- Utan **någon av dem** får bara loopback-adressen (`127.0.0.1`, `::1`) hämta: alla andra får `403`.
+
+`metrics.listen` (t.ex. `127.0.0.1:9090`, gäller efter en omstart) visar `/metrics`, `/healthz` och `/readyz` på en egen lyssnare, med vanlig HTTP; huvudlyssnaren svarar då `404` på `/metrics`. Håll den adressen på ett internt nät.
+
+```yaml
+metrics:
+  enabled: true
+  listen: "10.0.0.5:9090"          # valfritt
+  token_file: metrics-token        # relativ: i $CREDENTIALS_DIRECTORY
+  allowed_ips: [10.0.0.0/24]
+```
+
+Motsvarande jobb i Prometheus:
+
+```yaml
+scrape_configs:
+  - job_name: qtestframe
+    scheme: http
+    authorization:
+      credentials_file: /etc/prometheus/qtestframe-token
+    static_configs:
+      - targets: ["10.0.0.5:9090"]
+```
+
+En exempelpanel för Grafana (`examples/monitoring/grafana-dashboard.json`) och larmregler (`examples/monitoring/prometheus-alerts.yml`) finns i förrådet: felandel, svarstid, mättad databaspool, misslyckade jobb och misslyckade inloggningar.
+
+## OpenTelemetry-spårning
+
+Med spårning på spelar servern in ett spann för varje förfrågan (namngivet efter vägen, t.ex. `GET /api/v1/tests/{id}`), ett underordnat spann för varje databasfråga i förfrågan (satsen utan värden) och ett klientspann för varje utgående anrop (webhooks, ärendesystem, AI, …). Spannen skickas i omgångar till en OpenTelemetry-insamlare över **OTLP/HTTP med JSON** (var 5:e sekund eller 512 spann; högst 4096 väntar, fler kastas och räknas).
+
+| Inställning | Betydelse |
+|---|---|
+| `tracing.enabled` | på/av (av som standard) |
+| `tracing.endpoint` | insamlaren, t.ex. `http://otel-collector:4318`; `/v1/traces` läggs till en adress utan sökväg |
+| `tracing.headers` | rubriker för varje export som `nyckel=värde`-par åtskilda med komma, t.ex. `Authorization=Bearer <token>`; en hemlighet (kan bara skrivas, sparas krypterad, eller `tracing.headers_file`, `QTF_TRACING_HEADERS`) |
+| `tracing.sample_ratio` | andel nya spår som spelas in, `0`–`1` (standard `1`) |
+| `tracing.service_name` | spannens `service.name` (standard `qtestframe`) |
+
+W3C Trace Context följs åt båda hållen: en förfrågan med en `traceparent`-rubrik fortsätter anroparens spår (och dess urvalsbeslut), och utgående anrop får en egen `traceparent`-rubrik. Hälsokontroller och insamlingar spåras inte. Exporten går inte genom serverns regler för utgående anslutningar (precis som syslog). Avsnittet **Mätvärden och spårning** i systeminställningarna visar antalet exporterade, misslyckade och kastade spann och insamlarens senaste fel.
+
+```yaml
+tracing:
+  enabled: true
+  endpoint: "http://otel-collector:4318"
+  headers_file: otlp-headers       # t.ex. Authorization=Bearer <token>
+  sample_ratio: "0.2"
+  service_name: qtestframe
+```
 
 ## Vad som bör övervakas
 
 | Signal | Hur |
 |---|---|
 | liveness och readiness | `/healthz`, `/readyz` (t.ex. Prometheus `blackbox_exporter`, modulen `http_2xx`) |
+| felandel och svarstid | `qtf_http_requests_total{status="5xx"}`, `qtf_http_request_duration_seconds` (se larmreglerna i `examples/monitoring/`) |
+| bakgrundsarbete | `qtf_jobs_total` med `result` `error`, `failed` eller `partial` |
 | tjänstens tillstånd | `systemctl is-active qtestframe`; enheten startar om servern vid fel |
 | fel | loggposter med `level=ERROR`; `stored system settings are invalid`; `tls reload failed` |
 | angrepp | många `login failed`, `second factor failed` eller misslyckade SCIM-autentiseringar från en adress |

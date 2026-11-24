@@ -44,7 +44,8 @@ func adOIDCSecret(provider string) string {
 // SecretSettings are the system settings (table system_settings) whose
 // values hold secrets: the value of a "string" setting is a JSON string;
 // an "oidc" setting is a list of providers whose client_secret is secret.
-var SecretSettings = map[string]string{"email.password": "string", "auth.oidc": "oidc", "similarity.embeddings.api_key": "string", "ai.api_key": "string"}
+var SecretSettings = map[string]string{"email.password": "string", "auth.oidc": "oidc", "similarity.embeddings.api_key": "string", "ai.api_key": "string",
+	"metrics.token": "string", "tracing.headers": "string"}
 
 // Keyring returns the keyring (nil when secrets are stored as plaintext).
 func (s *Store) Keyring() *secrets.Keyring { return s.keys }

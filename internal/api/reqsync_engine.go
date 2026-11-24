@@ -1053,6 +1053,7 @@ func (s *Server) runReqSync(ctx context.Context, p *Principal, pr *model.Project
 	if opt.dry {
 		return run, runErr
 	}
+	s.countJob("req_sync", run.Status)
 	failures := 0
 	if run.Status == "error" {
 		failures = cfg.Failures + 1

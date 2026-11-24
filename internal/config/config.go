@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/rom/qtestframe/internal/tracing"
 )
 
 // Config is the complete server configuration.
@@ -55,6 +57,12 @@ type Config struct {
 	// the hosts they may reach (protection against server-side request
 	// forgery).
 	Outbound Outbound `yaml:"outbound"`
+	// Metrics configures the Prometheus endpoint /metrics (off by
+	// default).
+	Metrics Metrics `yaml:"metrics"`
+	// Tracing configures the export of OpenTelemetry traces over OTLP/HTTP
+	// (off by default).
+	Tracing Tracing `yaml:"tracing"`
 
 	// Meta records where values came from (file keys, environment
 	// variables); filled by Load, not part of the YAML.
@@ -337,6 +345,93 @@ type Live struct {
 	// PresenceTTL is how long a viewer stays listed after their last
 	// presence heartbeat.
 	PresenceTTL time.Duration `yaml:"presence_ttl"`
+}
+
+// Metrics configures the Prometheus endpoint /metrics. It is off by
+// default; when on, it answers only requests that pass every configured
+// protection: the bearer token and the address allowlist. With neither
+// configured only the loopback address may scrape it.
+type Metrics struct {
+	Enabled bool `yaml:"enabled"`
+	// Listen is a separate host:port for /metrics ("" = the main
+	// listener); with it, the main listener does not serve /metrics.
+	Listen    string `yaml:"listen"`
+	TokenFile string `yaml:"token_file"`
+	Token     string `yaml:"-"`
+	// AllowedIPs are addresses or CIDR ranges that may scrape.
+	AllowedIPs []string `yaml:"allowed_ips"`
+}
+
+func (m Metrics) validate() []error {
+	var errs []error
+	if m.Listen != "" {
+		if _, port, err := net.SplitHostPort(m.Listen); err != nil || port == "" {
+			errs = append(errs, fmt.Errorf("metrics.listen %q must be host:port (e.g. \"127.0.0.1:9090\")", m.Listen))
+		}
+	}
+	for _, a := range m.AllowedIPs {
+		if !ValidIPOrCIDR(a) {
+			errs = append(errs, fmt.Errorf("metrics.allowed_ips: %q is not an IP address or CIDR range", a))
+		}
+	}
+	return errs
+}
+
+// ValidIPOrCIDR reports whether s is an IP address or a CIDR range.
+func ValidIPOrCIDR(s string) bool {
+	if net.ParseIP(s) != nil {
+		return true
+	}
+	_, _, err := net.ParseCIDR(s)
+	return err == nil
+}
+
+// Tracing configures OpenTelemetry tracing: spans of HTTP requests,
+// database queries and outgoing calls exported to an OTLP/HTTP collector.
+type Tracing struct {
+	Enabled bool `yaml:"enabled"`
+	// Endpoint is the OTLP/HTTP URL of the collector, e.g.
+	// http://otel-collector:4318 (/v1/traces is added to a bare host).
+	Endpoint string `yaml:"endpoint"`
+	// Headers are sent with every export as "key=value,key2=value2"
+	// (e.g. an authorization header); a secret.
+	HeadersFile string `yaml:"headers_file"`
+	Headers     string `yaml:"-"`
+	// SampleRatio is the share of new traces recorded, 0–1.
+	SampleRatio string `yaml:"sample_ratio"`
+	ServiceName string `yaml:"service_name"`
+}
+
+// ParseRatio parses a sample ratio (0–1).
+func ParseRatio(s string) (float64, error) {
+	f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil || f < 0 || f > 1 || f != f {
+		return 0, errors.New("must be a number from 0 to 1")
+	}
+	return f, nil
+}
+
+func (t Tracing) validate() []error {
+	var errs []error
+	if t.Endpoint != "" {
+		u, err := url.Parse(t.Endpoint)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errs = append(errs, errors.New("tracing.endpoint must be an absolute http(s) URL"))
+		}
+	}
+	if t.Enabled && t.Endpoint == "" {
+		errs = append(errs, errors.New("tracing.endpoint is required when tracing is enabled"))
+	}
+	if _, err := tracing.ParseHeaders(t.Headers); err != nil {
+		errs = append(errs, errors.New("tracing.headers must be key=value pairs separated by commas"))
+	}
+	if _, err := ParseRatio(t.SampleRatio); err != nil {
+		errs = append(errs, fmt.Errorf("tracing.sample_ratio %s", err))
+	}
+	if strings.TrimSpace(t.ServiceName) == "" || strings.ContainsAny(t.ServiceName, "\r\n") {
+		errs = append(errs, errors.New("tracing.service_name must be one line of text"))
+	}
+	return errs
 }
 
 // Similarity configures the similarity checks. Without embeddings the
@@ -800,6 +895,7 @@ func Default() Config {
 			ReplayBuffer: 512, PresenceTTL: 45 * time.Second},
 		AI: AI{Provider: AIAnthropic, Timeout: 2 * time.Minute, MaxTokens: 8192, RateLimit: 30,
 			Features: AIFeatures{DraftTests: true, ImproveRequirement: true, SummarizeRun: true, SuggestMappings: true, SuggestCriteria: true}},
+		Tracing: Tracing{SampleRatio: "1", ServiceName: "qtestframe"},
 		Secrets: Secrets{Provider: SecretsLocal, TPM: TPMKey{Device: "/dev/tpmrm0", PCRBank: "sha256"},
 			PKCS11: PKCS11Key{KeyLabel: "qtestframe-kek"}},
 	}
@@ -939,6 +1035,11 @@ var EnvVars = map[string]string{
 	"QTF_SECRETS_TPM_DEVICE":        "secrets.tpm.device",
 	"QTF_SECRETS_PKCS11_MODULE":     "secrets.pkcs11.module",
 	"QTF_SECRETS_PKCS11_PIN":        "secrets.pkcs11.pin",
+	"QTF_METRICS_ENABLED":           "metrics.enabled",
+	"QTF_METRICS_TOKEN":             "metrics.token",
+	"QTF_TRACING_ENABLED":           "tracing.enabled",
+	"QTF_TRACING_ENDPOINT":          "tracing.endpoint",
+	"QTF_TRACING_HEADERS":           "tracing.headers",
 }
 
 func (c *Config) initMeta() {
@@ -1002,6 +1103,9 @@ func applyEnv(c *Config) {
 	set("QTF_SECRETS_KEY_FILE", &c.Secrets.Local.KeyFile)
 	set("QTF_SECRETS_TPM_DEVICE", &c.Secrets.TPM.Device)
 	set("QTF_SECRETS_PKCS11_MODULE", &c.Secrets.PKCS11.Module)
+	setBool("QTF_METRICS_ENABLED", &c.Metrics.Enabled)
+	setBool("QTF_TRACING_ENABLED", &c.Tracing.Enabled)
+	set("QTF_TRACING_ENDPOINT", &c.Tracing.Endpoint)
 }
 
 // readSecret returns the trimmed contents of file. A relative path is
@@ -1049,6 +1153,26 @@ func (c *Config) resolveSecrets() error {
 			return err
 		}
 		c.Meta.FileKeys["ai.api_key"] = true
+	}
+	if c.Metrics.TokenFile != "" {
+		if c.Metrics.Token, err = readSecret(c.Metrics.TokenFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["metrics.token"] = true
+	}
+	if c.Tracing.HeadersFile != "" {
+		if c.Tracing.Headers, err = readSecret(c.Tracing.HeadersFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["tracing.headers"] = true
+	}
+	if env := os.Getenv("QTF_METRICS_TOKEN"); env != "" {
+		c.Metrics.Token = env
+		c.Meta.EnvKeys["metrics.token"] = "QTF_METRICS_TOKEN"
+	}
+	if env := os.Getenv("QTF_TRACING_HEADERS"); env != "" {
+		c.Tracing.Headers = env
+		c.Meta.EnvKeys["tracing.headers"] = "QTF_TRACING_HEADERS"
 	}
 	if env := os.Getenv("QTF_EMAIL_PASSWORD"); env != "" {
 		c.Email.Password = env
@@ -1206,6 +1330,8 @@ func (c *Config) Validate() error {
 	errs = append(errs, c.Similarity.Embeddings.validate()...)
 	errs = append(errs, c.AI.validate()...)
 	errs = append(errs, c.Outbound.validate()...)
+	errs = append(errs, c.Metrics.validate()...)
+	errs = append(errs, c.Tracing.validate()...)
 	if c.Email.On() && c.Server.BaseURL == "" {
 		errs = append(errs, errors.New("server.base_url is required for e-mail (links in the messages)"))
 	}

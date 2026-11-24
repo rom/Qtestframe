@@ -342,6 +342,25 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `outbound.denied_hosts` | lista | — | — | Värdar som utgående anrop aldrig når, t.ex. `metadata.google.internal` eller `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Neka utgående anrop till loopback-, privata, länklokala och andra icke-publika adresser (kontrolleras på adressen som faktiskt ansluts), om inte värden finns i `allowed_hosts`. Slå på den när servern nås från internet och användarna inte ska nå ert interna nät genom den. |
 
+### `metrics`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `metrics.enabled` | bool | `false` | `QTF_METRICS_ENABLED` | Visa Prometheus-mätvärden på `/metrics` (förfrågningar, svarstider, databaspoolen, Go-körtiden, bakgrundsjobb, inloggningar, liveanslutningar och antalet projekt, krav, tester och körningar). Av som standard. |
+| `metrics.listen` | text | — | — | En separat `värd:port` för `/metrics` (t.ex. `127.0.0.1:9090`) som öppnas vid start; huvudlyssnaren svarar då 404 på `/metrics`. Tom: huvudlyssnaren visar den. |
+| `metrics.token_file` | text | — | — | Fil med den bearer-token som en insamlare måste skicka (`Authorization: Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Token kan också sparas, krypterad, i systeminställningarna; den visas aldrig igen. `QTF_METRICS_TOKEN` vinner över båda. |
+| `metrics.allowed_ips` | lista | — | — | Adresser eller CIDR-intervall som får hämta `/metrics` (klientens adress, från `X-Forwarded-For` bara bakom `trusted_proxies`). Med en token också måste båda stämma; utan någon av dem får bara loopback-adressen hämta. |
+
+### `tracing`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `tracing.enabled` | bool | `false` | `QTF_TRACING_ENABLED` | Exportera OpenTelemetry-spår av HTTP-förfrågningar, databasfrågor och utgående anrop till `endpoint`. Av som standard. |
+| `tracing.endpoint` | text | — | `QTF_TRACING_ENDPOINT` | OTLP/HTTP-adress till insamlaren, t.ex. `http://otel-collector:4318`; `/v1/traces` läggs till en adress utan sökväg. Spann skickas som JSON i omgångar (var 5:e sekund eller 512 spann). |
+| `tracing.headers_file` | text | — | — | Fil med rubriker som skickas med varje export, `nyckel=värde`-par åtskilda med komma (t.ex. `Authorization=Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Kan också sparas, krypterade, i systeminställningarna. `QTF_TRACING_HEADERS` vinner över båda. |
+| `tracing.sample_ratio` | text | `1` | — | Andel nya spår som spelas in, 0–1 (`0.1` = vart tionde). En förfrågan med en `traceparent`-rubrik följer anroparens beslut. |
+| `tracing.service_name` | text | `qtestframe` | — | `service.name` för de exporterade spannen. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler
@@ -364,6 +383,8 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_LIVE_ENABLED` | `live.enabled` (`1` eller `true` = på, allt annat = av) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
+| `QTF_METRICS_ENABLED` | `metrics.enabled` (`true` eller `1`) |
+| `QTF_METRICS_TOKEN` | bearer-token för `/metrics`; vinner över `metrics.token_file` och en token sparad i webbklienten |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` eller `true` = på) |
 | `QTF_RUNNER_WEB_BROWSERS_PATH` | `runner.web.browsers_path` |
 | `QTF_RUNNER_WEB_ENABLED` | `runner.web.enabled` (`1` eller `true` = på) |
@@ -379,6 +400,9 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_SERVER_BASE_URL` | `server.base_url` |
 | `QTF_SERVER_LISTEN` | `server.listen` |
 | `QTF_SERVER_PORT` | porten i `server.listen` (värden behålls) |
+| `QTF_TRACING_ENABLED` | `tracing.enabled` (`true` eller `1`) |
+| `QTF_TRACING_ENDPOINT` | `tracing.endpoint` |
+| `QTF_TRACING_HEADERS` | rubrikerna för spårexporten; vinner över `tracing.headers_file` och rubriker sparade i webbklienten |
 | `QTF_OIDC_<NAME>_CLIENT_SECRET` | klienthemligheten för OIDC-leverantören `<namn>` (versaler); vinner över `client_secret_file` och en hemlighet sparad i webbklienten |
 | `CREDENTIALS_DIRECTORY` | sätts av systemd (`LoadCredential=`): relativa `*_file`-sökvägar slås upp där, och den är läsbar efter låsningen |
 | `STATE_DIRECTORY` | sätts av systemd (`StateDirectory=`): standardplats för nyckelfilen när databasen inte är SQLite |

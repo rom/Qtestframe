@@ -37,6 +37,7 @@ import {
   INFO_SECTIONS,
   isSection,
   pendingRestart,
+  ratioPercent,
   searchSettings,
   SECTION_GROUPS,
   secretsRows,
@@ -45,6 +46,7 @@ import {
   sourceSeverity,
   TESTABLE,
   testValues,
+  tracingFailing,
   type FormValue,
   type ImportPlan,
   type OidcProvider,
@@ -564,7 +566,7 @@ function resetProviders() {
           <Message v-if="current === 'similarity'" severity="warn" :closable="false">{{ t('sysSettings.similarityWarning') }}</Message>
           <Message v-if="current === 'ai'" severity="warn" :closable="false">{{ t('sysSettings.aiWarning') }}</Message>
           <Message v-if="current === 'outbound'" severity="info" :closable="false">{{ t('sysSettings.outboundNote') }}</Message>
-          <p v-if="current === 'runner' || current === 'live' || current === 'server'" class="small"><i class="pi pi-refresh" aria-hidden="true" /> {{ t(`sysSettings.restartNote.${current}`) }}</p>
+          <p v-if="current === 'runner' || current === 'live' || current === 'server' || current === 'monitoring'" class="small"><i class="pi pi-refresh" aria-hidden="true" /> {{ t(`sysSettings.restartNote.${current}`) }}</p>
           <p v-if="current === 'email'" class="small muted">{{ t('sysSettings.emailTestTo', { email: auth.me?.user?.email ?? '' }) }}</p>
           <p v-if="current === 'tokens'" class="small muted">{{ t('sysSettings.tokensNote') }}</p>
           <!-- encryption of stored secrets: read-only, set in the file -->
@@ -586,6 +588,38 @@ function resetProviders() {
               <dd>{{ t('sysSettings.secrets.valuesText', { encrypted: data.secrets.encrypted, plaintext: data.secrets.plaintext }) }}</dd>
             </dl>
             <Message v-if="data.secrets.plaintext > 0" severity="warn" :closable="false">{{ t('sysSettings.secrets.plaintextNote') }}</Message>
+          </div>
+          <!-- state of metrics and tracing: read-only -->
+          <div v-if="current === 'monitoring' && data.monitoring" class="sys-secrets" role="group" aria-labelledby="h-sys-monitoring">
+            <h3 id="h-sys-monitoring" class="plain-heading"><i class="pi pi-chart-line" aria-hidden="true" /> {{ t('sysSettings.monitoring.title') }}</h3>
+            <dl class="sys-secrets-list">
+              <dt>{{ t('sysSettings.monitoring.metrics') }}</dt>
+              <dd><Tag :value="data.monitoring.metrics_enabled ? t('sysSettings.monitoring.on') : t('sysSettings.monitoring.off')" :severity="data.monitoring.metrics_enabled ? 'success' : 'secondary'" /></dd>
+              <template v-if="data.monitoring.metrics_enabled">
+                <dt>{{ t('sysSettings.monitoring.address') }}</dt>
+                <dd class="mono">{{ data.monitoring.metrics_listen ? t('sysSettings.monitoring.separateListener', { addr: data.monitoring.metrics_listen }) : t('sysSettings.monitoring.mainListener') }}</dd>
+                <dt>{{ t('sysSettings.monitoring.protection') }}</dt>
+                <dd>{{ data.monitoring.metrics_protection.map((p) => t(`sysSettings.monitoring.protectionKinds.${p}`)).join(' + ') }}</dd>
+              </template>
+              <dt>{{ t('sysSettings.monitoring.tracing') }}</dt>
+              <dd><Tag :value="data.monitoring.tracing_enabled ? t('sysSettings.monitoring.on') : t('sysSettings.monitoring.off')" :severity="data.monitoring.tracing_enabled ? 'success' : 'secondary'" /></dd>
+              <template v-if="data.monitoring.tracing_enabled">
+                <dt>{{ t('sysSettings.monitoring.endpoint') }}</dt>
+                <dd class="mono">{{ data.monitoring.tracing_endpoint }}</dd>
+                <dt>{{ t('sysSettings.monitoring.ratio') }}</dt>
+                <dd>{{ t('sysSettings.monitoring.ratioValue', { pct: ratioPercent(data.monitoring.sample_ratio) }) }}</dd>
+              </template>
+              <template v-if="data.monitoring.tracing_enabled || data.monitoring.spans.exported || data.monitoring.spans.failed">
+                <dt>{{ t('sysSettings.monitoring.spans') }}</dt>
+                <dd>{{ t('sysSettings.monitoring.spansText', { exported: data.monitoring.spans.exported, failed: data.monitoring.spans.failed, dropped: data.monitoring.spans.dropped, queued: data.monitoring.spans.queue_length }) }}</dd>
+                <dt>{{ t('sysSettings.monitoring.lastExport') }}</dt>
+                <dd>{{ data.monitoring.spans.last_export ? formatDateTime(data.monitoring.spans.last_export) : t('sysSettings.monitoring.never') }}</dd>
+              </template>
+            </dl>
+            <Message v-if="tracingFailing(data.monitoring)" severity="error" :closable="false">
+              <b>{{ t('sysSettings.monitoring.lastError') }}:</b> {{ data.monitoring.spans.last_error }} ({{ formatDateTime(data.monitoring.spans.last_error_at) }})
+            </Message>
+            <p v-if="data.monitoring.metrics_protection.includes('token')" class="small muted">{{ t('sysSettings.monitoring.tokenNote') }}</p>
           </div>
           <div class="sys-fields">
             <SystemSettingField

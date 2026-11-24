@@ -416,6 +416,10 @@ Once you change the providers here, this list replaces the providers of the conf
 
 Choose the **Log level** and **Log format** of the server log, and whether the log (including the audit trail) is also sent to a central **syslog** server: network (`udp`, `tcp`, `tls` or a local socket), address, message format, facility and tag. **Send test message** sends one message with the values in the form, before you save them; the result is shown and read out next to the button. Changes apply at once. Certificates for syslog over TLS are set in the configuration file.
 
+### Metrics and tracing
+
+Both are off by default. **Prometheus metrics** turns on the address `/metrics` for a monitoring system: requests, response times, the database connections, background jobs, sign-ins and the number of projects, requirements, tests and runs. Protect it with a **Bearer token** (write-only, like the other secrets on this page) or a list of **Allowed addresses**; with neither, only the server itself may read it. A **Separate metrics address** serves it on a port of its own after the next restart. **OpenTelemetry tracing** sends a trace of every request, with its database queries and outgoing calls, to a **Collector URL**; the **Sample ratio** decides how many requests are traced. The **Status** box shows where the metrics are served and how they are protected, and how many spans reached the collector, with its last error. See [Logging and monitoring](../../admin-guide/en/logging-and-monitoring.md#prometheus-metrics) in the administrator guide for the metrics and an example dashboard.
+
 ### E-mail server
 
 The SMTP server for notifications, invitations and reports: host, port, encryption (`starttls`, `tls` or `none`), user name, password, sender address and name, timeout and the hour of the daily digest. The password is write-only. **Send test e-mail** sends a message to your own address with the values in the form (and the stored password, unless you typed a new one). Turning e-mail off stops all outgoing mail.

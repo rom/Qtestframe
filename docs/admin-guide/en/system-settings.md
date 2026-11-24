@@ -39,6 +39,7 @@ Use environment variables or locks for what must not change from the web client 
 | General, Sign-in and passwords, API tokens, Single sign-on, Logging and syslog, E-mail (SMTP), Outgoing connections, Similarity, AI assistance | **at once** – the e-mail sender, the OIDC providers (unchanged providers are kept, so sign-ins in progress continue), the logger, the sign-in limits and the outgoing HTTP client follow the new values |
 | Live updates | the switch and the heartbeat **at once** (new connections); the connection limits, the replay buffer and the presence timeout **after a restart** |
 | Server and database | the HTTP read and write timeouts **after a restart**; everything else is set in the file and shown with its source (listen address, TLS files, database, first start, hardening, key provider) |
+| Metrics and tracing | **at once** – the switches, the token, the allowlist and the trace export; the separate metrics address (`metrics.listen`) **after a restart**. The section also shows the state: where `/metrics` is served, how it is protected, and the spans exported, failed and dropped with the last export and the last error |
 | Script and web test runner | **after a restart** – the runner and its sandbox are set up before the process is locked down (Landlock execute paths, work directory); the value is stored at once and the page shows the value in use until then |
 | Retention and backups, Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them (the trash keeps deleted items for 30 days, which is fixed) |
 
@@ -102,6 +103,15 @@ The settings the page offers, generated from `internal/settings`:
 | Logging and syslog | `logging.syslog.ca_file` | text | shown only (file) |
 | Logging and syslog | `logging.syslog.cert_file` | text | shown only (file) |
 | Logging and syslog | `logging.syslog.key_file` | text | shown only (file) |
+| Metrics and tracing | `metrics.enabled` | on/off | at once |
+| Metrics and tracing | `metrics.listen` | text | after a restart |
+| Metrics and tracing | `metrics.token` | secret (write-only) | at once |
+| Metrics and tracing | `metrics.allowed_ips` | list | at once |
+| Metrics and tracing | `tracing.enabled` | on/off | at once |
+| Metrics and tracing | `tracing.endpoint` | text | at once |
+| Metrics and tracing | `tracing.headers` | secret (write-only) | at once |
+| Metrics and tracing | `tracing.sample_ratio` | text | at once |
+| Metrics and tracing | `tracing.service_name` | text | at once |
 | E-mail (SMTP) | `email.enabled` | on/off | at once |
 | E-mail (SMTP) | `email.host` | text | at once |
 | E-mail (SMTP) | `email.port` | 1–65535 | at once |

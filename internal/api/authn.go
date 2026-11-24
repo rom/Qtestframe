@@ -427,6 +427,7 @@ func (s *Server) loginInfo(ctx context.Context, p *Principal, res *meResponse) e
 
 // recordLogin stores a sign-in attempt; failures are only logged.
 func (s *Server) recordLogin(r *http.Request, userID, method string, ok bool) {
+	s.countLogin(method, ok)
 	e := &model.LoginEvent{UserID: userID, Success: ok, Method: method, IP: s.clientIP(r), UserAgent: r.UserAgent()}
 	if err := s.Store.RecordLogin(r.Context(), e); err != nil {
 		s.Log.Warn("login event not recorded", "err", err)
@@ -575,6 +576,8 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		s.Log.Warn("login failed", "email", store.NormalizeEmail(req.Email), "remote", s.clientIP(r))
 		if u != nil {
 			s.recordLogin(r, u.ID, "local", false)
+		} else {
+			s.countLogin("local", false)
 		}
 		writeError(w, http.StatusUnauthorized, "unauthorized", "invalid credentials")
 		return
@@ -806,6 +809,7 @@ func (s *Server) getState(w http.ResponseWriter, r *http.Request, v any) error {
 
 func (s *Server) loginError(w http.ResponseWriter, r *http.Request, provider string, err error) {
 	s.Log.Warn("external login failed", "provider", provider, "err", err, "remote", s.clientIP(r))
+	s.countLogin("external", false)
 	http.Redirect(w, r, "/login?error="+url.QueryEscape("Sign-in failed"), http.StatusFound)
 }
 

@@ -215,6 +215,47 @@ func (db *DB) Migrate(ctx context.Context) (int, error) {
 	return db.apply(ctx, ms)
 }
 
+// Pending returns the number of embedded migrations not applied to the
+// database (all of them when the migrations table is missing).
+func (db *DB) Pending(ctx context.Context) (int, error) {
+	ms, err := Migrations()
+	if err != nil {
+		return 0, err
+	}
+	return db.pending(ctx, ms)
+}
+
+func (db *DB) pending(ctx context.Context, ms []Migration) (int, error) {
+	applied := map[int]bool{}
+	rows, err := db.QueryContext(ctx, `SELECT version FROM schema_migrations`)
+	if err != nil {
+		var n int
+		// no table yet: nothing is applied
+		if e := db.QueryRowContext(ctx, `SELECT 1`).Scan(&n); e == nil {
+			return len(ms), nil
+		}
+		return 0, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v int
+		if err := rows.Scan(&v); err != nil {
+			return 0, err
+		}
+		applied[v] = true
+	}
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+	n := 0
+	for _, m := range ms {
+		if !applied[m.Version] {
+			n++
+		}
+	}
+	return n, nil
+}
+
 func (db *DB) apply(ctx context.Context, ms []Migration) (int, error) {
 	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL)`); err != nil {
 		return 0, fmt.Errorf("db: migrations table: %w", err)

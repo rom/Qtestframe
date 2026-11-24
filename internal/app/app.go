@@ -732,11 +732,26 @@ func cmdServe(args []string, env Env) error {
 	if err != nil {
 		return err
 	}
+	// the separate listener of /metrics (metrics.listen), opened before
+	// the process is locked down
+	var mln net.Listener
+	if addr := srv.MetricsListen(); addr != "" {
+		if mln, err = net.Listen("tcp", addr); err != nil {
+			ln.Close()
+			return fmt.Errorf("metrics listener: %w", err)
+		}
+	}
+	closeAll := func() {
+		ln.Close()
+		if mln != nil {
+			mln.Close()
+		}
+	}
 	tlsOn := cfg.Server.TLSCert != ""
 	if tlsOn {
 		certs, err := newCertReloader(cfg.Server.TLSCert, cfg.Server.TLSKey)
 		if err != nil {
-			ln.Close()
+			closeAll()
 			return err
 		}
 		go certs.watch(ctx, log)
@@ -757,7 +772,7 @@ func cmdServe(args []string, env Env) error {
 	// All files needed at start-up are open: lock the process down.
 	rep, err := hardening.Apply(hardeningOptions(cfg))
 	if err != nil {
-		ln.Close()
+		closeAll()
 		return fmt.Errorf("hardening: %w", err)
 	}
 	log.Info("hardening", "applied", rep.Applied, "skipped", rep.Skipped)
@@ -784,8 +799,16 @@ func cmdServe(args []string, env Env) error {
 	// open event streams never become idle, so shutdown ends them
 	srv.StartLive(ctx)
 	hs.RegisterOnShutdown(srv.StopLive)
-	errc := make(chan error, 1)
+	errc := make(chan error, 2)
 	go func() { errc <- hs.Serve(ln) }()
+	var ms *http.Server
+	if mln != nil {
+		// plain HTTP: keep it on an internal address
+		ms = &http.Server{Handler: srv.MetricsHandler(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second,
+			WriteTimeout: 30 * time.Second, ErrorLog: slog.NewLogLogger(log.Handler(), slog.LevelWarn)}
+		go func() { errc <- ms.Serve(mln) }()
+		log.Info("metrics listening", "addr", mln.Addr().String())
+	}
 	log.Info("qtestframe listening", "addr", ln.Addr().String(), "tls", tlsOn, "version", Version, "db", cfg.Database.Driver)
 	if env.Ready != nil {
 		env.Ready(ln.Addr().String())
@@ -799,8 +822,14 @@ func cmdServe(args []string, env Env) error {
 	sctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	err = hs.Shutdown(sctx)
+	if ms != nil {
+		_ = ms.Shutdown(sctx)
+	}
 	srv.WaitJobsStopped(10 * time.Second) // jobs end when ctx does
 	srv.WaitMail()                        // e-mails in flight (each is bounded by email.timeout)
+	if terr := srv.ShutdownTracing(sctx); terr != nil {
+		log.Warn("tracing: last spans not exported", "err", terr)
+	}
 	return err
 }
 

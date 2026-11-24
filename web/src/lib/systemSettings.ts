@@ -108,6 +108,44 @@ export interface SystemSettings {
   logging_runtime: boolean
   /** encryption of stored secrets (read-only; section secrets of the file) */
   secrets?: SecretsInfo
+  /** state of metrics and tracing (section monitoring) */
+  monitoring?: MonitoringInfo
+}
+
+/** The state of the Prometheus endpoint and of the trace export. */
+export interface MonitoringInfo {
+  metrics_enabled: boolean
+  /** separate address of /metrics in use ("" = the main listener) */
+  metrics_listen: string
+  metrics_protection: MetricsProtection[]
+  tracing_enabled: boolean
+  tracing_endpoint: string
+  sample_ratio: number
+  spans: {
+    exported: number
+    dropped: number
+    failed: number
+    last_export?: string
+    last_error?: string
+    last_error_at?: string
+    queue_length: number
+    queue_maximum: number
+  }
+}
+
+export type MetricsProtection = 'token' | 'allowlist' | 'loopback'
+
+/** A sample ratio as a percentage for display (0.1 → "10", 0.005 → "0.5"). */
+export function ratioPercent(ratio: number): string {
+  const pct = Math.round(Math.min(Math.max(ratio, 0), 1) * 10000) / 100
+  return String(pct)
+}
+
+/** Whether the trace export needs attention: on, and its last error is newer than its last success. */
+export function tracingFailing(m: MonitoringInfo): boolean {
+  if (!m.tracing_enabled || !m.spans.last_error_at) return false
+  if (!m.spans.last_export) return true
+  return Date.parse(m.spans.last_error_at) > Date.parse(m.spans.last_export)
 }
 
 /** The key provider protecting the stored secrets (GET /admin/settings). */
@@ -142,7 +180,7 @@ export interface TestResult {
  * and link to the pages that manage them.
  */
 export const SECTION_GROUPS = {
-  server: ['general', 'server', 'logging', 'retention'],
+  server: ['general', 'server', 'logging', 'monitoring', 'retention'],
   access: ['security', 'tokens', 'oidc', 'mfa', 'authorisation'],
   services: ['email', 'outbound', 'runner', 'live', 'similarity', 'ai'],
 } as const

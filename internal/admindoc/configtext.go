@@ -629,6 +629,42 @@ var keyDocs = map[string]text{
 		"Optional price per million output tokens.",
 		"Valfritt pris per miljon utdata-token.",
 	},
+	"metrics.enabled": {
+		"Serve Prometheus metrics on `/metrics` (requests, latency, database pool, Go runtime, background jobs, sign-ins, live connections and the number of projects, requirements, tests and runs). Off by default.",
+		"Visa Prometheus-mätvärden på `/metrics` (förfrågningar, svarstider, databaspoolen, Go-körtiden, bakgrundsjobb, inloggningar, liveanslutningar och antalet projekt, krav, tester och körningar). Av som standard.",
+	},
+	"metrics.listen": {
+		"A separate `host:port` for `/metrics` (e.g. `127.0.0.1:9090`), opened at start-up; the main listener then answers `/metrics` with 404. Empty: the main listener serves it.",
+		"En separat `värd:port` för `/metrics` (t.ex. `127.0.0.1:9090`) som öppnas vid start; huvudlyssnaren svarar då 404 på `/metrics`. Tom: huvudlyssnaren visar den.",
+	},
+	"metrics.token_file": {
+		"File with the bearer token a scraper must send (`Authorization: Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). The token can also be stored, encrypted, in the system settings; it is never shown again. `QTF_METRICS_TOKEN` wins over both.",
+		"Fil med den bearer-token som en insamlare måste skicka (`Authorization: Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Token kan också sparas, krypterad, i systeminställningarna; den visas aldrig igen. `QTF_METRICS_TOKEN` vinner över båda.",
+	},
+	"metrics.allowed_ips": {
+		"Addresses or CIDR ranges that may scrape `/metrics` (the client address, from `X-Forwarded-For` only behind `trusted_proxies`). With a token too, both must match; with neither, only the loopback address may scrape.",
+		"Adresser eller CIDR-intervall som får hämta `/metrics` (klientens adress, från `X-Forwarded-For` bara bakom `trusted_proxies`). Med en token också måste båda stämma; utan någon av dem får bara loopback-adressen hämta.",
+	},
+	"tracing.enabled": {
+		"Export OpenTelemetry traces of HTTP requests, database queries and outgoing calls to `endpoint`. Off by default.",
+		"Exportera OpenTelemetry-spår av HTTP-förfrågningar, databasfrågor och utgående anrop till `endpoint`. Av som standard.",
+	},
+	"tracing.endpoint": {
+		"OTLP/HTTP address of the collector, e.g. `http://otel-collector:4318`; `/v1/traces` is added to an address without a path. Spans are sent as JSON in batches (every 5 seconds or 512 spans).",
+		"OTLP/HTTP-adress till insamlaren, t.ex. `http://otel-collector:4318`; `/v1/traces` läggs till en adress utan sökväg. Spann skickas som JSON i omgångar (var 5:e sekund eller 512 spann).",
+	},
+	"tracing.headers_file": {
+		"File with headers sent with every export, `key=value` pairs separated by commas (e.g. `Authorization=Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). Can also be stored, encrypted, in the system settings. `QTF_TRACING_HEADERS` wins over both.",
+		"Fil med rubriker som skickas med varje export, `nyckel=värde`-par åtskilda med komma (t.ex. `Authorization=Bearer <token>`; relativ: i `$CREDENTIALS_DIRECTORY`). Kan också sparas, krypterade, i systeminställningarna. `QTF_TRACING_HEADERS` vinner över båda.",
+	},
+	"tracing.sample_ratio": {
+		"Share of new traces that are recorded, 0–1 (`0.1` = one in ten). A request with a `traceparent` header follows the decision of its caller.",
+		"Andel nya spår som spelas in, 0–1 (`0.1` = vart tionde). En förfrågan med en `traceparent`-rubrik följer anroparens beslut.",
+	},
+	"tracing.service_name": {
+		"`service.name` of the exported spans.",
+		"`service.name` för de exporterade spannen.",
+	},
 	"system_settings.locked": {
 		"Settings that cannot be changed in **Administration → System settings**: keys (`logging.level`), prefixes ending in `.*` (`email.*`) or `*`. Their stored overrides are ignored.",
 		"Inställningar som inte kan ändras under **Administration → Systeminställningar**: nycklar (`logging.level`), prefix som slutar med `.*` (`email.*`) eller `*`. Deras sparade värden ignoreras.",
@@ -720,6 +756,11 @@ var envDocs = map[string]text{
 	"QTF_EMAIL_USERNAME":            {"`email.username`", "`email.username`"},
 	"QTF_EMAIL_FROM":                {"`email.from`", "`email.from`"},
 	"QTF_EMAIL_PORT":                {"`email.port` (ignored when not a number)", "`email.port` (ignoreras om det inte är ett tal)"},
+	"QTF_METRICS_ENABLED":           {"`metrics.enabled` (`true` or `1`)", "`metrics.enabled` (`true` eller `1`)"},
+	"QTF_METRICS_TOKEN":             {"the bearer token of `/metrics`; wins over `metrics.token_file` and a token stored in the web client", "bearer-token för `/metrics`; vinner över `metrics.token_file` och en token sparad i webbklienten"},
+	"QTF_TRACING_ENABLED":           {"`tracing.enabled` (`true` or `1`)", "`tracing.enabled` (`true` eller `1`)"},
+	"QTF_TRACING_ENDPOINT":          {"`tracing.endpoint`", "`tracing.endpoint`"},
+	"QTF_TRACING_HEADERS":           {"the headers of the trace export; win over `tracing.headers_file` and headers stored in the web client", "rubrikerna för spårexporten; vinner över `tracing.headers_file` och rubriker sparade i webbklienten"},
 	"QTF_EMAIL_PASSWORD":            {"the SMTP password; wins over `email.password_file` and a password stored in the web client", "SMTP-lösenordet; vinner över `email.password_file` och ett lösenord sparat i webbklienten"},
 	"QTF_RUNNER_ENABLED":            {"`runner.enabled` (`1` or `true` = on)", "`runner.enabled` (`1` eller `true` = på)"},
 	"QTF_LIVE_ENABLED":              {"`live.enabled` (`1` or `true` = on, anything else = off)", "`live.enabled` (`1` eller `true` = på, allt annat = av)"},

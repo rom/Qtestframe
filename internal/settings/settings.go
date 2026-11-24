@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/mail"
 	"net/url"
 	"os"
@@ -27,6 +28,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/tracing"
 )
 
 // Kind is the value type of a setting.
@@ -70,7 +72,7 @@ const (
 )
 
 // Sections of the administration view, in order.
-var Sections = []string{"general", "server", "security", "tokens", "oidc", "logging", "email", "outbound", "runner", "live", "similarity", "ai", "retention"}
+var Sections = []string{"general", "server", "security", "tokens", "oidc", "logging", "monitoring", "email", "outbound", "runner", "live", "similarity", "ai", "retention"}
 
 // Def describes one setting.
 type Def struct {
@@ -219,6 +221,20 @@ var Registry = []*Def{
 	str("logging.syslog.cert_file", "logging", ReadOnly, func(c *config.Config) *string { return &c.Logging.Syslog.CertFile }),
 	str("logging.syslog.key_file", "logging", ReadOnly, func(c *config.Config) *string { return &c.Logging.Syslog.KeyFile }),
 
+	// monitoring: the Prometheus endpoint and OpenTelemetry tracing (off
+	// by default; the separate metrics listener is opened at start-up)
+	flag("metrics.enabled", "monitoring", Runtime, func(c *config.Config) *bool { return &c.Metrics.Enabled }),
+	checked(optional(str("metrics.listen", "monitoring", Restart, func(c *config.Config) *string { return &c.Metrics.Listen })), checkListen),
+	{Key: "metrics.token", Section: "monitoring", Kind: Secret, Apply: Runtime, Optional: true, Check: oneLine,
+		get: func(c *config.Config) any { return c.Metrics.Token }, set: func(c *config.Config, v any) { c.Metrics.Token = v.(string) }},
+	itemChecked(list("metrics.allowed_ips", "monitoring", Runtime, func(c *config.Config) *[]string { return &c.Metrics.AllowedIPs }), checkIPOrCIDR),
+	flag("tracing.enabled", "monitoring", Runtime, func(c *config.Config) *bool { return &c.Tracing.Enabled }),
+	checked(optional(str("tracing.endpoint", "monitoring", Runtime, func(c *config.Config) *string { return &c.Tracing.Endpoint })), checkEndpoint),
+	{Key: "tracing.headers", Section: "monitoring", Kind: Secret, Apply: Runtime, Optional: true, Check: checkHeaders,
+		get: func(c *config.Config) any { return c.Tracing.Headers }, set: func(c *config.Config, v any) { c.Tracing.Headers = v.(string) }},
+	checked(str("tracing.sample_ratio", "monitoring", Runtime, func(c *config.Config) *string { return &c.Tracing.SampleRatio }), checkRatio),
+	checked(str("tracing.service_name", "monitoring", Runtime, func(c *config.Config) *string { return &c.Tracing.ServiceName }), checkTag),
+
 	// e-mail
 	{Key: "email.enabled", Section: "email", Kind: Bool, Apply: Runtime,
 		get: func(c *config.Config) any { return c.Email.Enabled == nil || *c.Email.Enabled },
@@ -315,6 +331,8 @@ var FileOnly = map[string]string{
 	"email.password_file":                "a secret file read at start-up (the password itself can be set here)",
 	"similarity.embeddings.api_key_file": "a secret file read at start-up (the key itself can be set here)",
 	"ai.api_key_file":                    "a secret file read at start-up (the key itself can be set here)",
+	"metrics.token_file":                 "a secret file read at start-up (the token itself can be set here)",
+	"tracing.headers_file":               "a secret file read at start-up (the headers themselves can be set here)",
 	"bootstrap.admin_password":           "a secret used once, at the first start",
 	"bootstrap.admin_password_file":      "a secret file used once, at the first start",
 	"auth.saml":                          "SAML providers need key and certificate files: listed read-only",
@@ -435,6 +453,38 @@ func checkTemperature(v any) error {
 func checkPrice(v any) error {
 	_, err := config.ParsePrice(v.(string))
 	return err
+}
+
+// checkListen: host:port (or empty).
+func checkListen(v any) error {
+	s := v.(string)
+	if s == "" {
+		return nil
+	}
+	if _, port, err := net.SplitHostPort(s); err != nil || port == "" || strings.ContainsAny(s, " \r\n") {
+		return errors.New("must be host:port, e.g. 127.0.0.1:9090")
+	}
+	return nil
+}
+
+func checkIPOrCIDR(s string) error {
+	if !config.ValidIPOrCIDR(s) {
+		return fmt.Errorf("%q is not an IP address or CIDR range such as 10.0.0.0/8", s)
+	}
+	return nil
+}
+
+func checkRatio(v any) error {
+	_, err := config.ParseRatio(v.(string))
+	return err
+}
+
+// checkHeaders: "key=value" pairs separated by commas (or empty).
+func checkHeaders(v any) error {
+	if _, err := tracing.ParseHeaders(v.(string)); err != nil {
+		return errors.New("must be key=value pairs separated by commas, e.g. Authorization=Bearer <token>")
+	}
+	return nil
 }
 
 // checkEndpoint: an absolute http(s) URL (or empty).

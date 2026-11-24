@@ -307,6 +307,7 @@ func (s *Server) endJob(ctx context.Context, tenantID string, j *model.ScriptJob
 	if ok, err := s.Store.FinishJob(ctx, j.ID, state, message); err != nil || !ok {
 		return
 	}
+	s.countJob("script_job", state)
 	if _, err := s.Store.RestoreExecution(ctx, tenantID, j.ExecutionID, j.Previous, message); err != nil {
 		s.Log.Warn("job: restore execution", "job", j.ID, "err", err)
 	}
@@ -327,6 +328,7 @@ func (s *Server) runJob(ctx context.Context, j *model.ScriptJob, p *Principal) {
 	if e.Status != model.ResultInProgress {
 		// someone recorded a result while the job was queued
 		_, _ = s.Store.FinishJob(ctx, j.ID, model.JobCancelled, "the result was set by hand while the test was queued")
+		s.countJob("script_job", model.JobCancelled)
 		return
 	}
 	rd, err := s.executionReadiness(ctx, tenant, e)
@@ -447,6 +449,7 @@ func (s *Server) runJob(ctx context.Context, j *model.ScriptJob, p *Principal) {
 		state = model.JobSkipped
 	}
 	_, _ = s.Store.FinishJob(ctx, j.ID, state, message)
+	s.countJob("script_job", state)
 	s.audit(ctx, p, "execution.script", "execution", e.ID, e.TestKey+" "+status+" (background job)")
 	s.afterExecutionChange(r, p, e, after, runBefore)
 	if reqs := s.requirementsOfTests(ctx, p, run.ProjectID, []string{e.TestCaseID}); len(reqs) > 0 {

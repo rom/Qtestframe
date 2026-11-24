@@ -413,6 +413,10 @@ När du ändrat leverantörerna här ersätter den här listan leverantörerna i
 
 Välj **Loggnivå** och **Loggformat** för serverloggen, och om loggen (även händelseloggen) också ska skickas till en central **syslog**-server: nätverk (`udp`, `tcp`, `tls` eller en lokal socket), adress, meddelandeformat, facility och tagg. **Skicka testmeddelande** skickar ett meddelande med värdena i formuläret, innan du sparar dem; resultatet visas och läses upp vid knappen. Ändringar gäller direkt. Certifikat för syslog över TLS anges i konfigurationsfilen.
 
+### Mätvärden och spårning
+
+Båda är av som standard. **Prometheus-mätvärden** slår på adressen `/metrics` för ett övervakningssystem: förfrågningar, svarstider, databasanslutningarna, bakgrundsjobb, inloggningar och antalet projekt, krav, tester och körningar. Skydda den med en **Bearer-token** (kan bara skrivas, som de andra hemligheterna på sidan) eller en lista med **Tillåtna adresser**; utan någon av dem får bara servern själv läsa den. En **Separat adress för mätvärden** visar den på en egen port efter nästa omstart. **OpenTelemetry-spårning** skickar ett spår av varje förfrågan, med dess databasfrågor och utgående anrop, till **Insamlarens adress**; **Urvalsandel** avgör hur många förfrågningar som spåras. Rutan **Status** visar var mätvärdena visas och hur de skyddas, och hur många spann som nått insamlaren, med dess senaste fel. Se [Loggning och övervakning](../../admin-guide/sv/logging-and-monitoring.md#prometheus-mätvärden) i administratörshandboken för mätvärdena och en exempelpanel.
+
 ### E-postserver
 
 SMTP-servern för aviseringar, inbjudningar och rapporter: värd, port, kryptering (`starttls`, `tls` eller `none`), användarnamn, lösenord, avsändaradress och avsändarnamn, tidsgräns och timmen för den dagliga sammanfattningen. Lösenordet kan bara skrivas. **Skicka testmejl** skickar ett meddelande till din egen adress med värdena i formuläret (och det sparade lösenordet, om du inte skrivit ett nytt). Stänger du av e-post skickas ingen e-post alls.

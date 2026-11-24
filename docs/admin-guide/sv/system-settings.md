@@ -39,6 +39,7 @@ Använd miljövariabler eller lås för det som inte får ändras från webbklie
 | Allmänt, Inloggning och lösenord, API-tokens, Enkel inloggning, Loggning och syslog, E-post (SMTP), Utgående anslutningar, Likhet, AI-assistans | **direkt** – e-postavsändaren, OIDC-leverantörerna (oförändrade leverantörer behålls, så pågående inloggningar fortsätter), loggningen, inloggningsgränserna och den utgående HTTP-klienten följer de nya värdena |
 | Liveuppdateringar | brytaren och pulsen **direkt** (nya anslutningar); anslutningsgränserna, repriskbufferten och tidsgränsen för närvaro **efter en omstart** |
 | Server och databas | HTTP-tidsgränserna för läsning och skrivning **efter en omstart**; allt annat anges i filen och visas med sin källa (lyssningsadress, TLS-filer, databas, första start, härdning, nyckelleverantör) |
+| Mätvärden och spårning | **direkt** – brytarna, token, adresslistan och spårexporten; den separata adressen för mätvärden (`metrics.listen`) **efter en omstart**. Avsnittet visar också läget: var `/metrics` visas, hur den skyddas, och antalet exporterade, misslyckade och kastade spann med senaste export och senaste fel |
 | Körning av skript och webbtester | **efter en omstart** – körningen och dess sandlåda sätts upp innan processen låses (Landlocks körbara sökvägar, arbetskatalogen); värdet sparas direkt och sidan visar värdet som används tills dess |
 | Gallring och säkerhetskopior, Behörigheter, Flerfaktorsautentisering | inget att ändra här: de förklarar och länkar till sidorna som hanterar dem (papperskorgen behåller borttagna objekt i 30 dagar, vilket är fast) |
 
@@ -102,6 +103,15 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Loggning och syslog | `logging.syslog.ca_file` | text | visas bara (filen) |
 | Loggning och syslog | `logging.syslog.cert_file` | text | visas bara (filen) |
 | Loggning och syslog | `logging.syslog.key_file` | text | visas bara (filen) |
+| Mätvärden och spårning | `metrics.enabled` | på/av | direkt |
+| Mätvärden och spårning | `metrics.listen` | text | efter omstart |
+| Mätvärden och spårning | `metrics.token` | hemlighet (skrivskyddad läsning) | direkt |
+| Mätvärden och spårning | `metrics.allowed_ips` | lista | direkt |
+| Mätvärden och spårning | `tracing.enabled` | på/av | direkt |
+| Mätvärden och spårning | `tracing.endpoint` | text | direkt |
+| Mätvärden och spårning | `tracing.headers` | hemlighet (skrivskyddad läsning) | direkt |
+| Mätvärden och spårning | `tracing.sample_ratio` | text | direkt |
+| Mätvärden och spårning | `tracing.service_name` | text | direkt |
 | E-post (SMTP) | `email.enabled` | på/av | direkt |
 | E-post (SMTP) | `email.host` | text | direkt |
 | E-post (SMTP) | `email.port` | 1–65535 | direkt |

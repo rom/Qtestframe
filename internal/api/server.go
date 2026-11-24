@@ -101,6 +101,8 @@ type Server struct {
 	sys sysState
 	// erec caches the electronic-records settings per tenant (erecords.go)
 	erec erecCache
+	// obs holds the metrics and the tracer (observability.go)
+	obs *observability
 }
 
 // New creates a server and its identity providers. cfg is the
@@ -125,6 +127,7 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		suggestLimiter: newRateLimiter(300, time.Minute),
 		jobs:           newJobManager(),
 	}
+	s.obs = newObservability(s)
 	// outgoing calls follow the outbound settings (outbound.go)
 	s.HTTPClient = s.outboundClient()
 	// e-mail, OIDC providers and login limits follow the system settings
@@ -148,7 +151,7 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 // Handler returns the root HTTP handler.
 func (s *Server) Handler() http.Handler {
 	s.once.Do(s.routes)
-	return s.recoverer(s.securityHeaders(s.logRequests(s.mux)))
+	return s.recoverer(s.securityHeaders(s.observe(s.logRequests(s.mux))))
 }
 
 func (s *Server) routes() {
@@ -164,6 +167,8 @@ func (s *Server) routes() {
 	}
 	pub("GET /healthz", s.handleHealth)
 	pub("GET /readyz", s.handleReady)
+	// Prometheus metrics (observability.go): off by default, its own protection
+	pub("GET /metrics", s.handleMetrics)
 	pub("GET /api/v1/openapi.json", s.handleOpenAPI)
 	pub("GET /api/v1/openapi.yaml", s.handleOpenAPI)
 
@@ -436,7 +441,20 @@ func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusServiceUnavailable, "unavailable", "database unavailable")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ready"})
+	// the schema must be complete (e.g. another process is still migrating)
+	if !s.obs.migrated.Load() {
+		n, err := s.Store.DB.Pending(ctx)
+		switch {
+		case err != nil:
+			writeError(w, http.StatusServiceUnavailable, "unavailable", "database unavailable")
+			return
+		case n > 0:
+			writeError(w, http.StatusServiceUnavailable, "unavailable", fmt.Sprintf("%d database migrations are not applied", n))
+			return
+		}
+		s.obs.migrated.Store(true)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"status": "ready", "checks": map[string]string{"database": "ok", "migrations": "ok"}})
 }
 
 // ---------------------------------------------------------------- UI
@@ -546,7 +564,7 @@ func (s *Server) logRequests(next http.Handler) http.Handler {
 		start := time.Now()
 		sw := &statusWriter{ResponseWriter: w}
 		next.ServeHTTP(sw, r)
-		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+		if quietPath(r.URL.Path) {
 			return
 		}
 		lvl := slog.LevelInfo

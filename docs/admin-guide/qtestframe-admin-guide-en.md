@@ -586,6 +586,25 @@ Every key of the file, its type, its default and the environment variable that s
 | `outbound.denied_hosts` | list | — | — | Hosts outgoing calls never reach, e.g. `metadata.google.internal` or `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Refuse outgoing calls to loopback, private, link-local and other non-public addresses (checked on the address actually connected to), unless the host is in `allowed_hosts`. Turn it on when the server is reachable from the internet and its users should not reach your internal network through it. |
 
+### `metrics`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `metrics.enabled` | bool | `false` | `QTF_METRICS_ENABLED` | Serve Prometheus metrics on `/metrics` (requests, latency, database pool, Go runtime, background jobs, sign-ins, live connections and the number of projects, requirements, tests and runs). Off by default. |
+| `metrics.listen` | string | — | — | A separate `host:port` for `/metrics` (e.g. `127.0.0.1:9090`), opened at start-up; the main listener then answers `/metrics` with 404. Empty: the main listener serves it. |
+| `metrics.token_file` | string | — | — | File with the bearer token a scraper must send (`Authorization: Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). The token can also be stored, encrypted, in the system settings; it is never shown again. `QTF_METRICS_TOKEN` wins over both. |
+| `metrics.allowed_ips` | list | — | — | Addresses or CIDR ranges that may scrape `/metrics` (the client address, from `X-Forwarded-For` only behind `trusted_proxies`). With a token too, both must match; with neither, only the loopback address may scrape. |
+
+### `tracing`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `tracing.enabled` | bool | `false` | `QTF_TRACING_ENABLED` | Export OpenTelemetry traces of HTTP requests, database queries and outgoing calls to `endpoint`. Off by default. |
+| `tracing.endpoint` | string | — | `QTF_TRACING_ENDPOINT` | OTLP/HTTP address of the collector, e.g. `http://otel-collector:4318`; `/v1/traces` is added to an address without a path. Spans are sent as JSON in batches (every 5 seconds or 512 spans). |
+| `tracing.headers_file` | string | — | — | File with headers sent with every export, `key=value` pairs separated by commas (e.g. `Authorization=Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). Can also be stored, encrypted, in the system settings. `QTF_TRACING_HEADERS` wins over both. |
+| `tracing.sample_ratio` | string | `1` | — | Share of new traces that are recorded, 0–1 (`0.1` = one in ten). A request with a `traceparent` header follows the decision of its caller. |
+| `tracing.service_name` | string | `qtestframe` | — | `service.name` of the exported spans. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -608,6 +627,8 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_LIVE_ENABLED` | `live.enabled` (`1` or `true` = on, anything else = off) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
+| `QTF_METRICS_ENABLED` | `metrics.enabled` (`true` or `1`) |
+| `QTF_METRICS_TOKEN` | the bearer token of `/metrics`; wins over `metrics.token_file` and a token stored in the web client |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` or `true` = on) |
 | `QTF_RUNNER_WEB_BROWSERS_PATH` | `runner.web.browsers_path` |
 | `QTF_RUNNER_WEB_ENABLED` | `runner.web.enabled` (`1` or `true` = on) |
@@ -623,6 +644,9 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_SERVER_BASE_URL` | `server.base_url` |
 | `QTF_SERVER_LISTEN` | `server.listen` |
 | `QTF_SERVER_PORT` | the port of `server.listen` (the host stays) |
+| `QTF_TRACING_ENABLED` | `tracing.enabled` (`true` or `1`) |
+| `QTF_TRACING_ENDPOINT` | `tracing.endpoint` |
+| `QTF_TRACING_HEADERS` | the headers of the trace export; win over `tracing.headers_file` and headers stored in the web client |
 | `QTF_OIDC_<NAME>_CLIENT_SECRET` | client secret of the OIDC provider `<name>` (upper case); wins over `client_secret_file` and a secret stored in the web client |
 | `CREDENTIALS_DIRECTORY` | set by systemd (`LoadCredential=`): relative `*_file` paths are resolved in it, and it is readable after the lock-down |
 | `STATE_DIRECTORY` | set by systemd (`StateDirectory=`): default place of the key file when the database is not SQLite |
@@ -1046,6 +1070,7 @@ Use environment variables or locks for what must not change from the web client 
 | General, Sign-in and passwords, API tokens, Single sign-on, Logging and syslog, E-mail (SMTP), Outgoing connections, Similarity, AI assistance | **at once** – the e-mail sender, the OIDC providers (unchanged providers are kept, so sign-ins in progress continue), the logger, the sign-in limits and the outgoing HTTP client follow the new values |
 | Live updates | the switch and the heartbeat **at once** (new connections); the connection limits, the replay buffer and the presence timeout **after a restart** |
 | Server and database | the HTTP read and write timeouts **after a restart**; everything else is set in the file and shown with its source (listen address, TLS files, database, first start, hardening, key provider) |
+| Metrics and tracing | **at once** – the switches, the token, the allowlist and the trace export; the separate metrics address (`metrics.listen`) **after a restart**. The section also shows the state: where `/metrics` is served, how it is protected, and the spans exported, failed and dropped with the last export and the last error |
 | Script and web test runner | **after a restart** – the runner and its sandbox are set up before the process is locked down (Landlock execute paths, work directory); the value is stored at once and the page shows the value in use until then |
 | Retention and backups, Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them (the trash keeps deleted items for 30 days, which is fixed) |
 
@@ -1109,6 +1134,15 @@ The settings the page offers, generated from `internal/settings`:
 | Logging and syslog | `logging.syslog.ca_file` | text | shown only (file) |
 | Logging and syslog | `logging.syslog.cert_file` | text | shown only (file) |
 | Logging and syslog | `logging.syslog.key_file` | text | shown only (file) |
+| Metrics and tracing | `metrics.enabled` | on/off | at once |
+| Metrics and tracing | `metrics.listen` | text | after a restart |
+| Metrics and tracing | `metrics.token` | secret (write-only) | at once |
+| Metrics and tracing | `metrics.allowed_ips` | list | at once |
+| Metrics and tracing | `tracing.enabled` | on/off | at once |
+| Metrics and tracing | `tracing.endpoint` | text | at once |
+| Metrics and tracing | `tracing.headers` | secret (write-only) | at once |
+| Metrics and tracing | `tracing.sample_ratio` | text | at once |
+| Metrics and tracing | `tracing.service_name` | text | at once |
 | E-mail (SMTP) | `email.enabled` | on/off | at once |
 | E-mail (SMTP) | `email.host` | text | at once |
 | E-mail (SMTP) | `email.port` | 1–65535 | at once |
@@ -1923,10 +1957,12 @@ The server writes structured log records (Go `log/slog`) to **standard error**; 
 
 What is logged:
 
-- **Every request** except `/healthz` and `/readyz`: method, path (without the query), status, bytes, duration and client address (from `X-Forwarded-For` only for `trusted_proxies`). Requests answered with 5xx are logged at ERROR, the others at INFO.
+- **Every request** except `/healthz`, `/readyz` and `/metrics`: method, path (without the query), status, bytes, duration and client address (from `X-Forwarded-For` only for `trusted_proxies`). Requests answered with 5xx are logged at ERROR, the others at INFO.
 - **Audit records** (`msg=audit`, INFO) with organisation, user, action, entity and id, one for every entry of the audit log.
 - **Security events**: `login failed` and `second factor failed` (WARN, with e-mail and client address), configuration and key problems at start-up, the `hardening` line.
 - **Background work**: migrations, purged sessions and trash, metric snapshots, e-mail and webhook failures, job resets.
+
+When a request belongs to a trace (an incoming `traceparent` header, or tracing on), its records carry `trace_id`, and `span_id` for the span of this server, so a log line can be found from a trace and the other way round.
 
 Passwords, tokens, cookies and `Authorization` headers are never logged. Unexpected errors are answered with only "internal server error"; the details are in the log line `request failed` (path and error).
 
@@ -1963,17 +1999,94 @@ Receiver examples for rsyslog (`imtcp` with `gtls`) and syslog-ng (`network(tran
 | Endpoint | Answers | Use |
 |---|---|---|
 | `GET /healthz` | `200 {"status":"ok","version":"…"}` while the process serves requests | liveness probe |
-| `GET /readyz` | `200 {"status":"ready"}`, or `503` when the database does not answer within 2 seconds | readiness probe, load balancer |
+| `GET /readyz` | `200 {"status":"ready","checks":{"database":"ok","migrations":"ok"}}`, or `503` when the database does not answer within 2 seconds or migrations are not applied (another process is still migrating) | readiness probe, load balancer |
 
 Both need no sign-in and are not written to the request log. `qtestframe healthcheck` probes `/healthz` of the local server for container health checks.
 
-There is **no metrics endpoint** (no Prometheus exporter). The dashboard *trends* are project data (daily snapshots), not server metrics.
+## Prometheus metrics
+
+`GET /metrics` serves metrics in the Prometheus text format. It is **off by default**; turn it on with `metrics.enabled` (or `QTF_METRICS_ENABLED=true`, or **Administration → System settings → Metrics and tracing**). The dashboard *trends* are project data (daily snapshots), not server metrics.
+
+| Metric | Type | Labels | Meaning |
+|---|---|---|---|
+| `qtf_http_requests_total` | counter | `route`, `method`, `status` | requests by route template (`/api/v1/tests/{id}`, never the id itself), method and status class (`2xx` … `5xx`) |
+| `qtf_http_request_duration_seconds` | histogram | `route`, `method` | duration of requests (event streams excluded) |
+| `qtf_http_requests_in_flight` | gauge | | requests being served (event streams excluded) |
+| `qtf_live_connections` | gauge | | open live-update streams (Server-Sent Events) |
+| `qtf_db_connections` | gauge | `state` (`in_use`, `idle`) | connections of the database pool |
+| `qtf_db_max_open_connections` | gauge | | the pool limit |
+| `qtf_db_wait_total`, `qtf_db_wait_duration_seconds_total` | counter | | queries that waited for a free connection, and how long |
+| `qtf_db_closed_connections_total` | counter | `reason` | connections closed by the pool |
+| `qtf_jobs_total` | counter | `kind` (`script_job`, `req_sync`, `report_mail`), `result` | finished background jobs: automated tests (`passed`, `failed`, `skipped`, `cancelled`, `error`, `interrupted`), requirement syncs (`ok`, `partial`, `error`) and scheduled reports (`ok`, `error`) |
+| `qtf_script_jobs_running` | gauge | | automated tests running on this process |
+| `qtf_logins_total` | counter | `method` (`local`, `oidc`, `saml`, `mfa`, `invitation`, `external`, `other`), `result` (`success`, `failure`) | sign-in attempts |
+| `qtf_tenants`, `qtf_users`, `qtf_projects`, `qtf_requirements`, `qtf_tests`, `qtf_runs` | gauge | | the size of the installation, counted at most once a minute |
+| `qtf_tracing_spans_total` | counter | `outcome` (`exported`, `failed`, `dropped`) | spans of the trace export |
+| `qtf_build_info` | gauge | `version`, `goversion` | always 1 |
+| `process_start_time_seconds` | gauge | | start of the process (Unix time) |
+| `go_goroutines`, `go_memstats_alloc_bytes`, `go_memstats_heap_inuse_bytes`, `go_memstats_heap_objects`, `go_memstats_sys_bytes`, `go_gc_next_bytes` | gauge | | Go runtime |
+| `go_gc_cycles_total`, `go_gc_pause_seconds_total` | counter | | garbage collection |
+
+The endpoint is protected by what is configured, and a request must pass **every** configured check:
+
+- **`metrics.token`** – the scraper sends `Authorization: Bearer <token>`. The token is a secret: write-only in the system settings (stored encrypted), or from `metrics.token_file` or `QTF_METRICS_TOKEN`. A missing or wrong token gets `401`.
+- **`metrics.allowed_ips`** – addresses or CIDR ranges (`10.0.0.0/8`). The client address is taken from `X-Forwarded-For` only behind `server.trusted_proxies`. Other addresses get `403`.
+- With **neither**, only the loopback address (`127.0.0.1`, `::1`) may scrape: everyone else gets `403`.
+
+`metrics.listen` (e.g. `127.0.0.1:9090`, applies after a restart) serves `/metrics`, `/healthz` and `/readyz` on a listener of its own, in plain HTTP; the main listener then answers `/metrics` with `404`. Keep that address on an internal network.
+
+```yaml
+metrics:
+  enabled: true
+  listen: "10.0.0.5:9090"          # optional
+  token_file: metrics-token        # relative: in $CREDENTIALS_DIRECTORY
+  allowed_ips: [10.0.0.0/24]
+```
+
+The matching Prometheus job:
+
+```yaml
+scrape_configs:
+  - job_name: qtestframe
+    scheme: http
+    authorization:
+      credentials_file: /etc/prometheus/qtestframe-token
+    static_configs:
+      - targets: ["10.0.0.5:9090"]
+```
+
+An example Grafana dashboard (`examples/monitoring/grafana-dashboard.json`) and alert rules (`examples/monitoring/prometheus-alerts.yml`) are in the repository: error rate, latency, pool saturation, failing jobs and sign-in failures.
+
+## OpenTelemetry tracing
+
+With tracing on, the server records a span for every request (named after its route, e.g. `GET /api/v1/tests/{id}`), a child span for every database query of the request (the statement without its values) and a client span for every outgoing call (webhooks, trackers, AI, …). Spans are sent in batches to an OpenTelemetry collector over **OTLP/HTTP with JSON** (every 5 seconds or 512 spans; at most 4096 wait, more are dropped and counted).
+
+| Setting | Meaning |
+|---|---|
+| `tracing.enabled` | on/off (off by default) |
+| `tracing.endpoint` | the collector, e.g. `http://otel-collector:4318`; `/v1/traces` is added to an address without a path |
+| `tracing.headers` | headers of every export as `key=value` pairs separated by commas, e.g. `Authorization=Bearer <token>`; a secret (write-only, stored encrypted, or `tracing.headers_file`, `QTF_TRACING_HEADERS`) |
+| `tracing.sample_ratio` | share of new traces that are recorded, `0`–`1` (default `1`) |
+| `tracing.service_name` | `service.name` of the spans (default `qtestframe`) |
+
+W3C Trace Context is followed both ways: a request with a `traceparent` header continues the caller's trace (and its sampling decision), and outgoing calls carry a `traceparent` header of their own. Health checks and scrapes are not traced. The export does not go through the outgoing-connection rules of the server (like syslog). The section **Metrics and tracing** of the system settings shows the spans exported, failed and dropped and the last error of the collector.
+
+```yaml
+tracing:
+  enabled: true
+  endpoint: "http://otel-collector:4318"
+  headers_file: otlp-headers       # e.g. Authorization=Bearer <token>
+  sample_ratio: "0.2"
+  service_name: qtestframe
+```
 
 ## What to monitor
 
 | Signal | How |
 |---|---|
 | liveness and readiness | `/healthz`, `/readyz` (e.g. Prometheus `blackbox_exporter`, module `http_2xx`) |
+| error rate and latency | `qtf_http_requests_total{status="5xx"}`, `qtf_http_request_duration_seconds` (see the alert rules in `examples/monitoring/`) |
+| background work | `qtf_jobs_total` with a `result` of `error`, `failed` or `partial` |
 | service state | `systemctl is-active qtestframe`; the unit restarts the server on failure |
 | errors | log records with `level=ERROR`; `stored system settings are invalid`; `tls reload failed` |
 | attacks | many `login failed`, `second factor failed` or SCIM authentication failures from one address |

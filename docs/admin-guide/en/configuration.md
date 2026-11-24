@@ -342,6 +342,25 @@ Every key of the file, its type, its default and the environment variable that s
 | `outbound.denied_hosts` | list | — | — | Hosts outgoing calls never reach, e.g. `metadata.google.internal` or `169.254.169.254`. |
 | `outbound.block_private` | bool | `false` | — | Refuse outgoing calls to loopback, private, link-local and other non-public addresses (checked on the address actually connected to), unless the host is in `allowed_hosts`. Turn it on when the server is reachable from the internet and its users should not reach your internal network through it. |
 
+### `metrics`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `metrics.enabled` | bool | `false` | `QTF_METRICS_ENABLED` | Serve Prometheus metrics on `/metrics` (requests, latency, database pool, Go runtime, background jobs, sign-ins, live connections and the number of projects, requirements, tests and runs). Off by default. |
+| `metrics.listen` | string | — | — | A separate `host:port` for `/metrics` (e.g. `127.0.0.1:9090`), opened at start-up; the main listener then answers `/metrics` with 404. Empty: the main listener serves it. |
+| `metrics.token_file` | string | — | — | File with the bearer token a scraper must send (`Authorization: Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). The token can also be stored, encrypted, in the system settings; it is never shown again. `QTF_METRICS_TOKEN` wins over both. |
+| `metrics.allowed_ips` | list | — | — | Addresses or CIDR ranges that may scrape `/metrics` (the client address, from `X-Forwarded-For` only behind `trusted_proxies`). With a token too, both must match; with neither, only the loopback address may scrape. |
+
+### `tracing`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `tracing.enabled` | bool | `false` | `QTF_TRACING_ENABLED` | Export OpenTelemetry traces of HTTP requests, database queries and outgoing calls to `endpoint`. Off by default. |
+| `tracing.endpoint` | string | — | `QTF_TRACING_ENDPOINT` | OTLP/HTTP address of the collector, e.g. `http://otel-collector:4318`; `/v1/traces` is added to an address without a path. Spans are sent as JSON in batches (every 5 seconds or 512 spans). |
+| `tracing.headers_file` | string | — | — | File with headers sent with every export, `key=value` pairs separated by commas (e.g. `Authorization=Bearer <token>`; relative: in `$CREDENTIALS_DIRECTORY`). Can also be stored, encrypted, in the system settings. `QTF_TRACING_HEADERS` wins over both. |
+| `tracing.sample_ratio` | string | `1` | — | Share of new traces that are recorded, 0–1 (`0.1` = one in ten). A request with a `traceparent` header follows the decision of its caller. |
+| `tracing.service_name` | string | `qtestframe` | — | `service.name` of the exported spans. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -364,6 +383,8 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_LIVE_ENABLED` | `live.enabled` (`1` or `true` = on, anything else = off) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
+| `QTF_METRICS_ENABLED` | `metrics.enabled` (`true` or `1`) |
+| `QTF_METRICS_TOKEN` | the bearer token of `/metrics`; wins over `metrics.token_file` and a token stored in the web client |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` or `true` = on) |
 | `QTF_RUNNER_WEB_BROWSERS_PATH` | `runner.web.browsers_path` |
 | `QTF_RUNNER_WEB_ENABLED` | `runner.web.enabled` (`1` or `true` = on) |
@@ -379,6 +400,9 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_SERVER_BASE_URL` | `server.base_url` |
 | `QTF_SERVER_LISTEN` | `server.listen` |
 | `QTF_SERVER_PORT` | the port of `server.listen` (the host stays) |
+| `QTF_TRACING_ENABLED` | `tracing.enabled` (`true` or `1`) |
+| `QTF_TRACING_ENDPOINT` | `tracing.endpoint` |
+| `QTF_TRACING_HEADERS` | the headers of the trace export; win over `tracing.headers_file` and headers stored in the web client |
 | `QTF_OIDC_<NAME>_CLIENT_SECRET` | client secret of the OIDC provider `<name>` (upper case); wins over `client_secret_file` and a secret stored in the web client |
 | `CREDENTIALS_DIRECTORY` | set by systemd (`LoadCredential=`): relative `*_file` paths are resolved in it, and it is readable after the lock-down |
 | `STATE_DIRECTORY` | set by systemd (`StateDirectory=`): default place of the key file when the database is not SQLite |

@@ -1011,6 +1011,8 @@ Containers: `docker compose pull`/`build`, `docker compose up -d` (the
 | Certificate expiry | `scripts/certs/verify-cert.sh -q --connect qtf.example.com:8443 --warn-days 21` (exit 2 = expiring) |
 | Resources | `systemctl status qtestframe` (memory/tasks vs. `MemoryMax`/`TasksMax`), disk space of `/var/lib/qtestframe` |
 | Backups | age of the newest backup file |
+| Metrics | `GET /metrics` (Prometheus, off by default: `metrics.enabled`, protected by `metrics.token` and/or `metrics.allowed_ips`); example dashboard and alert rules in `examples/monitoring/` |
+| Traces | OTLP/HTTP export to a collector (`tracing.enabled`, `tracing.endpoint`); log records of a traced request carry `trace_id` |
 
 Example blackbox probes (Prometheus `blackbox_exporter`, module `http_2xx`
 with `tls_config.ca_file` for internal CAs) against `/healthz` and

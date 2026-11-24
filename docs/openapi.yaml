@@ -109,7 +109,7 @@ tags:
 - name: Catalogue
   description: Built-in catalogue of standard requirements and tests, and copying them into a project
 - name: Operations
-  description: Health, readiness and this description
+  description: Health, readiness, metrics and this description
 - name: Exploratory testing
   description: Session-based exploratory testing (charters, timer, notes, debriefs, metrics)
 - name: AI assistance
@@ -791,7 +791,7 @@ paths:
       security: []
       responses:
         '200':
-          description: The database is reachable (503 `unavailable` otherwise)
+          description: The database is reachable and every migration is applied (503 `unavailable` otherwise)
           content:
             application/json:
               schema:
@@ -799,6 +799,50 @@ paths:
                 properties:
                   status:
                     type: string
+                  checks:
+                    type: object
+                    description: The result of each check (`database`, `migrations`)
+                    additionalProperties:
+                      type: string
+        default:
+          $ref: '#/components/responses/Error'
+  /metrics:
+    get:
+      tags:
+      - Operations
+      summary: Prometheus metrics
+      operationId: getMetrics
+      description: |-
+        **Permission:** none (public); the endpoint has its own protection.
+
+        Metrics of the server in the Prometheus text format (version 0.0.4): requests, latency, database pool, Go runtime, background jobs, sign-ins, live connections and the number of projects, requirements, tests and runs. Off by default (`metrics.enabled`); answers 404 when off, or when it is served on a separate listener (`metrics.listen`). When `metrics.token` is set the request needs `Authorization: Bearer <token>`; when `metrics.allowed_ips` is set the client address must be in it; with neither, only the loopback address may read it.
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: The metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: The bearer token is missing or wrong
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: The client address may not read the metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Metrics are off, or served on another listener
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/openapi.json:
