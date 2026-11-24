@@ -45,6 +45,8 @@ var BackupTables = []string{
 	"consistency_dismissals",
 	"invitations", "report_subscriptions",
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
+	// passkeys (0067)
+	"webauthn_credentials",
 	"project_members",
 	// waivers and deviations with their approvals, the Statement of
 	// Applicability decisions
@@ -89,6 +91,8 @@ var BackupTables = []string{
 // (pending MFA sign-ins and remembered devices are as transient as sessions)
 var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "job_runs": true, "script_jobs": true,
 	"mfa_challenges": true, "mfa_trusted_devices": true,
+	// challenges of passkey ceremonies, minutes long (0067)
+	"webauthn_challenges": true,
 	// personal autocomplete history: a convenience, not project data
 	"suggest_history": true,
 	// queue and log of chat posts (the channels are backed up)
@@ -127,6 +131,7 @@ var boolColumns = map[string]bool{
 	"projects.ai_disabled":          true,
 	"req_sync_configs.enabled":      true,
 	"environments.status_by_health": true, "environments.requires_approval": true,
+	"webauthn_credentials.user_verified": true, "webauthn_credentials.backup_eligible": true, "webauthn_credentials.backed_up": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).
@@ -544,7 +549,7 @@ func deleteOrder() []string {
 	for _, t := range BackupTables {
 		all = append(all, t)
 		if t == "users" {
-			all = append(all, "sessions", "mfa_challenges", "mfa_trusted_devices", "suggest_history")
+			all = append(all, "sessions", "mfa_challenges", "mfa_trusted_devices", "webauthn_challenges", "suggest_history")
 		}
 	}
 	for i, j := 0, len(all)-1; i < j; i, j = i+1, j-1 {

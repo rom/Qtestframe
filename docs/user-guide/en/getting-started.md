@@ -10,8 +10,9 @@ Open the address your administrator gave you (for a local trial installation `ht
 
 1. Enter your **E-mail** and **Password** and select **Sign in**.
 2. If you belong to several organisations and want to start in a particular one, select **Sign in to a specific organisation…** and enter its short name (slug), for example `acme`. Without it you start in your default organisation (see [Preferences](#preferences)) or the one you used last.
-3. If your organisation uses single sign-on, the page shows a button per provider below **or continue with**. Select it and sign in at your identity provider; you return to Qtestframe automatically.
-4. If you use [multi-factor authentication](#multi-factor-authentication), the page then asks for the **Authentication code**: open your authenticator app, enter the 6-digit code it shows for Qtestframe and select **Verify**. Each code works once; if one is refused, wait for the next. Without your phone, select **Use a recovery code instead** and enter one of your recovery codes. If your organisation allows it, **Remember this device** skips the code on this browser for a number of days.
+3. With a [passkey](#passkeys) select **Sign in with a passkey** (or pick your passkey among the suggestions of the **E-mail** field) and confirm with your fingerprint, face, PIN or security key: you need no password and no code. If the browser cannot use passkeys, the page says so below the button; sign in with your password instead.
+4. If your organisation uses single sign-on, the page shows a button per provider below **or continue with**. Select it and sign in at your identity provider; you return to Qtestframe automatically.
+5. If you use [multi-factor authentication](#multi-factor-authentication), the page then asks for the second factor. With a passkey, select **Use a passkey** and confirm on your device. Otherwise enter the **Authentication code**: open your authenticator app, enter the 6-digit code it shows for Qtestframe and select **Verify**. Each code works once; if one is refused, wait for the next. Without your phone, select **Use a recovery code instead** and enter one of your recovery codes. If your organisation allows it, **Remember this device** skips the code on this browser for a number of days.
 
 The language buttons at the top of the sign-in page switch between English and Swedish before you sign in. After sign-in, the language in your preferences wins.
 
@@ -160,6 +161,22 @@ From then on, every sign-in with your password asks for a code. API tokens are n
 - **New phone or lost phone**: with a recovery code you can still sign in; turn MFA off and set it up again with the new phone. Without phone and recovery codes, ask an administrator to [reset your multi-factor authentication](administration.md#reset-multi-factor-authentication).
 
 If you sign in with single sign-on, your identity provider usually asks for the second factor; Qtestframe asks for its own code only if the server is configured to do so.
+
+### Passkeys
+
+A **passkey** signs you in with the screen lock of your device (fingerprint, face or PIN), a password manager that keeps it, or a security key, instead of a password. It cannot be phished or guessed, and it also counts as your second factor: with a passkey you do not need an authenticator app. Passkeys need a current browser (Chrome, Edge, Firefox or Safari) and a server with an https address; otherwise the profile tells you why they are not available.
+
+**Add a passkey**
+
+1. In your profile, under **Passkeys**, select **Add a passkey**.
+2. Give it a name you will recognise later (it suggests your device and browser, for example *Mac · Safari*) and select **Add a passkey**.
+3. Follow the browser: choose where to keep the passkey (this device, your phone, a password manager or a security key) and confirm with your fingerprint, face, PIN or security key.
+
+If you signed in more than 10 minutes ago, Qtestframe first asks you to **Confirm it is you**: enter your password, a code of your authenticator app, or confirm with an existing passkey.
+
+**Sign in with it**: on the sign-in page select **Sign in with a passkey**, or pick it among the suggestions of the **E-mail** field. If your account signs in through single sign-on, use your identity provider; there the passkey can be your second factor. When the administrator has turned off the passwordless sign-in, a passkey is your second factor after the password.
+
+**Later**: the list shows each passkey with its name, when it was added and when it was last used (*Synced* means it is backed up in a password manager or cloud account and works on your other devices too). **Rename** (the pencil) changes its name; **Delete** (the bin) removes it from your account – remove it from the device or password manager too. Deleting needs a recent sign-in like adding. If your organisation requires multi-factor authentication, you cannot delete your last second factor. If you lose a device, delete its passkey from another device, or ask an administrator to [revoke your passkeys](administration.md#revoke-passkeys).
 
 ## Next steps
 

@@ -527,7 +527,10 @@ func (s *Server) handleProviders(w http.ResponseWriter, r *http.Request) {
 		// PasswordMinClasses the character classes they must use.
 		PasswordMinLength  int `json:"password_min_length"`
 		PasswordMinClasses int `json:"password_min_classes"`
-	}{Local: c.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}, PasswordMinLength: minPassword(c), PasswordMinClasses: c.Auth.PasswordMinClasses}
+		// Passkeys: the passwordless sign-in with a passkey is offered.
+		Passkeys bool `json:"passkeys"`
+	}{Local: c.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}, PasswordMinLength: minPassword(c), PasswordMinClasses: c.Auth.PasswordMinClasses,
+		Passkeys: s.passwordlessOn()}
 	for _, o := range c.Auth.OIDC {
 		if !o.On() {
 			continue
@@ -586,22 +589,9 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	tenantID := ""
-	if req.Tenant != "" {
-		t, err := s.Store.GetTenantBySlug(ctx, req.Tenant)
-		if err != nil {
-			writeError(w, http.StatusUnauthorized, "unauthorized", "invalid credentials")
-			return
-		}
-		if _, err := s.Store.GetMembership(ctx, t.ID, u.ID); err != nil && !u.SuperAdmin {
-			writeError(w, http.StatusForbidden, "forbidden", "not a member of tenant")
-			return
-		}
-		if err := s.tenantClosed(ctx, t, u); err != nil {
-			writeError(w, http.StatusForbidden, "forbidden", err.Error())
-			return
-		}
-		tenantID = t.ID
+	tenantID, ok := s.loginTenant(w, r, u, req.Tenant)
+	if !ok {
+		return
 	}
 	// the rate limit of this address and account is reset once the second
 	// factor (if any) has been given too

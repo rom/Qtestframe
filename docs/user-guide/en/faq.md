@@ -306,7 +306,7 @@ For requirement wording RFC 2119 and RFC 8174 (and SIS usage in Swedish); for do
 
 ### Does Qtestframe support passkeys or security keys?
 
-Not for signing in to Qtestframe: it uses passwords or single sign-on, with TOTP as the second factor. With single sign-on, your identity provider can require passkeys or security keys. The catalogue has requirements and tests that cite WebAuthn for your own products. See [WebAuthn and FIDO2](glossary.md#webauthn-and-fido2).
+Yes. Add a passkey in your profile (see [Passkeys](getting-started.md#passkeys)): it signs you in without a password, and it is a second factor after your password, next to an authenticator app. Accounts of single sign-on sign in at the identity provider, which can also require passkeys or security keys. The catalogue also has requirements and tests that cite WebAuthn for your own products. See [WebAuthn and FIDO2](glossary.md#webauthn-and-fido2).
 
 ### Where does the MITRE ATT&CK data come from?
 

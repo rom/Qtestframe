@@ -1400,7 +1400,7 @@ An automated test that drives a real browser through a web application.
 
 The W3C Web Authentication API and the FIDO2 standards: sign-in with a security key or a passkey, based on a key pair bound to the website, which resists phishing.
 
-**In Qtestframe:** not a sign-in method of Qtestframe itself (it uses passwords, single sign-on and TOTP), but the catalogue has requirements and tests for passkeys and security keys that cite WebAuthn.
+**In Qtestframe:** you can sign in with a passkey instead of a password, or use one as your second factor (see [Passkeys](getting-started.md#passkeys)). The catalogue also has requirements and tests for passkeys and security keys that cite WebAuthn.
 
 **See also:** [Multi-factor authentication](#multi-factor-authentication), [TOTP](#totp), [Catalogue](#catalogue)
 

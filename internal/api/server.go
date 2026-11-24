@@ -58,6 +58,9 @@ type Server struct {
 	limiter *rateLimiter
 	// mfaLimiter bounds the second-factor attempts of one account.
 	mfaLimiter *rateLimiter
+	// passkeyLimiter bounds the passwordless sign-in challenges one client
+	// address asks for.
+	passkeyLimiter *rateLimiter
 	// scimLimiter bounds the requests of one SCIM token, scimAuthLimiter
 	// the failed SCIM authentications of one client address.
 	scimLimiter     *rateLimiter
@@ -118,6 +121,9 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		limiter: newRateLimiter(10, 5*time.Minute),
 		// second-factor attempts per account, whatever the address
 		mfaLimiter: newRateLimiter(10, 15*time.Minute),
+		// passwordless challenges per address (the sign-in page asks for one
+		// on every visit, for the passkey suggestions of the e-mail field)
+		passkeyLimiter: newRateLimiter(60, 5*time.Minute),
 		// identity providers sync in bursts (Entra ID: initial cycle)
 		scimLimiter:     newRateLimiter(1200, time.Minute),
 		scimAuthLimiter: newRateLimiter(20, 5*time.Minute),
@@ -179,6 +185,8 @@ func (s *Server) routes() {
 	// the second factor of a sign-in (mfa.go): the qtf_mfa cookie is the credential
 	pub("GET /api/v1/auth/mfa/challenge", s.handleMFAChallenge)
 	pub("POST /api/v1/auth/mfa/verify", s.handleMFAVerify)
+	// passkeys (passkeys.go): passwordless sign-in and the second factor
+	s.routesPasskeysPublic(pub)
 	// e-mail invitations (invitations.go): the token is the credential
 	pub("GET /api/v1/invitations/{token}", s.handleGetInvitation)
 	pub("POST /api/v1/invitations/{token}/accept", s.handleAcceptInvitation)
@@ -399,6 +407,7 @@ func (s *Server) routes() {
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)
 	s.routesMFA(h)
+	s.routesPasskeys(h)
 	s.routesSharing(h)
 	// autocomplete suggestions and history (suggest.go)
 	s.routesSuggest(h)

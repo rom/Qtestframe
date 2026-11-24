@@ -199,6 +199,12 @@ var Registry = []*Def{
 	num("auth.login_max_attempts", "security", Runtime, 1, 1000, func(c *config.Config) *int { return &c.Auth.LoginMaxAttempts }),
 	dur("auth.login_lockout", "security", Runtime, time.Minute, 24*time.Hour, func(c *config.Config) *time.Duration { return &c.Auth.LoginLockout }),
 	flag("auth.cookie_secure", "security", ReadOnly, func(c *config.Config) *bool { return &c.Auth.CookieSecure }),
+	// passkeys (WebAuthn)
+	flag("auth.passkeys.enabled", "security", Runtime, func(c *config.Config) *bool { return &c.Auth.Passkeys.Enabled }),
+	flag("auth.passkeys.passwordless", "security", Runtime, func(c *config.Config) *bool { return &c.Auth.Passkeys.Passwordless }),
+	flag("auth.passkeys.require_for_admins", "security", Runtime, func(c *config.Config) *bool { return &c.Auth.Passkeys.RequireForAdmins }),
+	checked(optional(str("auth.passkeys.rp_id", "security", Runtime, func(c *config.Config) *string { return &c.Auth.Passkeys.RPID })), checkRPID),
+	itemChecked(list("auth.passkeys.origins", "security", Runtime, func(c *config.Config) *[]string { return &c.Auth.Passkeys.Origins }), checkOrigin),
 
 	// API tokens
 	num("auth.token_max_days", "tokens", Runtime, 0, 3650, func(c *config.Config) *int { return &c.Auth.TokenMaxDays }),
@@ -375,6 +381,14 @@ func mapList(m map[string]string) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+// checkRPID: a domain name (or empty: the host of server.base_url).
+func checkRPID(v any) error {
+	if s := v.(string); s != "" && !config.ValidRPID(s) {
+		return fmt.Errorf("%q is not a domain name such as example.com", s)
+	}
+	return nil
 }
 
 func checkOrigin(s string) error {

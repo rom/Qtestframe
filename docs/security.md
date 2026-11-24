@@ -246,11 +246,21 @@ Implemented in `internal/auth/totp.go` (algorithms), `internal/api/mfa.go`
 * **Not affected:** API tokens (a separate credential; protect them like
   passwords) and SCIM tokens. E-mail invitations start a session as
   before, flagged for enrolment if the policy requires MFA.
-* **Not implemented yet:** WebAuthn / passkeys (as second factor or
-  passwordless). It needs a WebAuthn library (e.g.
-  `github.com/go-webauthn/webauthn`, not a dependency today), a configured
-  relying-party ID and origin, and credential storage; the challenge and
-  policy machinery above is designed to accept further factors.
+* **Passkeys (WebAuthn)** are a further second factor and, for local
+  accounts with user verification, a passwordless sign-in (see the
+  administrator guide, Authentication → Passkeys). The relying-party side
+  is implemented with the standard library only (`internal/auth/webauthn.go`,
+  a bounded CBOR decoder in `cbor.go`): attestation `none` and `packed`,
+  ES256 / EdDSA / RS256; client data type, challenge, origin and
+  cross-origin, RP ID hash, UP/UV and BE/BS flags, signature and signature
+  counter (a regression is let in but logged and audited). Challenges are
+  stored server-side (`webauthn_challenges`, SHA-256 of the challenge),
+  single-use, valid 5 minutes and bound to the session, the pending
+  sign-in or the `qtf_passkey` cookie. Adding and deleting passkeys needs
+  a sign-in or re-authentication (`sessions.reauth_at`) within 10
+  minutes. A dedicated WebAuthn library was not added: the subset needed
+  without attestation trust is small and fully tested with a software
+  authenticator (`internal/testutil/softauthn`).
 
 ### OpenID Connect
 

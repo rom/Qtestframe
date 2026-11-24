@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import MfaEnrol from '@/components/MfaEnrol.vue'
 import MfaRecoveryCodes from '@/components/MfaRecoveryCodes.vue'
+import PasskeySettings from '@/components/PasskeySettings.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useProjectStore } from '@/stores/project'
 import { useI18n } from 'vue-i18n'
@@ -38,7 +39,13 @@ async function signOut() {
           <MfaRecoveryCodes :codes="codes" :account="auth.user?.email ?? ''" />
           <Button :label="t('mfa.continue')" icon="pi pi-arrow-right" icon-pos="right" style="margin-top: 12px" @click="finish" />
         </template>
-        <MfaEnrol v-else @enrolled="(c: string[]) => (codes = c)" />
+        <template v-else>
+          <MfaEnrol @enrolled="(c: string[]) => (codes = c)" />
+          <div class="passkey-option">
+            <p class="small muted" style="margin: 0 0 8px">{{ t('passkeys.useInstead') }}</p>
+            <PasskeySettings compact @added="finish" />
+          </div>
+        </template>
         <button type="button" class="link-button small" style="margin-top: 16px; color: var(--p-primary-color)" @click="signOut">{{ t('nav.signOut') }}</button>
       </div>
     </main>
@@ -48,5 +55,10 @@ async function signOut() {
 <style scoped>
 .mfa-setup {
   max-width: 640px;
+}
+.passkey-option {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--p-content-border-color);
 }
 </style>

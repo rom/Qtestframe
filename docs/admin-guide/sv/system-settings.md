@@ -89,6 +89,11 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Inloggning och lösenord | `auth.login_max_attempts` | 1–1000 | direkt |
 | Inloggning och lösenord | `auth.login_lockout` | 1m–24h | direkt |
 | Inloggning och lösenord | `auth.cookie_secure` | på/av | visas bara (filen) |
+| Inloggning och lösenord | `auth.passkeys.enabled` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.passwordless` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.require_for_admins` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.rp_id` | text | direkt |
+| Inloggning och lösenord | `auth.passkeys.origins` | lista | direkt |
 | API-tokens | `auth.token_max_days` | 0–3650 | direkt |
 | API-tokens | `auth.token_require_expiry` | på/av | direkt |
 | Enkel inloggning | `auth.oidc` | lista med leverantörer | direkt |

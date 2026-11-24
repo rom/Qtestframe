@@ -429,6 +429,16 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `auth.saml[].role_mapping` | mappning | — | — | Som för OIDC. |
 | `auth.saml[].allowed_domains` | lista | — | — | E-postdomäner som får logga in via leverantören, som för OIDC. Tom = alla. |
 
+### `auth`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `auth.passkeys.enabled` | bool | `true` | — | Användare kan registrera lösennycklar (passkeys) och använda dem. När det är av sparas registrerade lösennycklar men kan inte användas, inte heller som andra faktor. |
+| `auth.passkeys.passwordless` | bool | `true` | — | Användare med lokala konton kan logga in med bara en lösennyckel ("Logga in med lösennyckel"; autentiseraren måste verifiera användaren med PIN eller biometri). När det är av är lösennycklar bara en andra faktor. Konton från en identitetsleverantör loggar alltid in där. |
+| `auth.passkeys.require_for_admins` | bool | `false` | — | Superadministratörer och organisationsadministratörer måste ha en lösennyckel eller en autentiseringsapp: utan någon måste nästa inloggning först konfigurera en. |
+| `auth.passkeys.rp_id` | text | — | — | WebAuthn-id för den förlitande parten: domänen som lösennycklarna hör till, t.ex. `example.com` (tomt = värden i `server.base_url`). Om det ändras senare blir registrerade lösennycklar oanvändbara. |
+| `auth.passkeys.origins` | lista | — | — | Ursprung som webbläsaren får använda lösennycklar från, t.ex. `https://qtf.example.com` (tomt = ursprunget i `server.base_url`). Varje ursprung måste använda https (http bara för localhost) och ligga inom `rp_id`. |
+
 ### `runner`
 
 | Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
@@ -733,7 +743,8 @@ Qtestframe känner till de här sätten att visa vem någon är:
 | Metod | För | Konfigureras i |
 |---|---|---|
 | Lokalt lösenord | personer | `auth.local`, lösenordsregler |
-| Andra faktor (TOTP-autentiseringsapp, återställningskoder) | personer med lokalt lösenord, valfritt efter OIDC | MFA-policyn i webbklienten; `local_mfa` per OIDC-leverantör |
+| Andra faktor (TOTP-autentiseringsapp, återställningskoder, lösennycklar) | personer med lokalt lösenord, valfritt efter OIDC | MFA-policyn i webbklienten; `local_mfa` per OIDC-leverantör |
+| Lösennyckel (WebAuthn), utan lösenord | personer med lokalt konto | `auth.passkeys` (filen eller systeminställningarna) |
 | OpenID Connect | personer | `auth.oidc` (filen eller systeminställningarna) |
 | SAML 2.0 | personer | `auth.saml` (bara filen) |
 | Inbjudan via e-post | en persons första inloggning | kräver e-post |
@@ -768,7 +779,37 @@ Gissning begränsas på tre sätt: varje kod räknas mot inloggningsgränsen ova
 
 **Borttappad telefon och återställningskoder:** en organisationsadministratör använder **Återställ tvåstegsverifiering** under **Medlemmar** (för medlemmar som bara tillhör den organisationen), en superadministratör under **Användare**. Det tar bort autentiseringsappen, återställningskoderna och ihågkomna enheter, loggar ut användaren och meddelar hen med avisering och e-post. Kontrollera begäran via en annan kanal först.
 
-TOTP-hemligheterna lagras krypterade (se [Säkerhet](#kryptering-av-lagrade-hemligheter)). API-nycklar och SCIM-token påverkas inte av MFA; skydda dem som lösenord. WebAuthn och passkeys finns inte.
+TOTP-hemligheterna lagras krypterade (se [Säkerhet](#kryptering-av-lagrade-hemligheter)). API-nycklar och SCIM-token påverkas inte av MFA; skydda dem som lösenord. [Lösennycklar](#lösennycklar) är också en andra faktor.
+
+## Lösennycklar
+
+En **lösennyckel** (passkey) är en WebAuthn-autentiseringsuppgift: ett nyckelpar som användarens enhet håller (en plattformsautentiserare med fingeravtryck, ansikte eller PIN, en lösenordshanterare som synkar den, eller en säkerhetsnyckel). Qtestframe sparar bara den publika nyckeln. Lösennycklar används på tre sätt:
+
+- **Inloggning utan lösenord** – **Logga in med lösennyckel** på inloggningssidan, och förslag på lösennycklar i e-postfältet där webbläsaren stöder det (villkorlig medling, conditional mediation). Den använder *upptäckbara* autentiseringsuppgifter och kräver **användarverifiering** (UV-flaggan: PIN eller biometri), så den räknas som flerfaktor i sig: ingen TOTP-kod efterfrågas. Bara **lokala konton** kan logga in så; konton från en identitetsleverantör loggar in där (Qtestframe låter inte en lösennyckel kringgå leverantören).
+- **Andra faktor** – efter lösenordet (och efter OIDC med `local_mfa`) kan en användare med lösennycklar bekräfta med en sådan i stället för en TOTP-kod. Användarverifiering föredras men krävs inte (användarnärvaro krävs). En lösennyckel räknas som andra faktor för alla MFA-policyer, så en användare kan ha lösennycklar, en autentiseringsapp eller båda.
+- **Ny bekräftelse av identiteten** – att lägga till och ta bort lösennycklar kräver en inloggning för mindre än 10 minuter sedan; annars bekräftar användaren sin identitet igen med lösenordet, en TOTP- eller återställningskod eller en lösennyckel (`POST /api/v1/auth/reauth`).
+
+Användarna hanterar sina lösennycklar i sin profil (flera per konto, högst 25, var och en med namn, datum då den lades till och senaste användning; byt namn och ta bort). Att ta bort den sista andra faktorn för ett konto som en policy kräver MFA för nekas.
+
+**Inställningar** (Systeminställningar → Inloggning och lösenord, eller konfigurationsfilen):
+
+| Inställning | Standard | Betydelse |
+|---|---|---|
+| `auth.passkeys.enabled` | på | Användare kan registrera och använda lösennycklar. Av behåller registrerade lösennycklar men de kan inte användas, inte heller som andra faktor. |
+| `auth.passkeys.passwordless` | på | Inloggning utan lösenord erbjuds (kräver också `auth.local`). Av: lösennycklar är bara en andra faktor. |
+| `auth.passkeys.require_for_admins` | av | Superadministratörer och organisationsadministratörer måste ha en lösennyckel eller en autentiseringsapp, utan övergångsperiod: deras nästa inloggning måste först konfigurera en. |
+| `auth.passkeys.rp_id` | värden i `server.base_url` | WebAuthn-id för den förlitande parten (RP-id), domänen som lösennycklarna gäller för (`example.com` låter `qtf.example.com` och andra underdomäner använda dem). |
+| `auth.passkeys.origins` | ursprunget i `server.base_url` | Webbursprungen som får använda lösennycklarna. Vart och ett måste vara `https` (`http` bara för `localhost`) och ligga inom RP-id:t. |
+
+Lösennycklar kräver en **https**-adress i `server.base_url` (eller de två inställningarna ovan): webbläsare erbjuder WebAuthn bara i ett säkert sammanhang, och RP-id:t binder varje lösennyckel till domänen. Utan en sådan ser användarna att lösennycklar inte är konfigurerade. **Välj RP-id innan användarna registrerar lösennycklar**: om det ändras, eller om servern flyttas till en annan domän, blir alla registrerade lösennycklar oanvändbara (användarna loggar då in med lösenordet och registrerar nya).
+
+**Vad servern kontrollerar.** Utmaningarna är 32 slumpmässiga byte, sparas på servern, gäller i 5 minuter och tas bort när de besvaras (engångsbruk). De är bundna till webbläsarsessionen, till den påbörjade inloggningen med andra faktor eller, för inloggning utan lösenord, till en kortlivad `qtf_passkey`-kaka i webbläsaren som bad om den. För varje ceremoni kontrollerar servern klientdatans typ, utmaning och ursprung (inga ramar från andra ursprung), SHA-256 av RP-id:t i autentiseringsdatan, flaggan för användarnärvaro och, där det krävs, flaggan för användarverifiering, samt signaturen. Registreringar accepterar intygsformaten `none` (det Qtestframe ber om) och `packed` (självintyg, eller ett x5c-certifikat vars signatur kontrolleras men som inte kedjas till ett betrott rotcertifikat: Qtestframe avgör inte efter autentiserarmodell), med algoritmerna ES256, EdDSA (Ed25519) och RS256 (minst 2048 bitar). **Signaturräknaren** måste öka för autentiserare som har en: om den inte gör det släpps inloggningen igenom, men en varning loggas och händelsen `passkey.counter_regressed` registreras i händelseloggen, eftersom det kan betyda en klonad autentiserare. Synkade lösennycklar har ingen räknare. Implementationen använder bara Gos standardbibliotek (en liten, begränsad CBOR-avkodare för intygsobjekten); den lägger inte till något WebAuthn-beroende.
+
+**Gränser.** Inloggning utan lösenord räknas mot inloggningsgränsen för klientadressen; dess alternativ begränsas till 60 per 5 minuter och adress. En lösennyckel som andra faktor räknas som en kod (10 försök per 15 minuter och konto, 5 per påbörjad inloggning).
+
+**Administratörer** ser antalet lösennycklar per användare under **Medlemmar** (kolumnen *Lösennycklar*) och **Användare**, och kan **Återkalla lösennycklar** (en borttappad eller komprometterad enhet): alla användarens lösennycklar tas bort och användaren loggas ut överallt. Precis som för MFA-återställningar kan organisationsadministratörer göra detta för medlemmar som bara tillhör deras organisation.
+
+**Händelselogg:** `passkey.register`, `passkey.rename`, `passkey.delete`, `user.reauth`, `member.revoke_passkeys`, `user.revoke_passkeys`, `passkey.counter_regressed`, och inloggningarna som `login` med metoden `passkey` (utan lösenord) eller `mfa=passkey` (andra faktor), med lösennyckelns namn. Misslyckade inloggningar med lösennyckel registreras i inloggningshistoriken med metoden *passkey*.
 
 ## OpenID Connect
 
@@ -1121,6 +1162,11 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Inloggning och lösenord | `auth.login_max_attempts` | 1–1000 | direkt |
 | Inloggning och lösenord | `auth.login_lockout` | 1m–24h | direkt |
 | Inloggning och lösenord | `auth.cookie_secure` | på/av | visas bara (filen) |
+| Inloggning och lösenord | `auth.passkeys.enabled` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.passwordless` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.require_for_admins` | på/av | direkt |
+| Inloggning och lösenord | `auth.passkeys.rp_id` | text | direkt |
+| Inloggning och lösenord | `auth.passkeys.origins` | lista | direkt |
 | API-tokens | `auth.token_max_days` | 0–3650 | direkt |
 | API-tokens | `auth.token_require_expiry` | på/av | direkt |
 | Enkel inloggning | `auth.oidc` | lista med leverantörer | direkt |
@@ -2122,9 +2168,9 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**I en säkerhetskopia** (115 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
+**I en säkerhetskopia** (116 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `webauthn_credentials`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
 
-**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`, `webauthn_challenges`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -2268,6 +2314,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 62 | `0062_project_logo.sql` |
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
+| 67 | `0067_passkeys.sql` |
 
 <!-- END GENERATED: migrations -->
 

@@ -113,6 +113,10 @@ The **MFA** column shows who uses multi-factor authentication: **On**, *Off*, or
 
 *(Admin)* When someone has lost both their phone and their recovery codes, select **Reset MFA** (the shield) in their row and confirm. Their authenticator app, recovery codes and remembered devices are removed, they are signed out everywhere and told by a notification and an e-mail. They then sign in with their password alone, or, if MFA is required for them, set up a new authenticator app at the next sign-in. Make sure the request really comes from that person before you reset. As for passwords, admins can only reset people who belong to their organisation alone; super admins can reset anyone, also under [Users](#users). Every reset is recorded in the [audit log](#audit-log).
 
+### Revoke passkeys
+
+The **Passkeys** column shows how many [passkeys](getting-started.md#passkeys) each member has. *(Admin)* When someone has lost a device with a passkey, or a passkey may be in the wrong hands, select **Revoke passkeys** (the crossed circle) in their row and confirm: all their passkeys are deleted and they are signed out everywhere. They then sign in with their password (and can add new passkeys). The same limits as for resetting MFA apply; super admins can also do it under [Users](#users). It is recorded in the [audit log](#audit-log).
+
 ## Multi-factor authentication
 
 **Administration → Multi-factor authentication** decides who must use a second factor (an authenticator app, see [your profile](getting-started.md#multi-factor-authentication)) when signing in with a password. The page shows how many members already use it.

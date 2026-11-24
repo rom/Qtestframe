@@ -306,7 +306,7 @@ För kravformuleringar RFC 2119 och RFC 8174 (och SIS praxis på svenska); för 
 
 ### Stöder Qtestframe passkeys eller säkerhetsnycklar?
 
-Inte för inloggning i Qtestframe: där används lösenord eller enkel inloggning, med TOTP som andra faktor. Med enkel inloggning kan din identitetsleverantör kräva passkeys eller säkerhetsnycklar. Katalogen har krav och testfall som hänvisar till WebAuthn för dina egna produkter. Se [WebAuthn och FIDO2](glossary.md#webauthn-och-fido2).
+Ja. Lägg till en lösennyckel (passkey) i din profil (se [Lösennycklar](getting-started.md#lösennycklar)): den loggar in dig utan lösenord, och den är en andra faktor efter lösenordet, vid sidan av en autentiseringsapp. Konton med enkel inloggning loggar in hos identitetsleverantören, som också kan kräva passkeys eller säkerhetsnycklar. Katalogen har också krav och testfall som hänvisar till WebAuthn för dina egna produkter. Se [WebAuthn och FIDO2](glossary.md#webauthn-och-fido2).
 
 ### Var kommer uppgifterna om MITRE ATT&CK ifrån?
 

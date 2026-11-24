@@ -81,8 +81,9 @@ Den här sidan förklarar hur du loggar in, hittar rätt på skärmen och ställ
 
 1. Ange **E-post** och **Lösenord** och välj **Logga in**.
 2. Om du tillhör flera organisationer och vill börja i en viss, välj **Logga in i en viss organisation …** och ange dess kortnamn, till exempel `acme`. Utan kortnamn hamnar du i din standardorganisation (se [Inställningar](#inställningar)) eller den du använde senast.
-3. Om din organisation använder enkel inloggning (SSO) visar sidan en knapp per leverantör under **eller fortsätt med**. Välj den och logga in hos identitetsleverantören; du kommer automatiskt tillbaka till Qtestframe.
-4. Om du använder [tvåstegsverifiering](#tvåstegsverifiering) frågar sidan sedan efter **Verifieringskod**: öppna autentiseringsappen, ange den sexsiffriga kod den visar för Qtestframe och välj **Verifiera**. Varje kod fungerar en gång; om en kod nekas, vänta på nästa. Utan telefonen väljer du **Använd en återställningskod i stället** och anger en av dina återställningskoder. Om din organisation tillåter det hoppar **Kom ihåg den här enheten** över koden i den här webbläsaren under ett antal dagar.
+3. Med en [lösennyckel](#lösennycklar) väljer du **Logga in med lösennyckel** (eller väljer din lösennyckel bland förslagen i fältet **E-post**) och bekräftar med fingeravtryck, ansikte, PIN eller säkerhetsnyckel: du behöver varken lösenord eller kod. Om webbläsaren inte kan använda lösennycklar står det under knappen; logga då in med ditt lösenord.
+4. Om din organisation använder enkel inloggning (SSO) visar sidan en knapp per leverantör under **eller fortsätt med**. Välj den och logga in hos identitetsleverantören; du kommer automatiskt tillbaka till Qtestframe.
+5. Om du använder [tvåstegsverifiering](#tvåstegsverifiering) frågar sidan sedan efter den andra faktorn. Med en lösennyckel väljer du **Använd lösennyckel** och bekräftar på enheten. Annars anger du **Verifieringskod**: öppna autentiseringsappen, ange den sexsiffriga kod den visar för Qtestframe och välj **Verifiera**. Varje kod fungerar en gång; om en kod nekas, vänta på nästa. Utan telefonen väljer du **Använd en återställningskod i stället** och anger en av dina återställningskoder. Om din organisation tillåter det hoppar **Kom ihåg den här enheten** över koden i den här webbläsaren under ett antal dagar.
 
 Språkknapparna högst upp på inloggningssidan växlar mellan engelska och svenska innan du loggar in. Efter inloggningen gäller språket i dina inställningar.
 
@@ -231,6 +232,22 @@ Därefter frågar varje inloggning med lösenord efter en kod. API-nycklar påve
 - **Ny eller borttappad telefon**: med en återställningskod kan du fortfarande logga in; stäng av tvåstegsverifieringen och konfigurera den igen med den nya telefonen. Utan telefon och återställningskoder ber du en administratör att [återställa din tvåstegsverifiering](#återställa-tvåstegsverifiering).
 
 Om du loggar in med enkel inloggning frågar oftast identitetsleverantören efter den andra faktorn; Qtestframe frågar efter en egen kod bara om servern är konfigurerad för det.
+
+### Lösennycklar
+
+Med en **lösennyckel** (passkey) loggar du in med enhetens skärmlås (fingeravtryck, ansikte eller PIN), en lösenordshanterare som sparar den, eller en säkerhetsnyckel, i stället för med lösenord. Den kan inte nätfiskas eller gissas, och den räknas också som din andra faktor: med en lösennyckel behöver du ingen autentiseringsapp. Lösennycklar kräver en aktuell webbläsare (Chrome, Edge, Firefox eller Safari) och en server med en https-adress; annars förklarar profilen varför de inte är tillgängliga.
+
+**Lägg till en lösennyckel**
+
+1. I din profil, under **Lösennycklar**, väljer du **Lägg till lösennyckel**.
+2. Ge den ett namn som du känner igen senare (förslaget är din enhet och webbläsare, till exempel *Mac · Safari*) och välj **Lägg till lösennyckel**.
+3. Följ webbläsaren: välj var lösennyckeln ska sparas (den här enheten, din telefon, en lösenordshanterare eller en säkerhetsnyckel) och bekräfta med fingeravtryck, ansikte, PIN eller säkerhetsnyckel.
+
+Om du loggade in för mer än 10 minuter sedan ber Qtestframe dig först att **Bekräfta att det är du**: ange ditt lösenord, en kod från autentiseringsappen eller bekräfta med en befintlig lösennyckel.
+
+**Logga in med den**: på inloggningssidan väljer du **Logga in med lösennyckel**, eller väljer den bland förslagen i fältet **E-post**. Om ditt konto loggar in via enkel inloggning använder du din identitetsleverantör; där kan lösennyckeln vara din andra faktor. När administratören har stängt av inloggning utan lösenord är en lösennyckel din andra faktor efter lösenordet.
+
+**Senare**: listan visar varje lösennyckel med namn, när den lades till och när den senast användes (*Synkad* betyder att den är säkerhetskopierad i en lösenordshanterare eller ett molnkonto och fungerar på dina andra enheter också). **Byt namn** (pennan) ändrar namnet; **Ta bort** (papperskorgen) tar bort den från ditt konto – ta också bort den från enheten eller lösenordshanteraren. Att ta bort kräver en ny inloggning, precis som att lägga till. Om din organisation kräver tvåstegsverifiering kan du inte ta bort din sista andra faktor. Om du tappar bort en enhet tar du bort dess lösennyckel från en annan enhet, eller ber en administratör att [återkalla dina lösennycklar](#återkalla-lösennycklar).
 
 ## Nästa steg
 
@@ -4439,6 +4456,10 @@ Kolumnen **MFA** visar vem som använder tvåstegsverifiering: **På**, *Av*, el
 
 *(Administratör)* När någon har tappat bort både telefonen och återställningskoderna väljer du **Återställ MFA** (skölden) på hens rad och bekräftar. Autentiseringsappen, återställningskoderna och ihågkomna enheter tas bort, personen loggas ut överallt och får en notis och ett e-postmeddelande. Därefter loggar hen in med bara lösenordet, eller, om MFA krävs för hen, konfigurerar en ny autentiseringsapp vid nästa inloggning. Försäkra dig om att begäran verkligen kommer från personen innan du återställer. Precis som för lösenord kan administratörer bara återställa personer som enbart tillhör deras organisation; superadministratörer kan återställa vem som helst, även under [Användare](#användare). Varje återställning registreras i [händelseloggen](#händelselogg).
 
+### Återkalla lösennycklar
+
+Kolumnen **Lösennycklar** visar hur många [lösennycklar](#lösennycklar) varje medlem har. *(Administratör)* När någon har tappat bort en enhet med en lösennyckel, eller en lösennyckel kan ha hamnat i fel händer, väljer du **Återkalla lösennycklar** (den överkryssade cirkeln) på hens rad och bekräftar: alla hens lösennycklar tas bort och hen loggas ut överallt. Därefter loggar hen in med sitt lösenord (och kan lägga till nya lösennycklar). Samma begränsningar som för att återställa MFA gäller; superadministratörer kan också göra det under [Användare](#användare). Det registreras i [händelseloggen](#händelselogg).
+
 ## Tvåstegsverifiering
 
 **Administration → Tvåstegsverifiering** bestämmer vem som måste använda en andra faktor (en autentiseringsapp, se [din profil](#tvåstegsverifiering)) vid inloggning med lösenord. Sidan visar hur många medlemmar som redan använder den.
@@ -5345,7 +5366,7 @@ För kravformuleringar RFC 2119 och RFC 8174 (och SIS praxis på svenska); för 
 
 ### Stöder Qtestframe passkeys eller säkerhetsnycklar?
 
-Inte för inloggning i Qtestframe: där används lösenord eller enkel inloggning, med TOTP som andra faktor. Med enkel inloggning kan din identitetsleverantör kräva passkeys eller säkerhetsnycklar. Katalogen har krav och testfall som hänvisar till WebAuthn för dina egna produkter. Se [WebAuthn och FIDO2](#webauthn-och-fido2).
+Ja. Lägg till en lösennyckel (passkey) i din profil (se [Lösennycklar](#lösennycklar)): den loggar in dig utan lösenord, och den är en andra faktor efter lösenordet, vid sidan av en autentiseringsapp. Konton med enkel inloggning loggar in hos identitetsleverantören, som också kan kräva passkeys eller säkerhetsnycklar. Katalogen har också krav och testfall som hänvisar till WebAuthn för dina egna produkter. Se [WebAuthn och FIDO2](#webauthn-och-fido2).
 
 ### Var kommer uppgifterna om MITRE ATT&CK ifrån?
 
@@ -6771,7 +6792,7 @@ Web Content Accessibility Guidelines från W3C: testbara framgångskriterier, or
 
 W3C:s Web Authentication API och FIDO2-standarderna: inloggning med en säkerhetsnyckel eller en passkey, baserad på ett nyckelpar som är bundet till webbplatsen och därför står emot nätfiske.
 
-**I Qtestframe:** inte en inloggningsmetod i Qtestframe självt (det använder lösenord, enkel inloggning och TOTP), men katalogen har krav och testfall för passkeys och säkerhetsnycklar som hänvisar till WebAuthn.
+**I Qtestframe:** du kan logga in med en lösennyckel i stället för lösenord, eller använda en som andra faktor (se [Lösennycklar](#lösennycklar)). Katalogen har också krav och testfall för passkeys och säkerhetsnycklar som hänvisar till WebAuthn.
 
 **Se även:** [Tvåstegsverifiering](#tvåstegsverifiering-2), [TOTP](#totp), [Katalog](#katalog-1)
 

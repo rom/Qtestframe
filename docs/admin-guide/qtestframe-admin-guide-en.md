@@ -429,6 +429,16 @@ Every key of the file, its type, its default and the environment variable that s
 | `auth.saml[].role_mapping` | map | — | — | As for OIDC. |
 | `auth.saml[].allowed_domains` | list | — | — | E-mail domains that may sign in through the provider, as for OIDC. Empty = any. |
 
+### `auth`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `auth.passkeys.enabled` | bool | `true` | — | Users can register passkeys and use them. When off, registered passkeys are kept but cannot be used, also not as a second factor. |
+| `auth.passkeys.passwordless` | bool | `true` | — | Users of local accounts can sign in with a passkey alone ("Sign in with a passkey"; the authenticator must verify the user with a PIN or biometrics). When off, passkeys are only a second factor. Accounts of an identity provider always sign in there. |
+| `auth.passkeys.require_for_admins` | bool | `false` | — | Super administrators and organisation administrators must have a passkey or an authenticator app: without one their next sign-in must set one up first. |
+| `auth.passkeys.rp_id` | string | — | — | The WebAuthn relying party ID: the domain passkeys belong to, e.g. `example.com` (empty = the host of `server.base_url`). Changing it later makes the registered passkeys unusable. |
+| `auth.passkeys.origins` | list | — | — | Origins the browser may use passkeys from, e.g. `https://qtf.example.com` (empty = the origin of `server.base_url`). Each must use https (http only for localhost) and lie within `rp_id`. |
+
 ### `runner`
 
 | Key | Type | Default | Environment | Description |
@@ -733,7 +743,8 @@ Qtestframe knows these ways to prove who someone is:
 | Method | For | Configured in |
 |---|---|---|
 | Local password | people | `auth.local`, password policy |
-| Second factor (TOTP authenticator app, recovery codes) | people with a local password, optionally after OIDC | MFA policy in the web client; `local_mfa` per OIDC provider |
+| Second factor (TOTP authenticator app, recovery codes, passkeys) | people with a local password, optionally after OIDC | MFA policy in the web client; `local_mfa` per OIDC provider |
+| Passkey (WebAuthn), passwordless | people with a local account | `auth.passkeys` (file or system settings) |
 | OpenID Connect | people | `auth.oidc` (file or system settings) |
 | SAML 2.0 | people | `auth.saml` (file only) |
 | E-mail invitation | a person's first sign-in | needs e-mail |
@@ -769,7 +780,37 @@ Guessing is limited three ways: every code counts against the sign-in limit abov
 
 **Lost phone and recovery codes:** an organisation admin uses **Reset MFA** in **Members** (for members of only that organisation), a super administrator under **Users**. It removes the authenticator, recovery codes and remembered devices, signs the user out and tells them by notification and e-mail. Verify the request out of band first.
 
-The TOTP secrets are stored encrypted (see [Security](#encryption-of-stored-secrets)). API tokens and SCIM tokens are not affected by MFA; protect them like passwords. WebAuthn and passkeys are not implemented.
+The TOTP secrets are stored encrypted (see [Security](#encryption-of-stored-secrets)). API tokens and SCIM tokens are not affected by MFA; protect them like passwords. [Passkeys](#passkeys) are a second factor too.
+
+## Passkeys
+
+A **passkey** is a WebAuthn credential: a key pair kept by the user's device (platform authenticator with fingerprint, face or PIN, a password manager that syncs it, or a security key). Qtestframe stores only the public key. Passkeys are used three ways:
+
+- **Passwordless sign-in** – **Sign in with a passkey** on the sign-in page, and passkey suggestions in the e-mail field where the browser supports them (conditional mediation). It uses *discoverable* credentials and requires **user verification** (UV flag: PIN or biometrics), so it counts as multi-factor on its own: no TOTP code is asked for. Only **local accounts** can sign in this way; accounts of an identity provider sign in there (Qtestframe does not let a passkey bypass the provider).
+- **Second factor** – after the password (and after OIDC with `local_mfa`) a user with passkeys can confirm with one instead of a TOTP code. User verification is preferred but not required (user presence is). A passkey counts as a second factor for every MFA policy, so a user can have passkeys, an authenticator app or both.
+- **Re-authentication** – adding and deleting passkeys needs a sign-in less than 10 minutes ago; otherwise the user confirms their identity again with their password, a TOTP or recovery code, or a passkey (`POST /api/v1/auth/reauth`).
+
+Users manage their passkeys in their profile (several per account, at most 25, each with a name, the date added and the last use; rename and delete). Deleting the last second factor of an account that a policy requires MFA of is refused.
+
+**Settings** (System settings → Sign-in and passwords, or the configuration file):
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `auth.passkeys.enabled` | on | Users can register and use passkeys. Off keeps registered passkeys but they cannot be used, also not as a second factor. |
+| `auth.passkeys.passwordless` | on | The passwordless sign-in is offered (also needs `auth.local`). Off: passkeys are a second factor only. |
+| `auth.passkeys.require_for_admins` | off | Super administrators and organisation administrators must have a passkey or an authenticator app, without a grace period: their next sign-in must set one up first. |
+| `auth.passkeys.rp_id` | host of `server.base_url` | The WebAuthn relying party ID, the domain the passkeys are scoped to (`example.com` lets `qtf.example.com` and other subdomains use them). |
+| `auth.passkeys.origins` | origin of `server.base_url` | The web origins that may use the passkeys. Each must be `https` (`http` only for `localhost`) and lie within the RP ID. |
+
+Passkeys need an **https** `server.base_url` (or the two settings above): browsers offer WebAuthn only in a secure context, and the RP ID binds every passkey to the domain. Without one, users see that passkeys are not set up. **Choose the RP ID before users register passkeys**: changing it, or moving the server to another domain, makes all registered passkeys unusable (users then sign in with their password and register new ones).
+
+**What the server checks.** Challenges are 32 random bytes, stored on the server, valid for 5 minutes and deleted when answered (single use). They are bound to the browser session, to the pending second-factor sign-in or, for the passwordless sign-in, to a short-lived `qtf_passkey` cookie of the browser that asked for it. For every ceremony the server checks the client data type, challenge and origin (no cross-origin frames), the SHA-256 of the RP ID in the authenticator data, the user-present flag and, where required, the user-verified flag, and the signature. Registrations accept the attestation formats `none` (what Qtestframe asks for) and `packed` (self attestation, or an x5c certificate whose signature is checked but which is not chained to a trust anchor: Qtestframe does not decide by authenticator model), with the algorithms ES256, EdDSA (Ed25519) and RS256 (at least 2048 bits). The **signature counter** must increase for authenticators that have one: if it does not, the sign-in goes ahead, but a warning is logged and the event `passkey.counter_regressed` is audited, because it can mean a cloned authenticator. Synced passkeys report no counter. The implementation uses only the Go standard library (a small, bounded CBOR decoder for the attestation objects); it does not add a WebAuthn dependency.
+
+**Limits.** The passwordless sign-in counts against the sign-in limit of the client address; its options are limited to 60 per 5 minutes per address. A passkey as second factor counts like a code (10 attempts per 15 minutes per account, 5 per pending sign-in).
+
+**Administrators** see the number of passkeys per user in **Members** (column *Passkeys*) and **Users**, and can **Revoke passkeys** (a lost or compromised device): all passkeys of the user are deleted and the user is signed out everywhere. As for MFA resets, organisation administrators can do this for members who belong only to their organisation.
+
+**Audit log:** `passkey.register`, `passkey.rename`, `passkey.delete`, `user.reauth`, `member.revoke_passkeys`, `user.revoke_passkeys`, `passkey.counter_regressed`, and the sign-ins as `login` with the method `passkey` (passwordless) or `mfa=passkey` (second factor), with the passkey's name. Failed passkey sign-ins are recorded in the sign-in history with the method *passkey*.
 
 ## OpenID Connect
 
@@ -1120,6 +1161,11 @@ The settings the page offers, generated from `internal/settings`:
 | Sign-in and passwords | `auth.login_max_attempts` | 1–1000 | at once |
 | Sign-in and passwords | `auth.login_lockout` | 1m–24h | at once |
 | Sign-in and passwords | `auth.cookie_secure` | on/off | shown only (file) |
+| Sign-in and passwords | `auth.passkeys.enabled` | on/off | at once |
+| Sign-in and passwords | `auth.passkeys.passwordless` | on/off | at once |
+| Sign-in and passwords | `auth.passkeys.require_for_admins` | on/off | at once |
+| Sign-in and passwords | `auth.passkeys.rp_id` | text | at once |
+| Sign-in and passwords | `auth.passkeys.origins` | list | at once |
 | API tokens | `auth.token_max_days` | 0–3650 | at once |
 | API tokens | `auth.token_require_expiry` | on/off | at once |
 | Single sign-on | `auth.oidc` | list of providers | at once |
@@ -2121,9 +2167,9 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**In a backup** (115 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
+**In a backup** (116 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `webauthn_credentials`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
 
-**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`, `webauthn_challenges`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -2267,6 +2313,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 62 | `0062_project_logo.sql` |
 | 63 | `0063_tenant_admin.sql` |
 | 64 | `0064_solution_preamble.sql` |
+| 67 | `0067_passkeys.sql` |
 
 <!-- END GENERATED: migrations -->
 

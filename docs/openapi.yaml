@@ -1615,7 +1615,7 @@ paths:
       summary: Providers
       operationId: getAuthProviders
       description: |-
-        public — `{"local":true,"oidc":[{"name","display_name","login_url"}],"saml":[{"name","display_name","login_url"}]}`
+        public — `{"local":true,"oidc":[{"name","display_name","login_url"}],"saml":[{"name","display_name","login_url"}],"passkeys":true}`; `passkeys`: the passwordless sign-in with a passkey is offered.
 
         **Permission:** none (public).
       x-permission: none
@@ -20152,7 +20152,7 @@ paths:
       summary: Pending second factor
       operationId: getAuthMfaChallenge
       description: |-
-        Describes the sign-in that waits for its second factor (the `qtf_mfa` cookie set by `POST /auth/login` or an OIDC callback): `{"mfa_required": true, "methods": ["totp","recovery_code"], "remember_days", "expires_at"}`. 401 `mfa_expired` when none is pending.
+        Describes the sign-in that waits for its second factor (the `qtf_mfa` cookie set by `POST /auth/login` or an OIDC callback): `{"mfa_required": true, "methods", "remember_days", "expires_at"}`; `methods` lists `totp` and `recovery_code` (authenticator app) and `passkey` (`POST /auth/mfa/passkey`). 401 `mfa_expired` when none is pending.
 
         **Permission:** none (public).
       x-permission: none
@@ -20200,7 +20200,7 @@ paths:
       summary: Own MFA status
       operationId: getAuthMfa
       description: |-
-        `{"enabled", "enabled_at", "pending", "recovery_codes_left", "recovery_codes_total", "trusted_devices", "required", "enrolment_deadline", "enrolment_required", "remember_days"}`. The TOTP secret is never returned.
+        `{"enabled", "enabled_at", "pending", "recovery_codes_left", "recovery_codes_total", "trusted_devices", "required", "enrolment_deadline", "enrolment_required", "remember_days", "passkeys"}` (`passkeys`: the number of passkeys, which are a second factor too). The TOTP secret is never returned.
 
         **Permission:** signed in.
       x-permission: authenticated
@@ -20481,6 +20481,349 @@ paths:
       operationId: postUsersByIdMfaReset
       description: |-
         Super administrators only; as `POST /members/{uid}/mfa/reset` for any user (audited as `user.reset_mfa`).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/login/options:
+    post:
+      tags:
+      - Auth
+      summary: "Passkey sign-in options"
+      operationId: postAuthPasskeysLoginOptions
+      description: |-
+        Starts a passwordless sign-in with a passkey (discoverable credential, also for the passkey suggestions of the e-mail field): `{"publicKey": {"challenge", "rpId", "timeout", "userVerification": "required", "allowCredentials": []}}` for `navigator.credentials.get()`. The challenge is single-use, valid 5 minutes, stored on the server and bound to the short-lived `qtf_passkey` cookie set with the answer. 403 `passkeys_disabled` when passkeys, the passwordless sign-in or local sign-in are off; 503 `passkeys_unavailable` without a usable relying party (an https `server.base_url`); 429 after 60 requests in 5 minutes per address.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/login:
+    post:
+      tags:
+      - Auth
+      summary: "Sign in with a passkey"
+      operationId: postAuthPasskeysLogin
+      description: |-
+        `{"credential", "tenant"?}`: the `PublicKeyCredential` JSON of the assertion (base64url fields `id`, `rawId`, `response.clientDataJSON`, `response.authenticatorData`, `response.signature`, `response.userHandle`) with the `qtf_passkey` cookie of the options. The server checks the client data type, challenge and origin, the RP ID hash, the UP and UV flags, the signature and the signature counter (a counter that did not increase is let in, logged and audited as `passkey.counter_regressed`). Only local accounts can sign in this way (403 `passkey_sso` otherwise). The answer is `/auth/me` and the session cookie; no second factor is asked for (the passkey verified the user). Errors: 400 `passkey_expired` (unknown, used or expired challenge), `passkey_unknown`, `passkey_invalid`; 429 after 10 attempts in 5 minutes per address. The sign-in is audited as `login` with the method `passkey`.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/passkey/options:
+    post:
+      tags:
+      - Auth
+      summary: "Passkey second-factor options"
+      operationId: postAuthMfaPasskeyOptions
+      description: |-
+        For the sign-in waiting for its second factor (`qtf_mfa` cookie) when `methods` contains `passkey`: request options with the user's passkeys in `allowCredentials` and `userVerification: "preferred"`. 401 `mfa_expired` when no sign-in is pending; 409 when the user has no passkey.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/passkey:
+    post:
+      tags:
+      - Auth
+      summary: "Give a passkey as second factor"
+      operationId: postAuthMfaPasskey
+      description: |-
+        `{"credential", "remember"?}` completes the pending sign-in with a passkey assertion, like `POST /auth/mfa/verify` (the same rate limits and the limit of 5 failed attempts per pending sign-in). The answer is `/auth/me`; audited as `login` with `mfa=passkey`.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys:
+    get:
+      tags:
+      - Auth
+      summary: "Own passkeys"
+      operationId: getAuthPasskeys
+      description: |-
+        `{"items": [{"id", "name", "credential_id", "alg", "aaguid", "transports", "attestation", "user_verified", "backup_eligible", "backed_up", "created_at", "last_used_at"}], "enabled", "available", "reason"?, "passwordless", "rp_id", "recent_auth_until", "reauth_minutes"}`. Public keys are never returned. `recent_auth_until`: until then passkeys can be added and deleted without confirming one's identity again (`POST /auth/reauth`).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/register/options:
+    post:
+      tags:
+      - Auth
+      summary: "Passkey registration options"
+      operationId: postAuthPasskeysRegisterOptions
+      description: |-
+        Creation options for `navigator.credentials.create()`: `{"publicKey": {"rp", "user", "challenge", "pubKeyCredParams" (ES256, EdDSA, RS256), "timeout", "excludeCredentials", "authenticatorSelection" (`residentKey` required while the passwordless sign-in is on), "attestation": "none"}}`. Browser sessions only, with a recent sign-in or re-authentication (403 `reauth_required`); 409 with 25 passkeys.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/register:
+    post:
+      tags:
+      - Auth
+      summary: "Register a passkey"
+      operationId: postAuthPasskeysRegister
+      description: |-
+        `{"name"?, "credential"}`: the `PublicKeyCredential` JSON of the registration (`response.clientDataJSON`, `response.attestationObject`, `response.transports`). Accepted attestation formats: `none` and `packed` (self attestation or x5c, not checked against trust anchors); algorithms ES256, EdDSA and RS256. 201 with the passkey; 400 `passkey_expired` / `passkey_invalid`; 409 when the passkey is already registered. Lifts a pending MFA enrolment requirement (a passkey is a second factor). Audited as `passkey.register`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/passkeys/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Auth
+      summary: "Rename a passkey"
+      operationId: patchAuthPasskey
+      description: |-
+        `{"name"}` (1–100 characters, one line) — the passkey. Audited as `passkey.rename`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Auth
+      summary: "Delete a passkey"
+      operationId: deleteAuthPasskey
+      description: |-
+        Needs a sign-in or re-authentication less than 10 minutes ago (403 `reauth_required`: confirm with `POST /auth/reauth`). The last second factor of an account that a policy requires MFA of cannot be deleted (403 `mfa_required`). 204; audited as `passkey.delete`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/reauth/options:
+    post:
+      tags:
+      - Auth
+      summary: "Passkey re-authentication options"
+      operationId: postAuthReauthOptions
+      description: |-
+        Request options to confirm one's identity with a passkey (`allowCredentials`: the caller's passkeys), bound to the session. 409 without passkeys.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/reauth:
+    post:
+      tags:
+      - Auth
+      summary: "Confirm identity"
+      operationId: postAuthReauth
+      description: |-
+        Confirms the user's identity in this browser session for sensitive changes (adding and deleting passkeys): `{"password"}` (local accounts), `{"code"}` (authenticator app or recovery code) or `{"credential"}` (a passkey assertion for `POST /auth/reauth/options`). `{"reauth_until"}`; 403 `reauth_failed`; 429 after 10 attempts in 15 minutes. Audited as `user.reauth`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/members/{uid}/passkeys/revoke:
+    parameters:
+    - name: uid
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Members
+      summary: "Revoke a member's passkeys"
+      operationId: postMembersByUidPasskeysRevoke
+      description: |-
+        Deletes all passkeys of the member and signs them out — `{"revoked": n}` (409 when they have none). As for MFA resets, a tenant administrator cannot revoke those of super administrators or users of other tenants. Audited as `member.revoke_passkeys`.
+
+        **Permission:** `member.manage`.
+      x-permission: member.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/passkeys/revoke:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: "Revoke a user's passkeys"
+      operationId: postUsersByIdPasskeysRevoke
+      description: |-
+        Super administrators only; as `POST /members/{uid}/passkeys/revoke` for any user (audited as `user.revoke_passkeys`).
 
         **Permission:** signed in.
       x-permission: authenticated

@@ -211,6 +211,8 @@ var ProjectArchiveExcluded = map[string]string{
 	"user_mfa":              "secret (second factors)",
 	"mfa_recovery_codes":    "secret (second factors)",
 	"mfa_policies":          "organisation",
+	"webauthn_credentials":  "secret (passkeys)",
+	"webauthn_challenges":   "secret (passkey ceremonies)",
 	"code_settings":         "secret (webhook secret of the code integration)",
 	"field_set_fields":      "organisation field sets (the project has its own copies)",
 	"org_item_templates":    "organisation templates",

@@ -146,6 +146,25 @@ function resetMfa(u: User) {
   )
 }
 
+// ---------- passkeys (lost or compromised device) ----------
+function revokePasskeys(u: User) {
+  notify.confirmDanger(
+    t('passkeys.revoke.confirm', { user: u.email }),
+    async () => {
+      try {
+        const r = await api.post<{ revoked: number }>(`/users/${u.id}/passkeys/revoke`)
+        u.passkeys = 0
+        notify.ok(t('passkeys.revoke.done', { n: r.revoked }, r.revoked), u.email)
+        announce.value = t('passkeys.revoke.done', { n: r.revoked }, r.revoked)
+      } catch (e) {
+        notify.fail(e)
+      }
+    },
+    t('passkeys.revoke.header'),
+    t('passkeys.revoke.action'),
+  )
+}
+
 // ---------- password reset (generated temporary password) ----------
 const tempOpen = ref(false)
 const tempPassword = ref('')
@@ -197,15 +216,17 @@ function resetPassword(u: User) {
             <Tag v-if="data.disabled" :value="t('admin.disabled')" severity="contrast" />
             <Tag v-if="data.must_change_password" :value="t('admin.mustChange')" severity="warn" />
             <Tag v-if="data.mfa_enabled" :value="t('mfa.tag')" severity="success" icon="pi pi-shield" />
+            <Tag v-if="data.passkeys" :value="t('passkeys.count', { n: data.passkeys }, data.passkeys)" severity="success" icon="pi pi-key" />
           </div>
         </template>
       </Column>
       <Column field="created_at" :header="t('common.created')" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column style="width: 250px; white-space: nowrap">
+      <Column style="width: 290px; white-space: nowrap">
         <template #body="{ data }">
           <Button icon="pi pi-building" text rounded severity="secondary" :aria-label="t('admin.membershipsOf', { user: data.email })" v-tooltip="t('admin.memberships')" @click="openMemberships(data)" />
           <Button v-if="data.id !== auth.user?.id" icon="pi pi-sign-out" text rounded severity="secondary" :aria-label="t('admin.revokeSessions.of', { user: data.email })" v-tooltip="t('admin.revokeSessions.action')" @click="revokeSessions(data)" />
           <Button v-if="data.mfa_enabled && data.id !== auth.user?.id" icon="pi pi-shield" text rounded severity="secondary" :aria-label="t('mfa.reset.of', { user: data.email })" v-tooltip="t('mfa.reset.action')" @click="resetMfa(data)" />
+          <Button v-if="data.passkeys && data.id !== auth.user?.id" icon="pi pi-times-circle" text rounded severity="secondary" :aria-label="t('passkeys.revoke.of', { user: data.email })" v-tooltip="t('passkeys.revoke.action')" @click="revokePasskeys(data)" />
           <Button v-if="isLocal(data) && data.id !== auth.user?.id" icon="pi pi-key" text rounded severity="secondary" :aria-label="t('admin.resetPasswordOf', { user: data.email })" v-tooltip="t('admin.resetPasswordAction')" @click="resetPassword(data)" />
           <Button v-if="data.id !== auth.user?.id && !isLast(data)" :icon="data.disabled ? 'pi pi-lock-open' : 'pi pi-ban'" text rounded :severity="data.disabled ? 'success' : 'warn'" :aria-label="data.disabled ? t('admin.enableNamed', { user: data.email }) : t('admin.disableNamed', { user: data.email })" v-tooltip="data.disabled ? t('admin.enableUser') : t('admin.disableUser')" @click="setDisabled(data, !data.disabled)" />
           <Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('admin.editNamed', { name: data.email })" v-tooltip="t('common.edit')" @click="openEdit(data)" />

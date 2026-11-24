@@ -185,6 +185,16 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `auth.saml[].role_mapping` | mappning | — | — | Som för OIDC. |
 | `auth.saml[].allowed_domains` | lista | — | — | E-postdomäner som får logga in via leverantören, som för OIDC. Tom = alla. |
 
+### `auth`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `auth.passkeys.enabled` | bool | `true` | — | Användare kan registrera lösennycklar (passkeys) och använda dem. När det är av sparas registrerade lösennycklar men kan inte användas, inte heller som andra faktor. |
+| `auth.passkeys.passwordless` | bool | `true` | — | Användare med lokala konton kan logga in med bara en lösennyckel ("Logga in med lösennyckel"; autentiseraren måste verifiera användaren med PIN eller biometri). När det är av är lösennycklar bara en andra faktor. Konton från en identitetsleverantör loggar alltid in där. |
+| `auth.passkeys.require_for_admins` | bool | `false` | — | Superadministratörer och organisationsadministratörer måste ha en lösennyckel eller en autentiseringsapp: utan någon måste nästa inloggning först konfigurera en. |
+| `auth.passkeys.rp_id` | text | — | — | WebAuthn-id för den förlitande parten: domänen som lösennycklarna hör till, t.ex. `example.com` (tomt = värden i `server.base_url`). Om det ändras senare blir registrerade lösennycklar oanvändbara. |
+| `auth.passkeys.origins` | lista | — | — | Ursprung som webbläsaren får använda lösennycklar från, t.ex. `https://qtf.example.com` (tomt = ursprunget i `server.base_url`). Varje ursprung måste använda https (http bara för localhost) och ligga inom `rp_id`. |
+
 ### `runner`
 
 | Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
