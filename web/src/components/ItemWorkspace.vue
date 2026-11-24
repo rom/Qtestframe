@@ -31,6 +31,7 @@ import RequirementEditor from './RequirementEditor.vue'
 import TestEditor from './TestEditor.vue'
 import RequirementImportDialog from './RequirementImportDialog.vue'
 import ExchangeImportDialog from './ExchangeImportDialog.vue'
+import TestImportDialog from './TestImportDialog.vue'
 import Menu from 'primevue/menu'
 import type { ExchangeMode } from '@/lib/exchange'
 import type { ImportSourceId } from '@/lib/importSources'
@@ -384,6 +385,8 @@ async function exportRoundTrip() {
     notify.fail(e, t('exchange.exportFailed'))
   }
 }
+// ---------- tests from other test management tools ----------
+const testImportOpen = ref(false)
 const exchangeItems = computed(() => [
   ...(isReq.value && canWrite.value
     ? [
@@ -393,6 +396,7 @@ const exchangeItems = computed(() => [
         { label: t('exchange.fromAzure'), icon: 'pi pi-microsoft', command: () => openExchange('azure-devops') },
       ]
     : []),
+  ...(!isReq.value && canWrite.value ? [{ label: t('exchange.fromTestTool'), icon: 'pi pi-file-import', command: () => (testImportOpen.value = true) }] : []),
   ...(canExport.value ? [{ label: t('exchange.exportXlsx'), icon: 'pi pi-file-excel', command: exportRoundTrip }] : []),
   ...(canWrite.value ? [{ label: t('exchange.importXlsx'), icon: 'pi pi-file-import', command: () => openExchange('xlsx') }] : []),
 ])
@@ -980,6 +984,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     :can-export="canExport"
     @imported="onImported"
   />
+  <TestImportDialog v-if="!isReq && canWrite" v-model:visible="testImportOpen" :project-id="pid" :folders="folders" :folder-id="selectedFolder" @imported="onImported" />
   <ApplicabilityDialog
     v-model:visible="bulkApplicabilityOpen"
     :project-id="pid"

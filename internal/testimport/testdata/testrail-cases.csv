@@ -1,0 +1,10 @@
+ID,Title,Section,Section Hierarchy,Suite,Template,Type,Priority,Estimate,References,Preconditions,Steps (Step),Steps (Expected Result),Automation Type,Component
+C101,Sign in with a valid password,Sign in,Accounts > Sign in,Web shop,Test Case (Steps),Functional,High,5m,"SHOP-101, SHOP-102",A registered customer account exists.,Open the sign-in page,The sign-in form is shown,None,Accounts
+,,,,,,,,,,,Enter the e-mail address and the password,The fields accept the input,,
+,,,,,,,,,,,Press Sign in,The account overview is shown,,
+C102,Sign in with a wrong password,Sign in,Accounts > Sign in,Web shop,Test Case (Steps),Security,Critical,3m,SHOP-101,A registered customer account exists.,Enter a wrong password and press Sign in,An error message is shown and no session is created,None,Accounts
+,,,,,,,,,,,Repeat five times,The account is locked for 15 minutes,,
+C103,Add an item to the cart,Cart,Checkout > Cart,Web shop,Test Case (Text),Regression,Medium,1h 30m,SHOP-200,,"1. Open a product page
+2. Press Add to cart","1. The product page is shown
+2. The cart shows one item",Ranorex,Checkout
+C104,Pay with a saved card,Payment,Checkout > Payment,Web shop,Test Case (Steps),Automated,Low,,"SHOP-201, SHOP-999",The cart holds one item.,Choose the saved card and pay,The order confirmation is shown,Selenium,Checkout

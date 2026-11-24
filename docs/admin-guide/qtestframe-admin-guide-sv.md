@@ -2605,6 +2605,24 @@ Bygger en prompt för en AI-assistent på en server, via REST-API:t med en API-n
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 | `--variant` | `string` | only the requirements that apply to this variant (id or name) |
 
+### `qtestframe import-tests`
+
+Importerar testfallen från ett annat testverktyg till ett projekt på en server, via REST-API:t med en API-nyckel: `--from` `testrail` (CSV- eller XML-export), `xray` (CSV eller JSON), `zephyr` (CSV från Zephyr Scale/Squad eller XML från Zephyr Scale), `qtest` (XLSX eller CSV) eller `azure` (CSV från Azure Test Plans). Kommandot skriver vad som skulle skapas, uppdateras, lämnas oförändrat eller är i konflikt, med varningar som kravreferenser som inte matchar något krav, och importerar sedan; `--dry-run` stannar efter förhandsgranskningen. Varje testfall minns sin källa och sitt externa id, så en ny import av filen uppdaterar testfallen i stället för att skapa dubbletter; `--overwrite` uppdaterar även testfall som ändrats i Qtestframe sedan dess. Tidigare resultat i filen blir avslutade körningar (`--no-history` hoppar över dem); `--folder`, `--no-folders` och `--no-links` styr placering och kravlänkar (se sidan Samverkan i användarhandboken).
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--dry-run` | — | only show what would be created and updated |
+| `--folder` | `string` | test folder to import into (path or id; default: top level) |
+| `--format` | `string` | file format: csv, xml, json or xlsx (default: from the file name) |
+| `--from` | `string` | the tool the file comes from: testrail, xray, zephyr, qtest, azure |
+| `--no-folders` | — | do not create folders for the sections, suites, modules or area paths |
+| `--no-history` | — | do not import past results as runs |
+| `--no-links` | — | do not link the tests to the requirements they reference |
+| `--overwrite` | — | also update tests changed in Qtestframe since the last import (conflicts) |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+
 ### `qtestframe version`
 
 Skriver ut versionen (även `--version`, `-v`).

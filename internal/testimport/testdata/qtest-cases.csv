@@ -1,0 +1,4 @@
+Id,Name,Description,Precondition,Test Step #,Test Step Description,Test Step Expected Result,Module,Priority,Status,Type,Assigned To,Linked Requirements,Test Environment
+TC-21,Filter products by price,<p>The price filter narrows the list.</p>,The catalogue holds the demo products.,1,Open the lamp category,The lamps are listed,MD-1 Catalogue/MD-4 Filters,Urgent,Ready for Baseline,Manual,ada@example.com,RQ-7,Staging
+,,,,2,Set the maximum price to 50,Only lamps up to 50 are listed,,,,,,,
+TC-22,Sort products by rating,,,1,Choose Sort by rating,The best rated product is first,MD-1 Catalogue/MD-4 Filters,Medium,New,Automation,,RQ-8,

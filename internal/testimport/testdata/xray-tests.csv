@@ -1,0 +1,11 @@
+Issue Key,Summary,Description,Test Type,Priority,Labels,Action,Data,Result,Gherkin,Generic Definition,Precondition,Test Repository Path,Test Set,Requirement,Status
+SHOP-T1,Search finds a product by name,Search is the main entry point.,Manual,High,search smoke,"Enter ""lamp"" in the search field",lamp,Suggestions are shown,,,The catalogue holds the demo products.,/Catalogue/Search,SHOP-50,SHOP-110,Ready
+SHOP-T1,,,,,,Press Enter,,"The result list shows ""Desk lamp""",,,,,,,
+SHOP-T2,Guest checkout,,Cucumber,Medium,checkout,,,,"Feature: Checkout
+  Scenario: A guest buys a lamp
+    Given the cart holds a desk lamp
+    When the guest checks out with a card
+    And confirms the order
+    Then an order number is shown
+    And a confirmation e-mail is sent",,,/Checkout,SHOP-50,"SHOP-120, SHOP-121",In Review
+SHOP-T3,API returns the price list,,Generic,Low,api,,,,,tests/api/test_prices.py::test_price_list,,/API,,SHOP-130,Obsolete

@@ -372,6 +372,7 @@ func (s *Server) routes() {
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)
+	s.routesTestImport(h)
 	// Excel round-trip and ReqIF import (exchange.go), OSLC (oslc.go)
 	s.routesExchange(h)
 	s.routesRequirementSources(h)
